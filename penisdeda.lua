@@ -2890,7 +2890,7 @@ local function DoESP()
 					end
 					if config["esp_player_team"] then
 						surface.SetFont("ESP_Font_Flag")
-                                                local w, h = surface.GetTextSize(v:Team())
+                                                local w, h = surface.GetTextSize(team.GetName(v:Team()))
 						local col = team.GetColor(v:Team())
 						if config["tm_pos"] == 1 then
 						draw.SimpleTextOutlined(team.GetName(v:Team()), "ESP_Font_Flag", MinX-config["tm_x"], MinY+config["tm_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
