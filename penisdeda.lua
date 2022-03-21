@@ -1,5 +1,5 @@
 --Cheat inf
-local penisversion = "V3.5.5"
+local penisversion = "V3.6.5"
 --Gavno
 local surface, draw = surface, draw
 local ply, me = LocalPlayer(), LocalPlayer()
