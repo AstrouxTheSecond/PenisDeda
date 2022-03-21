@@ -1,3 +1,5 @@
+--Cheat inf
+local penisversion = "V3.5.5"
 --Gavno
 local surface, draw = surface, draw
 local ply, me = LocalPlayer(), LocalPlayer()
@@ -2352,11 +2354,11 @@ function HavocGUI()
 	--CreateCheckBox("Self Chmas", 10, 210, "esp_self_chams", true, visual_self, 165)
 	--CreateCheckBox("Self Weapon Chmas", 10, 230, "esp_self_chams_wep", true, visual_self, 165)
 	
-	CreateCheckBox("Box ESP", 10, 30, "esp_npc_box", true, visual_npc , 165)
-	CreateCheckBox("Glow ESP", 10, 50, "esp_npc_halo", true, visual_npc , 165)
-	CreateCheckBox("Class ESP", 10, 70, "esp_npc_name", true, visual_npc , 165)
-	CreateCheckBox("Health ESP", 10, 90, "esp_npc_health", true, visual_npc , 165)
-	CreateCheckBox("Snaplines", 10, 110, "esp_npc_snaplines", true, visual_npc , 165)	
+	--CreateCheckBox("Box ESP", 10, 30, "esp_npc_box", true, visual_npc , 165)
+	--CreateCheckBox("Glow ESP", 10, 50, "esp_npc_halo", true, visual_npc , 165)
+	--CreateCheckBox("Class ESP", 10, 70, "esp_npc_name", true, visual_npc , 165)
+	--CreateCheckBox("Health ESP", 10, 90, "esp_npc_health", true, visual_npc , 165)
+	--CreateCheckBox("Snaplines", 10, 110, "esp_npc_snaplines", true, visual_npc , 165)	
 	
 	CreateButton("Entity List", "Open Entity List.", CreateEntityList, 10, 30, world_ents)
 	CreateCheckBox("Storage ESP", 10, 50, "esp_ent_storage_esp", true, world_ents , 165)
@@ -5663,11 +5665,9 @@ end)
 
 --==================== Injection Welcome Message Thing
 print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
-MsgC(Color(61, 149, 217), "")
+MsgC(Color(255, 235, 200), "PenisDeda" .. penisversion .. "loaded! \n")
 
-notification.AddLegacy("Loaded PenisDeda v2 Early BETA!Loged as " .. LocalPlayer():Nick() .. " | " .. os.date("%I:%M %p"), NOTIFY_HINT, 5)
-
-surface.PlaySound( "radio/go.wav" )
+notification.AddLegacy("Loaded PenisDeda " .. penisversion .."  | " .. os.date("%I:%M %p"), NOTIFY_HINT, 5)
 
 for k, v in ipairs(files) do
 	if string.lower(v) == "default.json" then
