@@ -4909,7 +4909,7 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
     end
     if config["antihit_fd"] then
         if input.IsKeyDown(config.keybinds["antihit_fd_key"]) then
-		    bSendPacket = (ucmd:CommandNumber() % 32) < 3
+		    bSendPacket = (ucmd:CommandNumber() % 16) < 3
 			ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 4));
 		    if LocalPlayer():KeyDown(IN_DUCK) then ucmd:RemoveKey(IN_DUCK) end
 		end
