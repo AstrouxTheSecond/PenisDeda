@@ -1,7 +1,11 @@
 --Cheat inf
-local penisversion = "V3.6.5"
+local penisversion = "V3.7"
 --Gavno
 local surface, draw = surface, draw
+
+local SurfaceLine = surface.DrawLine
+local DrawOutlinedText = draw.SimpleTextOutlined
+
 local ply, me = LocalPlayer(), LocalPlayer()
 local em = FindMetaTable"Entity"
 local wm = FindMetaTable"Weapon"
@@ -24,7 +28,7 @@ gameevent.Listen("player_say")
 gameevent.Listen("player_spawn")
 gameevent.Listen("player_hurt")
 //Modules
---require("dickwrap")
+require("dickwrap")
 require("enginepred")
 require("context")
 require("bsendpacket")
@@ -94,6 +98,7 @@ config["antihit_antiaim"] = false
 config["yaw_base"] = 1
 config["yaw_add"] = 1
 config["pitch_add"] = 1
+config["legit_aa"] = false
 
 config["antihit_fd"] = false
 
@@ -125,8 +130,8 @@ config["esp_player_hp"] = false
 config["esp_player_hp_type"] = 1
 config["esp_player_ap"] = false
 config["esp_player_ap_type"] = 1
-config["esp_player_health"] = false config["health_x"] = 0 config["health_y"] = 10 config["health_pos"] = 1 
-config["esp_player_armor"] = false config["armor_x"] = 0 config["armor_y"] = 20 config["armor_pos"] = 1 
+config["esp_player_health"] = false config["health_x"] = 5 config["health_y"] = 10 config["health_pos"] = 1 
+config["esp_player_armor"] = false config["armor_x"] = 5 config["armor_y"] = 20 config["armor_pos"] = 1 
 config["esp_player_ap_type"] = 2
 config["esp_player_weapon"] = false config["wep_x"] = 0 config["wep_y"] = 15 config["wep_pos"] = 4 
 config["esp_player_weapon_fancy"] = false
@@ -294,8 +299,6 @@ config["flag_font"] = 2
 config["bsp_fake_lags"] = false
 config["bsp_fake_lags_value"] = 1
 config["bsp_fake_lags_conditions"] = 1
-config["bsp_fake_lagsr"] = false
-config["bsp_fake_lagsr_value"] = 1
 
 config.colors["esp_player_box"] = "255 255 255 255"
 config.colors["esp_player_name"] = "255 255 255 255"
@@ -678,6 +681,11 @@ local function ValidateAimbot(ply)
 		return true
 	end
 end
+
+
+
+
+
 local function ValidateKillaura(ply)
 	if !IsValid(ply) then return false end
 	if !ply:IsPlayer() and !ply:IsBot() then return false end
@@ -2219,6 +2227,10 @@ function HavocGUI()
 	CreateCheckBox("Enable Anti-Aim", 10, 30, "antihit_antiaim", false, combat_antihitnotanim)
 	CreateDropdown("Yaw Base", 10, 50, {"Static", "Sway", "Jitter", "LBY"}, "yaw_base", combat_antihitnotanim)
 	CreateDropdown("Pitch", 10, 90, {"None","Zero", "Down", "Up", "Fake Down", "Fake Up"}, "pitch_add", combat_antihitnotanim)
+	--Fake angles
+	--CreateCheckBox("Enable Anti-Aim", 10, 30, "antihit_antiaim", false, combat_antihitnotanim)
+	--CreateDropdown("Yaw Base", 10, 50, {"Static", "Sway", "Jitter", "LBY"}, "yaw_base", combat_antihitnotanim)
+	--CreateDropdown("Pitch", 10, 90, {"None","Zero", "Down", "Up", "Fake Down", "Fake Up"}, "pitch_add", combat_antihitnotanim)	
 	--AA Misc
 	CreateCheckBox("Fake Duck", 10, 30, "antihit_fd", false, antihit_misc)
 	CreateKeybind(140, 30, "antihit_fd_key", antihit_misc)
@@ -2454,8 +2466,6 @@ function HavocGUI()
 	CreateCheckBox("Fake Lags", 10, 30, "bsp_fake_lags", false, bsendpacket_tab)
 	CreateSlider("FakeLag Limit", 10, 50, "bsp_fake_lags_value", 1, 128, 0, bsendpacket_tab)
 	CreateDropdown("FakeLag Conditions", 10, 90, {"Always On", "In Move", "In Stand", "On Ground", "In Air", "On Attack", "Off Attack"}, "bsp_fake_lags_conditions", bsendpacket_tab)
-	CreateCheckBox("FL Randomisation", 10, 130, "bsp_fake_lagsr", false, bsendpacket_tab)
-	CreateSlider("Randomisation Limit", 10, 150, "bsp_fake_lagsr_value", 1, 64, 0, bsendpacket_tab)
 	
 	--CFG
     CreateLabel("Menu Keybind", 10, 10, cfg_tab)
@@ -2679,14 +2689,14 @@ local function DoESP()
 						end
 						if config["esp_player_box_mode"] == 2 then
 							local XLen, YLen = MaxX - MinX, MaxY - MinY
-							surface.DrawLine( MaxX, MaxY, MinX + XLen * 0.7, MaxY)
-							surface.DrawLine( MinX, MaxY, MinX + XLen * 0.3, MaxY)
-							surface.DrawLine( MaxX, MaxY, MaxX, MinY + YLen * 0.75)
-							surface.DrawLine( MaxX, MinY, MaxX, MinY + YLen * 0.25)
-							surface.DrawLine( MinX, MinY, MaxX - XLen * 0.7, MinY )
-							surface.DrawLine( MaxX, MinY, MaxX - XLen * 0.3, MinY )
-							surface.DrawLine( MinX, MinY, MinX, MaxY - YLen * 0.75)
-							surface.DrawLine( MinX, MaxY, MinX, MaxY - YLen * 0.25)
+							SurfaceLine( MaxX, MaxY, MinX + XLen * 0.7, MaxY)
+							SurfaceLine( MinX, MaxY, MinX + XLen * 0.3, MaxY)
+							SurfaceLine( MaxX, MaxY, MaxX, MinY + YLen * 0.75)
+							SurfaceLine( MaxX, MinY, MaxX, MinY + YLen * 0.25)
+							SurfaceLine( MinX, MinY, MaxX - XLen * 0.7, MinY )
+							SurfaceLine( MaxX, MinY, MaxX - XLen * 0.3, MinY )
+							SurfaceLine( MinX, MinY, MinX, MaxY - YLen * 0.75)
+							SurfaceLine( MinX, MaxY, MinX, MaxY - YLen * 0.25)
 						elseif config["esp_player_box_mode"] == 3 then
 							cam.Start3D()
 							    if config["esp_player_box_hsv"] then
@@ -2717,10 +2727,10 @@ local function DoESP()
 	                    surface.SetMaterial( Material("gui/sm_hover.png") ) 
 	                    surface.DrawTexturedRect( MinX, MinY, XLen, YLen ) 							
 						else
-							surface.DrawLine( MaxX, MaxY, MinX, MaxY )
-							surface.DrawLine( MaxX, MaxY, MaxX, MinY )
-							surface.DrawLine( MinX, MinY, MaxX, MinY )
-							surface.DrawLine( MinX, MinY, MinX, MaxY )
+							SurfaceLine( MaxX, MaxY, MinX, MaxY )
+							SurfaceLine( MaxX, MaxY, MaxX, MinY )
+							SurfaceLine( MinX, MinY, MaxX, MinY )
+							SurfaceLine( MinX, MinY, MinX, MaxY )
 						end
 					end
 					if config["esp_player_name"] then
@@ -2737,13 +2747,13 @@ local function DoESP()
 							col = string.ToColor(config.colors["esp_player_name"])
 						end
 						if config["name_pos"] == 1 then
-						draw.SimpleTextOutlined(v:Name(), "ESP_Font_Main", MinX-config["name_x"], MinY+config["name_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText(v:Name(), "ESP_Font_Main", MinX-config["name_x"], MinY+config["name_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["name_pos"] == 2 then
-						draw.SimpleTextOutlined(v:Name(), "ESP_Font_Main", MaxX+config["name_x"], MinY+config["name_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText(v:Name(), "ESP_Font_Main", MaxX+config["name_x"], MinY+config["name_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["name_pos"] == 3 then
-						draw.SimpleTextOutlined(v:Name(), "ESP_Font_Main", MaxX-(MaxX-MinX)/2-w/2+config["name_x"], MinY-config["name_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText(v:Name(), "ESP_Font_Main", MaxX-(MaxX-MinX)/2-w/2+config["name_x"], MinY-config["name_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["name_pos"] == 4 then  
-						draw.SimpleTextOutlined(v:Name(), "ESP_Font_Main", MaxX-(MaxX-MinX)/2-w/2+config["name_x"], MaxY+config["name_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText(v:Name(), "ESP_Font_Main", MaxX-(MaxX-MinX)/2-w/2+config["name_x"], MaxY+config["name_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						end
 					end
 					if config["esp_player_hp"] then
@@ -2758,32 +2768,32 @@ local function DoESP()
 						colnormal = string.ToColor(config.colors["esp_player_hp"])
 						if config["esp_player_hp_type"] == 1 then	
 						surface.SetDrawColor(0, 0, 0, 250)
-						surface.DrawLine( MinX-2, MinY, MinX-2, MaxY )
-						surface.DrawLine( MinX-3, MinY, MinX-3, MaxY )
+						SurfaceLine( MinX-2, MinY, MinX-2, MaxY )
+						SurfaceLine( MinX-3, MinY, MinX-3, MaxY )
 						surface.SetDrawColor(colnormal)
-						surface.DrawLine( MinX-2, MinY-appliedBar, MinX-2, MaxY )
-						surface.DrawLine( MinX-3, MinY-appliedBar, MinX-3, MaxY )
+						SurfaceLine( MinX-2, MinY-appliedBar, MinX-2, MaxY )
+						SurfaceLine( MinX-3, MinY-appliedBar, MinX-3, MaxY )
 						elseif config["esp_player_hp_type"] == 2 then
 						surface.SetDrawColor(0, 0, 0, 250)
-						surface.DrawLine( MaxX+2, MaxY, MaxX+2, MinY )
-						surface.DrawLine( MaxX+3, MaxY, MaxX+3, MinY )
+						SurfaceLine( MaxX+2, MaxY, MaxX+2, MinY )
+						SurfaceLine( MaxX+3, MaxY, MaxX+3, MinY )
                         surface.SetDrawColor(colnormal)
-						surface.DrawLine( MaxX+2, MaxY, MaxX+2, MinY-appliedBar )
-						surface.DrawLine( MaxX+3, MaxY, MaxX+3, MinY-appliedBar )
+						SurfaceLine( MaxX+2, MaxY, MaxX+2, MinY-appliedBar )
+						SurfaceLine( MaxX+3, MaxY, MaxX+3, MinY-appliedBar )
 						elseif config["esp_player_hp_type"] == 3 then
                         surface.SetDrawColor(0, 0, 0, 250)
-						surface.DrawLine( MinX, MinY-2, MaxX, MinY-2 )
-						surface.DrawLine( MinX, MinY-3, MaxX, MinY-3 )
+						SurfaceLine( MinX, MinY-2, MaxX, MinY-2 )
+						SurfaceLine( MinX, MinY-3, MaxX, MinY-3 )
                         surface.SetDrawColor(colnormal)
-						surface.DrawLine( MinX-appliedBar2, MinY-2, MaxX, MinY-2 )
-						surface.DrawLine( MinX-appliedBar2, MinY-3, MaxX, MinY-3 )
+						SurfaceLine( MinX-appliedBar2, MinY-2, MaxX, MinY-2 )
+						SurfaceLine( MinX-appliedBar2, MinY-3, MaxX, MinY-3 )
 						elseif config["esp_player_hp_type"] == 4 then
 						surface.SetDrawColor(0, 0, 0, 250)
-						surface.DrawLine( MinX, MaxY+2, MaxX, MaxY+2 )
-						surface.DrawLine( MinX, MaxY+3, MaxX, MaxY+3 )
+						SurfaceLine( MinX, MaxY+2, MaxX, MaxY+2 )
+						SurfaceLine( MinX, MaxY+3, MaxX, MaxY+3 )
                         surface.SetDrawColor(colnormal)
-						surface.DrawLine( MinX-appliedBar2, MaxY+2, MaxX, MaxY+2 )
-						surface.DrawLine( MinX-appliedBar2, MaxY+3, MaxX, MaxY+3 )
+						SurfaceLine( MinX-appliedBar2, MaxY+2, MaxX, MaxY+2 )
+						SurfaceLine( MinX-appliedBar2, MaxY+3, MaxX, MaxY+3 )
 						end
 					end
 					if config["esp_player_health"] then
@@ -2791,13 +2801,13 @@ local function DoESP()
 						local w, h = surface.GetTextSize(v:Health())
 						local col = string.ToColor(config.colors["esp_player_health"])
 						if config["health_pos"] == 1 then
-						draw.SimpleTextOutlined(v:Health(), "ESP_Font_Flag", MinX-config["health_x"], MinY+config["health_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText(v:Health(), "ESP_Font_Flag", MinX-config["health_x"], MinY+config["health_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["health_pos"] == 2 then
-						draw.SimpleTextOutlined(v:Health(), "ESP_Font_Flag", MaxX+config["health_x"], MinY+config["health_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText(v:Health(), "ESP_Font_Flag", MaxX+config["health_x"], MinY+config["health_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["health_pos"] == 3 then
-						draw.SimpleTextOutlined(v:Health(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["health_x"], MinY-config["health_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText(v:Health(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["health_x"], MinY-config["health_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["health_pos"] == 4 then  
-						draw.SimpleTextOutlined(v:Health(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["health_x"], MaxY+config["health_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText(v:Health(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["health_x"], MaxY+config["health_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						end
 					end
 					if config["esp_player_ap"] then
@@ -2813,32 +2823,32 @@ local function DoESP()
 						if v:Armor() > 0 then
 						if config["esp_player_ap_type"] == 1 then	
 						surface.SetDrawColor(0, 0, 0, 225)
-						surface.DrawLine( MinX-2, MinY, MinX-2, MaxY )
-						surface.DrawLine( MinX-3, MinY, MinX-3, MaxY )
+						SurfaceLine( MinX-2, MinY, MinX-2, MaxY )
+						SurfaceLine( MinX-3, MinY, MinX-3, MaxY )
 						surface.SetDrawColor(colnormal)
-						surface.DrawLine( MinX-2, MinY-appliedBar, MinX-2, MaxY )
-						surface.DrawLine( MinX-3, MinY-appliedBar, MinX-3, MaxY )
+						SurfaceLine( MinX-2, MinY-appliedBar, MinX-2, MaxY )
+						SurfaceLine( MinX-3, MinY-appliedBar, MinX-3, MaxY )
 						elseif config["esp_player_ap_type"] == 2 then
 						surface.SetDrawColor(0, 0, 0, 225)
-						surface.DrawLine( MaxX+2, MaxY, MaxX+2, MinY )
-						surface.DrawLine( MaxX+3, MaxY, MaxX+3, MinY )
+						SurfaceLine( MaxX+2, MaxY, MaxX+2, MinY )
+						SurfaceLine( MaxX+3, MaxY, MaxX+3, MinY )
                         surface.SetDrawColor(colnormal)
-						surface.DrawLine( MaxX+2, MaxY, MaxX+2, MinY-appliedBar )
-						surface.DrawLine( MaxX+3, MaxY, MaxX+3, MinY-appliedBar )
+						SurfaceLine( MaxX+2, MaxY, MaxX+2, MinY-appliedBar )
+						SurfaceLine( MaxX+3, MaxY, MaxX+3, MinY-appliedBar )
 						elseif config["esp_player_ap_type"] == 3 then
                         surface.SetDrawColor(0, 0, 0, 225)
-						surface.DrawLine( MinX, MinY-2, MaxX, MinY-2 )
-						surface.DrawLine( MinX, MinY-3, MaxX, MinY-3 )
+						SurfaceLine( MinX, MinY-2, MaxX, MinY-2 )
+						SurfaceLine( MinX, MinY-3, MaxX, MinY-3 )
                         surface.SetDrawColor(colnormal)
-						surface.DrawLine( MinX-appliedBar2, MinY-2, MaxX, MinY-2 )
-						surface.DrawLine( MinX-appliedBar2, MinY-3, MaxX, MinY-3 )
+						SurfaceLine( MinX-appliedBar2, MinY-2, MaxX, MinY-2 )
+						SurfaceLine( MinX-appliedBar2, MinY-3, MaxX, MinY-3 )
 						elseif config["esp_player_ap_type"] == 4 then
 						surface.SetDrawColor(0, 0, 0, 225)
-						surface.DrawLine( MinX, MaxY+2, MaxX, MaxY+2 )
-						surface.DrawLine( MinX, MaxY+3, MaxX, MaxY+3 )
+						SurfaceLine( MinX, MaxY+2, MaxX, MaxY+2 )
+						SurfaceLine( MinX, MaxY+3, MaxX, MaxY+3 )
                         surface.SetDrawColor(colnormal)
-						surface.DrawLine( MinX-appliedBar2, MaxY+2, MaxX, MaxY+2 )
-						surface.DrawLine( MinX-appliedBar2, MaxY+3, MaxX, MaxY+3 )
+						SurfaceLine( MinX-appliedBar2, MaxY+2, MaxX, MaxY+2 )
+						SurfaceLine( MinX-appliedBar2, MaxY+3, MaxX, MaxY+3 )
 						end
 						end
 					end
@@ -2848,13 +2858,13 @@ local function DoESP()
 						local col = string.ToColor(config.colors["esp_player_armor"])
 					if v:Armor() > 0 or frame then
 						if config["armor_pos"] == 1 then
-						draw.SimpleTextOutlined(v:Armor(), "ESP_Font_Flag", MinX-config["armor_x"], MinY+config["armor_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText(v:Armor(), "ESP_Font_Flag", MinX-config["armor_x"], MinY+config["armor_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["armor_pos"] == 2 then
-						draw.SimpleTextOutlined(v:Armor(), "ESP_Font_Flag", MaxX+config["armor_x"], MinY+config["armor_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText(v:Armor(), "ESP_Font_Flag", MaxX+config["armor_x"], MinY+config["armor_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["armor_pos"] == 3 then
-						draw.SimpleTextOutlined(v:Armor(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["armor_x"], MinY-config["armor_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText(v:Armor(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["armor_x"], MinY-config["armor_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["armor_pos"] == 4 then  
-						draw.SimpleTextOutlined(v:Armor(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["armor_x"], MaxY+config["armor_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText(v:Armor(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["armor_x"], MaxY+config["armor_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						end
 					end
 					end
@@ -2864,13 +2874,13 @@ local function DoESP()
 						local w, h = surface.GetTextSize(config["esp_player_weapon_fancy"] and v:GetActiveWeapon():GetPrintName() or v:GetActiveWeapon():GetClass())
 						local col = string.ToColor(config.colors["esp_player_weapon"])
 						if config["wep_pos"] == 1 then
-						draw.SimpleTextOutlined(config["esp_player_weapon_fancy"] and v:GetActiveWeapon():GetPrintName() or v:GetActiveWeapon():GetClass(), "ESP_Font_Flag", MinX-config["wep_x"], MinY+config["wep_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText(config["esp_player_weapon_fancy"] and v:GetActiveWeapon():GetPrintName() or v:GetActiveWeapon():GetClass(), "ESP_Font_Flag", MinX-config["wep_x"], MinY+config["wep_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["wep_pos"] == 2 then
-						draw.SimpleTextOutlined(config["esp_player_weapon_fancy"] and v:GetActiveWeapon():GetPrintName() or v:GetActiveWeapon():GetClass(), "ESP_Font_Flag", MaxX+config["wep_x"], MinY+config["wep_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText(config["esp_player_weapon_fancy"] and v:GetActiveWeapon():GetPrintName() or v:GetActiveWeapon():GetClass(), "ESP_Font_Flag", MaxX+config["wep_x"], MinY+config["wep_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["wep_pos"] == 3 then
-						draw.SimpleTextOutlined(config["esp_player_weapon_fancy"] and v:GetActiveWeapon():GetPrintName() or v:GetActiveWeapon():GetClass(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["wep_x"], MinY-config["wep_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText(config["esp_player_weapon_fancy"] and v:GetActiveWeapon():GetPrintName() or v:GetActiveWeapon():GetClass(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["wep_x"], MinY-config["wep_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["wep_pos"] == 4 then  
-						draw.SimpleTextOutlined(config["esp_player_weapon_fancy"] and v:GetActiveWeapon():GetPrintName() or v:GetActiveWeapon():GetClass(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["wep_x"], MaxY+config["wep_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText(config["esp_player_weapon_fancy"] and v:GetActiveWeapon():GetPrintName() or v:GetActiveWeapon():GetClass(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["wep_x"], MaxY+config["wep_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						end
 					end
 					end
@@ -2879,27 +2889,27 @@ local function DoESP()
                         local w, h = surface.GetTextSize(v:GetUserGroup())
 						local col = string.ToColor(config.colors["esp_player_rank"])
 						if config["rank_pos"] == 1 then
-						draw.SimpleTextOutlined(v:GetUserGroup(), "ESP_Font_Flag", MinX-config["rank_x"], MinY+config["rank_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText(v:GetUserGroup(), "ESP_Font_Flag", MinX-config["rank_x"], MinY+config["rank_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["rank_pos"] == 2 then
-						draw.SimpleTextOutlined(v:GetUserGroup(), "ESP_Font_Flag", MaxX+config["rank_x"], MinY+config["rank_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText(v:GetUserGroup(), "ESP_Font_Flag", MaxX+config["rank_x"], MinY+config["rank_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["rank_pos"] == 3 then
-						draw.SimpleTextOutlined(v:GetUserGroup(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["rank_x"], MinY-config["rank_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText(v:GetUserGroup(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["rank_x"], MinY-config["rank_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["rank_pos"] == 4 then  
-						draw.SimpleTextOutlined(v:GetUserGroup(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["rank_x"], MaxY+config["rank_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText(v:GetUserGroup(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["rank_x"], MaxY+config["rank_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						end
 					end
 					if config["esp_player_team"] then
 						surface.SetFont("ESP_Font_Flag")
-                                                local w, h = surface.GetTextSize(team.GetName(v:Team()))
+                        local w, h = surface.GetTextSize(team.GetName(v:Team()))
 						local col = team.GetColor(v:Team())
 						if config["tm_pos"] == 1 then
-						draw.SimpleTextOutlined(team.GetName(v:Team()), "ESP_Font_Flag", MinX-config["tm_x"], MinY+config["tm_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText(team.GetName(v:Team()), "ESP_Font_Flag", MinX-config["tm_x"], MinY+config["tm_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["tm_pos"] == 2 then
-						draw.SimpleTextOutlined(team.GetName(v:Team()), "ESP_Font_Flag", MaxX+config["tm_x"], MinY+config["tm_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText(team.GetName(v:Team()), "ESP_Font_Flag", MaxX+config["tm_x"], MinY+config["tm_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["tm_pos"] == 3 then
-						draw.SimpleTextOutlined(team.GetName(v:Team()), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["tm_x"], MinY-config["tm_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText(team.GetName(v:Team()), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["tm_x"], MinY-config["tm_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["tm_pos"] == 4 then  
-						draw.SimpleTextOutlined(team.GetName(v:Team()), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["tm_x"], MaxY+config["tm_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText(team.GetName(v:Team()), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["tm_x"], MaxY+config["tm_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						end
 					end
 					if config["esp_player_distance"] then
@@ -2908,33 +2918,38 @@ local function DoESP()
 						local col = string.ToColor(config.colors["esp_player_distance"])
 						local distance = math.Round((LocalPlayer():GetPos() - v:GetPos()):Length())
 						if config["ds_pos"] == 1 then
-						draw.SimpleTextOutlined("Dist:" .. distance, "ESP_Font_Flag", MinX-config["ds_x"], MinY+config["ds_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText("Dist:" .. distance, "ESP_Font_Flag", MinX-config["ds_x"], MinY+config["ds_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["ds_pos"] == 2 then
-						draw.SimpleTextOutlined("Dist:" .. distance, "ESP_Font_Flag", MaxX+config["ds_x"], MinY+config["ds_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText("Dist:" .. distance, "ESP_Font_Flag", MaxX+config["ds_x"], MinY+config["ds_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["ds_pos"] == 3 then
-						draw.SimpleTextOutlined("Dist:" .. distance, "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["ds_x"], MinY-config["ds_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText("Dist:" .. distance, "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["ds_x"], MinY-config["ds_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["ds_pos"] == 4 then  
-						draw.SimpleTextOutlined("Dist:" .. distance, "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["ds_x"], MaxY+config["ds_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText("Dist:" .. distance, "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["ds_x"], MaxY+config["ds_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						end
 					end
 					if config["esp_player_snaplines"] then
 					if config["esp_player_snaplines_pos"] == 1 then
 						surface.SetDrawColor( string.ToColor(config.colors["esp_player_snaplines"]))
-						surface.DrawLine( ScrW() / 2 - 1, ScrH() , MaxX - ( MaxX - MinX ) / 2 - 1, MaxY )
+						SurfaceLine( ScrW() / 2 - 1, ScrH() , MaxX - ( MaxX - MinX ) / 2 - 1, MaxY )
 					elseif config["esp_player_snaplines_pos"] == 2 then
 					    surface.SetDrawColor( string.ToColor(config.colors["esp_player_snaplines"]))
-						surface.DrawLine( ScrW() / 2 , ScrH() / 2 , MaxX - ( MaxX - MinX ) / 2 - 1, MaxY )
+						SurfaceLine( ScrW() / 2 , ScrH() / 2 , MaxX - ( MaxX - MinX ) / 2 - 1, MaxY )
 				    elseif config["esp_player_snaplines_pos"] == 3 && config["esp_player_snaplines"] then
 
 					end
 					end
+                    if config["esp_player_drawmodel"] then
+	                    cam.Start3D()
+		                    v:DrawModel()
+		                cam.End3D()
+	                end
 					if config["esp_player_skeleton"] then
 						for _, b in pairs( bones ) do
 							if v:LookupBone(b.S) != nil && v:LookupBone(b.E) != nil then
 								local spos, epos = v:GetBonePosition(v:LookupBone(b.S)):ToScreen(), v:GetBonePosition(v:LookupBone(b.E)):ToScreen()
 								if spos.visible && epos.visible then
 									surface.SetDrawColor( string.ToColor(config.colors["esp_player_skeleton"]) )
-									surface.DrawLine( spos.x, spos.y, epos.x, epos.y )
+									SurfaceLine( spos.x, spos.y, epos.x, epos.y )
 								end
 							end
 						end
@@ -2955,13 +2970,13 @@ local function DoESP()
 					if v.Traitor then
 						surface.SetFont("ESP_Font_Flag")
 						local w, h = surface.GetTextSize("Traitor")
-						draw.SimpleTextOutlined("Traitor", "ESP_Font_Flag", MaxX+5, MinY + h, Color(255, 0, 0) , TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText("Traitor", "ESP_Font_Flag", MaxX+5, MinY + h, Color(255, 0, 0) , TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 					end
 					if config["misc_ttt"] && engine.ActiveGamemode() == "murder" then
 						if v:HasWeapon("weapon_mu_knife") then
 							surface.SetFont("ESP_Font_Flag")
 							local w, h = surface.GetTextSize("Murderer")
-							draw.SimpleTextOutlined("Murderer", "ESP_Font_Flag", MaxX+5, MinY + h, Color(255, 0, 0) , TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))	
+							DrawOutlinedText("Murderer", "ESP_Font_Flag", MaxX+5, MinY + h, Color(255, 0, 0) , TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))	
 						end 	
 					end
 				end
@@ -2973,15 +2988,15 @@ local function DoESP()
 					local MaxX, MaxY, MinX, MinY, V1, V2, V3, V4, V5, V6, V7, V8, isVis = GetENTPos( v )
 					if config["esp_entity_box"] then
 						surface.SetDrawColor(string.ToColor(config.colors["esp_entity_box"]))
-						surface.DrawLine( MaxX, MaxY, MinX, MaxY )
-						surface.DrawLine( MaxX, MaxY, MaxX, MinY )
-						surface.DrawLine( MinX, MinY, MaxX, MinY )
-						surface.DrawLine( MinX, MinY, MinX, MaxY )
+						SurfaceLine( MaxX, MaxY, MinX, MaxY )
+						SurfaceLine( MaxX, MaxY, MaxX, MinY )
+						SurfaceLine( MinX, MinY, MaxX, MinY )
+						SurfaceLine( MinX, MinY, MinX, MaxY )
 					end
 					if config["esp_entity_name"] then
 						surface.SetFont("ESP_Font_Flag")
 						local w, h = surface.GetTextSize(v:GetClass())
-						draw.SimpleTextOutlined(v:GetClass(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2, MinY-1, string.ToColor(config.colors["esp_entity_name"]), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						DrawOutlinedText(v:GetClass(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2, MinY-1, string.ToColor(config.colors["esp_entity_name"]), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 					end
 				end
 			end
@@ -3023,16 +3038,16 @@ local function DoESP()
 		if config["esp_npc_name"] then
 		surface.SetFont("ESP_Font_Main")
 		local w, h = surface.GetTextSize(v:GetClass())
-		draw.SimpleTextOutlined(v:GetClass(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2, MinY-1, string.ToColor(config.colors["esp_npc_name"]), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+		DrawOutlinedText(v:GetClass(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2, MinY-1, string.ToColor(config.colors["esp_npc_name"]), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 		end
 		if config["esp_npc_health"] then
 		surface.SetFont("ESP_Font_Main")
 		local w, h = surface.GetTextSize(v:GetClass())
-		draw.SimpleTextOutlined(v:Health() .. "HP", "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2, MinY-10, string.ToColor(config.colors["esp_npc_health"]), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+		DrawOutlinedText(v:Health() .. "HP", "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2, MinY-10, string.ToColor(config.colors["esp_npc_health"]), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 		end
 		if config["esp_npc_snaplines"] then
 		surface.SetDrawColor( string.ToColor(config.colors["esp_npc_snaplines"]))
-		surface.DrawLine( ScrW() / 2 - 1, ScrH() , MaxX - ( MaxX - MinX ) / 2 - 1, MaxY )
+		SurfaceLine( ScrW() / 2 - 1, ScrH() , MaxX - ( MaxX - MinX ) / 2 - 1, MaxY )
 		end
 	    end
 	end
@@ -3783,17 +3798,7 @@ for k,v in next, player.GetAll() do
 end
 end)
 -- ======================= Chams
-AddHook("HUDPaint", RandomString(), function()
-    if config["esp_player_drawmodel"] then
-	    cam.Start3D( EyePos(), EyeAngles() )
-			for k, v in ipairs(player.GetAll()) do
-				if ValidateESP(v) then
-		            v:DrawModel()
-		        end
-			end
-		cam.End3D()
-	end
-end)
+
 AddHook("RenderScreenspaceEffects", RandomString(), function()
 
 	local colorFix = (1 / 255)
@@ -4182,7 +4187,7 @@ local camOffset = {
 	RL = 0, 
 	FB = -(config["esp_other_thirdperson_distance"] * 15)
 }
-AddHook('CalcView', 'ThirdPersonCalcView', function (pl, origin, ang, fov)
+AddHook('CalcView', RandomString(), function (pl, origin, ang, fov)
 if !config["esp_other_thirdperson"] && intp && config["esp_other_thirdperson_walldetect"] && !scopeAiming() then
 	return {
 		origin = util.TraceLine({
@@ -4196,14 +4201,16 @@ if !config["esp_other_thirdperson"] && intp && config["esp_other_thirdperson_wal
 	}
 end
 end)
-
-
-	
---===================================
---=================================== Aimbot
---===================================
-
---=================================== No Recoil
+ 
+AddHook("CalcView", RandomString(), function(p, o, a, f)
+    if config["aim_nospread"] then
+    local view = {};
+    view.angles = (fa && fa || a);
+    view.fov = f;
+    view.origin = o;
+    return view;
+    end
+end);
  
 local OEyeAngles = OEyeAngles or FindMetaTable( "Player" ).SetEyeAngles
 
@@ -4677,150 +4684,6 @@ AddHook("Move", RandomString() , function()
 	servertime = CurTime()
 end)
 
-local function PredictSpread(ucmd, ang, spread)
-	if config["aim_nospread"] then
-		spread = (spread.x + spread.y) / 2
-		local spreadDir = PredictSpread(ucmd, ang, spread)
-		local newAngles = ang + spreadDir:Angle()
-		newAngles:Normalize()
-		
-		return newAngles
-	end
-	
-	return ang
-end
-
-local weapcones = {}
-local function RemoveSpread(ucmd, ang)
-	local weap = me:GetActiveWeapon()
-	local class = weap:GetClass()
-	
-	if class:StartWith("cw_") then
-		-- local memevec = Angle(0, cmd:CommandNumber() % 2 * 180, 0):Forward()
-		
-		local function CalculateSpread()
-			if not weap.AccuracyEnabled then
-				return
-			end
-			
-			local aim = ang:Forward()
-			local CT = CurTime()
-			local dt = TICK_INTERVAL --FrameTime()
-			
-			if !me.LastView then
-				me.LastView = aim
-				me.ViewAff = 0
-			else
-				me.ViewAff = LerpCW20(dt * 10, me.ViewAff, (aim - me.LastView):Length() * 0.5)
-				me.LastView = aim
-			end
-			
-			local baseCone, maxSpreadMod = weap:getBaseCone()
-			weap.BaseCone = baseCone
-			
-			if me:Crouching() then
-				weap.BaseCone = weap.BaseCone * weap:getCrouchSpreadModifier()
-			end
-			
-			weap.CurCone = weap:getFinalSpread(me:GetVelocity():Length2D(), maxSpreadMod)
-			
-			if CT > weap.SpreadWait then
-				weap.AddSpread = mClamp(weap.AddSpread - 0.5 * weap.AddSpreadSpeed * dt, 0, weap:getMaxSpreadIncrease(maxSpreadMod))
-				weap.AddSpreadSpeed = mClamp(weap.AddSpreadSpeed + 5 * dt, 0, 1)
-			end
-		end
-		
-		-- samoware.SetContextVector(ucmd, memevec)
-		
-		CalculateSpread()
-		
-		local cone = weap.CurCone
-		if !cone then return ang end
-
-		if me:Crouching() then
-			cone = cone * 0.85
-		end
-
-		math.randomseed(ucmd:CommandNumber())
-		ang = ang - Angle(mRand(-cone, cone), mRand(-cone, cone), 0) * 25
-	elseif class:StartWith("arccw_") then
-		local angDir = ang:Forward()
-
-		local seed1 = weap:GetBurstCount()
-		local seed2 = !game.SinglePlayer() and ucmd:CommandNumber() or CurTime()
-
-		local randSeed = util.SharedRandom(seed1, -1337, 1337, seed2) * (weap:EntIndex() % 30241)
-		math.randomseed(math.Round(randSeed))
-
-		local spread = ArcCW.MOAToAcc * weap:GetBuff("AccuracyMOA")
-		local disp = weap:GetDispersion() * ArcCW.MOAToAcc / 10
-
-		angDir:Rotate(Angle(0, -ArcCW.StrafeTilt(weap), 0))
-		angDir = angDir - VectorRand() * disp
-
-		local randSeed = util.SharedRandom(1, -1337, 1337, seed2) * (weap:EntIndex() % 30241)
-		math.randomseed(math.Round(randSeed))
-		angDir = angDir - VectorRand() * spread
-
-		return angDir:Angle()
-	elseif class:StartWith("swb_") then
-		local function CalculateSpread()
-			local vel = me:GetVelocity():Length()
-			local dir = ang:Forward()
-			
-			if !me.LastView then
-				me.LastView = dir
-				me.ViewAff = 0
-			else
-				me.ViewAff = Lerp(0.25, me.ViewAff, (dir - me.LastView):Length() * 0.5)
-				--  me.LastView = dir
-			end
-			
-			if weap.dt.State == SWB_AIMING then
-				weap.BaseCone = weap.AimSpread
-				
-				if weap.Owner.Expertise then
-					weap.BaseCone = weap.BaseCone * (1 - weap.Owner.Expertise["steadyaim"].val * 0.0015)
-				end
-			else
-				weap.BaseCone = weap.HipSpread
-				
-				if weap.Owner.Expertise then
-					weap.BaseCone = weap.BaseCone * (1 - weap.Owner.Expertise["wepprof"].val * 0.0015)
-				end
-			end
-			
-			if me:Crouching() then
-				weap.BaseCone = weap.BaseCone * (weap.dt.State == SWB_AIMING and 0.9 or 0.75)
-			end
-			
-			weap.CurCone = mClamp(weap.BaseCone + weap.AddSpread + (vel / 10000 * weap.VelocitySensitivity) * (weap.dt.State == SWB_AIMING and weap.AimMobilitySpreadMod or 1) + me.ViewAff, 0, 0.09 + weap.MaxSpreadInc)
-			
-			if CurTime() > weap.SpreadWait then
-				weap.AddSpread = mClamp(weap.AddSpread - 0.005 * weap.AddSpreadSpeed, 0, weap.MaxSpreadInc)
-				weap.AddSpreadSpeed = mClamp(weap.AddSpreadSpeed + 0.05, 0, 1)
-			end
-		end
-		
-		CalculateSpread()
-		
-		local cone = weap.CurCone
-		if !cone then return ang end
-
-		if me:Crouching() then
-			cone = cone * 0.85
-		end
-
-		math.randomseed(ucmd:CommandNumber())
-		ang = ang - Angle(mRand(-cone, cone), mRand(-cone, cone), 0) * 25
-	elseif weapcones[class] then
-		local spread = weapcones[class]
-		return PredictSpread(ucmd, ang, spread)
-	end
-	
-	return ang
-end
-
 local function PitchAA(ucmd)
 	pitch = 180
 	return pitch
@@ -4830,91 +4693,93 @@ local function YawAA(ucmd)
 	yaw = 180
 	return yaw
 end
+--===========Nospread/Norecoil
 
+local e, err = pcall(function() require("dickwrap") end);
+if(err) then print("badv"); return; end
+local ofb = em.FireBullets;
+local cones = {};
+local nullvec = Vector() * -1;
+ 
+function em.FireBullets(p, data)
+    local spread = data.Spread * -1;
+    local class = p:GetActiveWeapon():GetClass();
+    if (spread != cones[class] && spread != nullvec) then
+        cones[class] = spread;
+    end
+    return(ofb(p, data));
+end
+ 
+local function PredictSpread(ucmd, ang)
+    local w = LocalPlayer():GetActiveWeapon();
+    if (!w || !w:IsValid() || !cones[w:GetClass()]) then return ang; end
+    local ang = (dickwrap.Predict(ucmd, ang:Forward(), cones[w:GetClass()])):Angle();
+    ang.y, ang.x = math.NormalizeAngle(ang.y), math.NormalizeAngle(ang.x);
+    return(ang);
+end
 
 AddHook("CreateMove", RandomString(), function(ucmd, world_click)
+
+
+
     local pitch, yaw
     if config["antihit_antiaim"] then
-	    if config["yaw_base"] == 1 then
-	        yaw, pitch = YawAA(ucmd)
-		end
-		if config["pitch_add"] != 1 then
-		    pitch = PitchAA(ucmd)
-		end	 	
-	local angles = Angle(pitch, yaw, 0)
-	ucmd:SetViewAngles(angles)
-	else
-	local angles = ucmd:GetViewAngles()
+        if LocalPlayer():Alive() then 
+	        if !ucmd.KeyDown(KEY_E) or !ucmd.MouseDown(107) or !input.IsMouseDown(108) then 
+	            if config["yaw_base"] == 1 then
+	            yaw, pitch = YawAA(ucmd)
+		        end
+		        if config["pitch_add"] != 1 then
+		        pitch = PitchAA(ucmd)
+		        end	 	
+	            local angles = Angle(pitch, yaw, 0)
+	            ucmd:SetViewAngles(angles)
+	            else
+	            local angles = ucmd:GetViewAngles()
+			end
+	    end 
 	end
+	
+	
+	
     bSendPacket = 0
     if config["bsp_fake_lags"] then
-	if config["bsp_fake_lagsr"] then
-	local rlag = math.random( config["bsp_fake_lagsr_value"],config["bsp_fake_lags_value"])
 		if config["bsp_fake_lags_conditions"] == 1 then  
-            bSendPacket = (ucmd:CommandNumber() % rlag) < 3 --
+            bSendPacket = (ucmd:CommandNumber() % config["bsp_fake_lags_value"]) < 3 --
 	    elseif config["bsp_fake_lags_conditions"] == 2 then
 		    if LocalPlayer():GetVelocity():Length() > 50 then
-		        bSendPacket = (ucmd:CommandNumber() % rlag) < 3
+		        bSendPacket = (ucmd:CommandNumber() % config["bsp_fake_lags_value"]) < 3
 			end
 		elseif config["bsp_fake_lags_conditions"] == 3 then
 		    if LocalPlayer():GetVelocity():Length() < 20 then
-		        bSendPacket = (ucmd:CommandNumber() % rlag) < 3
+		        bSendPacket = (ucmd:CommandNumber() % config["bsp_fake_lags_value"]) < 3
 			end
 		elseif config["bsp_fake_lags_conditions"] == 4 then
 		    if LocalPlayer():IsOnGround() then
-		        bSendPacket = (ucmd:CommandNumber() % rlag) < 3
+		        bSendPacket = (ucmd:CommandNumber() % config["bsp_fake_lags_value"]) < 3
 		    end
 		elseif config["bsp_fake_lags_conditions"] == 5 then
 		    if !LocalPlayer():IsOnGround() then
-		        bSendPacket = (ucmd:CommandNumber() % rlag) < 3
+		        bSendPacket = (ucmd:CommandNumber() % config["bsp_fake_lags_value"]) < 3
 		    end
 		elseif config["bsp_fake_lags_conditions"] == 6 then
 		    if ucmd:KeyDown(IN_ATTACK) then
-		        bSendPacket = (ucmd:CommandNumber() % rlag) < 3
+		        bSendPacket = (ucmd:CommandNumber() % config["bsp_fake_lags_value"]) < 3
 		    end
 		elseif config["bsp_fake_lags_conditions"] == 7 then
 		    if !ucmd:KeyDown(IN_ATTACK) then
-		        bSendPacket = (ucmd:CommandNumber() % rlag) < 3
+		        bSendPacket = (ucmd:CommandNumber() % config["bsp_fake_lags_value"]) < 3
 		    end
 		end	
-	else
-	    if config["bsp_fake_lags_conditions"] == 1 then 
-            bSendPacket = (ucmd:CommandNumber() % config["bsp_fake_lags_value"]) < 3
-	    elseif config["bsp_fake_lags_conditions"] == 2 then
-		    if LocalPlayer():GetVelocity():Length() > 50 then
-		        bSendPacket = (ucmd:CommandNumber() % config["bsp_fake_lags_value"]) < 3
-			end
-		elseif config["bsp_fake_lags_conditions"] == 3 then
-		    if LocalPlayer():GetVelocity():Length() < 20 then
-		        bSendPacket = (ucmd:CommandNumber() % config["bsp_fake_lags_value"]) < 3
-			end
-		elseif config["bsp_fake_lags_conditions"] == 4 then
-		    if LocalPlayer():IsOnGround() then
-		        bSendPacket = (ucmd:CommandNumber() % config["bsp_fake_lags_value"]) < 3
-		    end
-		elseif config["bsp_fake_lags_conditions"] == 5 then
-		    if !LocalPlayer():IsOnGround() then
-		        bSendPacket = (ucmd:CommandNumber() % config["bsp_fake_lags_value"]) < 3
-		    end
-		elseif config["bsp_fake_lags_conditions"] == 6 then
-		    if ucmd:KeyDown(IN_ATTACK) then
-		        bSendPacket = (ucmd:CommandNumber() % config["bsp_fake_lags_value"]) < 3
-		    end
-		elseif config["bsp_fake_lags_conditions"] == 7 then
-		    if !ucmd:KeyDown(IN_ATTACK) then
-		        bSendPacket = (ucmd:CommandNumber() % rlag) < 3
-		    end
-		end
-	end
     end
     if config["antihit_fd"] then
         if input.IsKeyDown(config.keybinds["antihit_fd_key"]) then
-		    bSendPacket = (ucmd:CommandNumber() % 16) < 3
+		    bSendPacket = (ucmd:CommandNumber() % 32) < 3
 			ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 4));
 		    if LocalPlayer():KeyDown(IN_DUCK) then ucmd:RemoveKey(IN_DUCK) end
 		end
     end
-	if config["aim_silent"] then
+	if config["aim_silent"] && !config["antihit_antiaim"] then
 		if(!realAng) then realAng = ucmd:GetViewAngles() end
 		realAng = realAng + Angle(ucmd:GetMouseY() * .023, ucmd:GetMouseX() * -.023, 0)
 		realAng.x = math.NormalizeAngle(realAng.x)
@@ -5118,6 +4983,7 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 	end
 	end
 	end
+
 	if config["aim_master_toggle"] then
 		if !config["aim_onkey"] || ( config.keybinds["aim_onkey_key"] != 0 && ( ( config.keybinds["aim_onkey_key"] >= 107 && config.keybinds["aim_onkey_key"] <= 113 ) && input.IsMouseDown(config.keybinds["aim_onkey_key"]) ) || input.IsKeyDown(config.keybinds["aim_onkey_key"]) ) && !frame then
 			if !LocalPlayer():Alive() then return end
@@ -5157,17 +5023,10 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 								AimSpot = Prediction(v, AimSpot)
 
 							end
-							
 
 							local FinAngle = ( AimSpot - CurPos ):Angle()
-
 							FinAngle:Normalize()
-							
-							if config["aim_nospread"] then 
-							FinAngle = RemoveSpread(ucmd, FinAngle)
-							end
-							
-
+				
 							if config["aim_target"] == 1 && !config["killaura_toggle"] then
 
 								if math.sqrt((AimSpot:ToScreen().x - centerx) * (AimSpot:ToScreen().x - centerx) + (AimSpot:ToScreen().y - centery) * (AimSpot:ToScreen().y - centery)) < playerCenter then newPlayerCenter = math.sqrt((AimSpot:ToScreen().x - centerx) * (AimSpot:ToScreen().x - centerx) + (AimSpot:ToScreen().y - centery) * (AimSpot:ToScreen().y - centery)) AimP = true end
@@ -5257,21 +5116,30 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 							        end
 							    end
 							end
+							
+							local sprdang 
+							
+							if config["aim_nospread"] then
+						    sprdang = PredictSpread(ucmd, Angle())
+							else
+							sprdang = Angle()
+							end
+							
 							if AimP && InFOV then
 								if config["aim_smoothing"] && (IsValid(LocalPlayer():GetActiveWeapon()) && LocalPlayer():GetActiveWeapon():GetClass() != "weapon_crossbow" ) then
 									playerCenter = newPlayerCenter
 									PlayerHealth = NewPlayerHealth
 									PlayerDistance = NewPlayerDistance
 									ucmd:SetViewAngles(Smoothing(FinAngle))
-									if config["aim_silent"] then
+									if config["aim_silent"] && !config["antihit_antiaim"] then
 										FixMovement(ucmd, realAng)
 									end
 								else
 									playerCenter = newPlayerCenter
 									PlayerHealth = NewPlayerHealth
 									PlayerDistance = NewPlayerDistance
-									ucmd:SetViewAngles(FinAngle)
-									if config["aim_silent"] then
+									ucmd:SetViewAngles(FinAngle + sprdang)
+									if config["aim_silent"] && !config["antihit_antiaim"] then
 										FixMovement(ucmd, realAng)
 									end
 								end
@@ -5418,16 +5286,7 @@ AddHook("player_hurt",RandomString(),function(i)
         table.insert(a, {pos = k, life = 1, num = m, vec = VectorRand()})
 	end
 end)
---Show Family Shared
-if config["misc_familyshared"]  then
-for _,v in pairs(player.GetHumans())do
-    http.Fetch("https://api.steampowered.com/IPlayerService/IsPlayingSharedGame/v0001/?key=5DCF81C641ACAE4B5E5332A5E04B5FCD&format=json&steamid="..v:SteamID64().."&appid_playing=4000",function(a)
-        local showfake=util.JSONToTable(a)["response"]["lender_steamid"]
-        if showfake=="0"then return end
-        print(v:Nick().."\nReal: https://steamcommunity.com/profiles/"..showfake.."\nFake: https://steamcommunity.com/profiles/"..v:SteamID64())
-    end)
-end
-end
+
 
 function FPS_FIX()
 	RunConsoleCommand( "cl_detailfade", "800" )
@@ -5664,7 +5523,7 @@ end)
 
 
 --==================== Injection Welcome Message Thing
-print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
+print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
 MsgC(Color(255, 235, 200), "PenisDeda" .. penisversion .. "loaded! \n")
 
 notification.AddLegacy("Loaded PenisDeda " .. penisversion .."  | " .. os.date("%I:%M %p"), NOTIFY_HINT, 5)
