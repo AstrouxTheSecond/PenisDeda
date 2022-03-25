@@ -1,5 +1,5 @@
 --Cheat inf
-local penisversion = "V3.9"
+local penisversion = "V3.8.5"
 --Gavno
 local surface, draw = surface, draw
 
@@ -3723,7 +3723,7 @@ do
 
 local csaysss = {
 	[1] = {
-		"sick resolver",
+
 	},
 	[2] = {
 		"Lucky Shot - Arab shot",
@@ -3751,14 +3751,14 @@ local csaysss = {
 		"Откисай молодой!"
 	},
 	[3] = {
-		"sick resolver",
+
 	},
 	[4] = {
 		"Твоя мать настолько жирная что её танк не переедет.",
 		".",
 	},
 	[5] = {
-		"sick resolver",
+
 	},
 }
 
