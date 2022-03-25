@@ -1,5 +1,5 @@
 --Cheat inf
-local penisversion = "V3.8.5"
+local penisversion = "V3.9"
 --Gavno
 local surface, draw = surface, draw
 
@@ -255,6 +255,7 @@ config["misc_180turn"] = false
 config["misc_jittermove"] = false
 config["misc_scrollattack"] = false
 config["misc_fastswitch"] = false
+config["misc_m9kstopper"] = false
 
 config["misc_ttt"] = false
 config["misc_antibot"] = false
@@ -276,7 +277,8 @@ config["misc_vm_ya"] = 0
 config["misc_vm_r"] = 0
 config["misc_chat_spam"] = false
 config["misc_eventlog"] = false
-config["misc_eventlog_type"] = 1
+config["misc_gaysay"] = false
+config["misc_gaysays"] = 1
 config["misc_familyshared"] = false
 config["misc_flashlight"] = false
 config["misc_antiarest"] = false
@@ -289,6 +291,8 @@ config["misc_doundo"] = false
 config["misc_rpnamer"] = false
 config["misc_rpnamer_time"] = 35
 config["misc_circlestrafer"] = false
+
+
 
 config["config_name"] = nil
 config["name_font_size"] = 12
@@ -389,8 +393,12 @@ CreateMaterial("wireframe", "VertexLitGeneric", {
 	["$wireframe"] = 1
 })
 local ChamMaterials = {
-	["Platinum"] = "models/player/shared/ice_player",
-	["Gold"] = "models/player/shared/gold_player",
+	["Flat"] = "!flat",
+	["Textured"] = "!textured",
+	["Untextured"] = "1",
+	["Wireframe"] = "!wireframe",
+	["Spawn Effect"] = "models/spawn_effect2",
+	["Light 1"] = "models/error/new light1",
 	["Alien"] = "models/XQM/LightLinesRed_tool",
 	["Flesh"] = "models/flesh",
 	["Molten"] = "models/props_lab/Tank_Glass001",
@@ -403,10 +411,7 @@ local ChamMaterials = {
 	["Galaxy"] = "Models/effects/comball_sphere",
 	["Water 2"] = "models/shadertest/shader3",
 	["Chrome"] = "debug/env_cubemap_model",
-	["Untextured"] = "1",
-	["Wireframe"] = "!wireframe",
-	["Flat"] = "!flat",
-	["Textured"] = "!textured"
+
 }
 local CheatFonts = {"comfortaa", "Arial", "Bahnschrift", "Calibri", "Comic Sans MS", "Consolas", "Courier New", "Franklin Gothic Medium", "Impact", "Ink Free", "Microsoft Sans Serif", "Myanmar Text", "Segoe UI", "Tahoma", "Times New Roman", "Trebuchet MS", "Verdana"}
 local function UpdateNameFont()
@@ -955,6 +960,55 @@ for k,v in ipairs(ents.FindByClass("spawned_weapon")) do
     end)
 end
 end
+messageJustSent = false
+messages = 0
+EventsAlpha = 0
+timer.Create("eventListTimer", 8, 0, function() messageJustSent = false end)
+local function eventListOpen()
+    eventList = vgui.Create("DFrame")
+    eventList:SetDraggable(false)
+    eventList:ShowCloseButton(false)
+    eventList:SetPos(-5, 22)
+    eventList:SetSize(800, 300)
+    eventList:SetTitle("")
+    eventList.Paint = function() end
+
+    Events = vgui.Create("RichText", eventList)
+    Events:Dock(FILL)
+    Events:SetVerticalScrollbarEnabled(false) 
+    Events.Paint = function()
+        if(!messageJustSent) then if(EventsAlpha > 0) then EventsAlpha = EventsAlpha - 4 end end
+        if(messages > 10 && messageJustSent) then Events:GotoTextEnd() end
+        Events:SetAlpha(EventsAlpha)
+    end
+
+    Events.PerformLayout = function(self)
+        self:SetFontInternal("ChatFont")
+    end
+    function addEventlistMessage(message)
+    timer.Stop("eventListTimer")
+    messageJustSent = true
+    messages = messages + 1
+    EventsAlpha = 255
+    if(messageJustSent) then timer.Start("eventListTimer") end
+    Events:InsertColorChange(0, 0, 0, 255)
+    Events:AppendText("[")
+            
+    Events:InsertColorChange(255, 25, 25, 255)
+    Events:AppendText("Penis")
+
+    Events:InsertColorChange(255, 255, 255, 255)
+    Events:AppendText("Deda")
+
+    Events:InsertColorChange(0, 0, 0, 255)
+    Events:AppendText("]")
+
+    Events:InsertColorChange(255, 255, 255, 255)
+    Events:AppendText(" ".. message.. "\n")
+    MsgC(message, Color(255, 255, 255))
+    end
+end
+
 --=========================================GUI ITEMS============================================--
 local function CreateCheckBox(lbl, x, y, cfg, col, par, cpx)
 
@@ -2108,6 +2162,7 @@ function HavocGUI()
     surface.DrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "Misc:", "DermaDefault", 19, 2, color_white )
     end
+
 	
 	local CFG_SCROLL = vgui.Create( "DScrollPanel", SHEET )
     CFG_SCROLL:Dock( FILL )
@@ -2148,6 +2203,7 @@ function HavocGUI()
 	SHEET:AddSheet( "Self", SELF_SCROLL, "icon16/eye.png", false, false, nil)
 	SHEET:AddSheet( "World", WORLD_SCROLL, "icon16/world.png", false, false, nil)
 	SHEET:AddSheet( "Misc", MISC_SCROLL, "icon16/page_white_stack.png", false, false, nil)
+	--SHEET:AddSheet( "LUA Run", LUA_TAB, "icon16/control_fastforward_blue.png", false, false, nil)
 	SHEET:AddSheet( "Config", CFG_SCROLL, "icon16/disk.png", false, false, nil)
 
 	--======Other==================--
@@ -2216,6 +2272,7 @@ function HavocGUI()
 	CreateCheckBox("Auto Click", 10, 30, "misc_autoclick", false, combat_helpers)
 	CreateCheckBox("Scroll Attack", 10, 50, "misc_scrollattack", false, combat_helpers)
 	CreateCheckBox("Fast Switch", 10, 70, "misc_fastswitch", false, combat_helpers)
+	CreateCheckBox("M9K Sprint disabler", 10, 90, "misc_m9kstopper", false, combat_helpers)
 	--AA
 	CreateCheckBox("Dance Spam", 10, 30, "antihit_act", false, combat_antihit)
 	CreateDropdown("Act", 10, 50, {"Dance", "Robot", "Sex", "Bow", "Wave", "Zombie", "Disagree", "Forward", "Pers", "Salute"}, "antihit_act_type", combat_antihit)
@@ -2450,18 +2507,19 @@ function HavocGUI()
 	CreateButton("Filter Teams", "The filter will be applied when the filter menu is closed. This filter applies to ESP and Aimbot.", CreateFilterPanel, 10, 195, misc_misc)
 	CreateCheckBox("Chat Spammer", 10, 215, "misc_chat_spam", false, misc_misc)	
 	CreateCheckBox("Event Logs", 10, 235, "misc_eventlog", false, misc_misc)	
-	CreateDropdown("Log Output", 10, 255, {"Notify", "Chat", "Console"}, "misc_eventlog_type", misc_misc)
-	CreateCheckBox("Flashlight Spammmer", 10, 295, "misc_flashlight", false, misc_misc)	
-    CreateCheckBox("Arest Leave", 10, 315, "misc_antiarest", false, misc_misc)
-	CreateDropdown("Leave Method", 10, 335, {"Suicide", "Retry", "/Hobo (Job)"}, "misc_antiarest_metod", misc_misc)
-	CreateCheckBox("Обосраца", 10, 375, "misc_supkill", false, misc_misc)
-	CreateKeybind(140, 375, "misc_supkill_key", misc_misc)
-	CreateCheckBox("Anti-Bot", 10, 395, "misc_antibot", false, misc_misc)
-	CreateCheckBox("Rainbow Player", 10, 415, "misc_rainbowply", false, misc_misc)
-	CreateCheckBox("Use Spammer", 10, 435, "misc_use", false, misc_misc)
-    CreateCheckBox("Undo Spam", 10, 455, "misc_doundo", false, misc_misc)	
-    CreateCheckBox("RP Name changer", 10, 475, "misc_rpnamer", false, misc_misc)	
-    CreateSlider("RPName Delay", 10, 495, "misc_rpnamer_time", 1, 300, 0, misc_misc)
+	CreateCheckBox("Kill Say", 10, 255, "misc_gaysay", false, misc_misc)	
+	CreateDropdown("KillSay Type", 10, 275, {"Русский", "D3D9C style", "Arabian", "Шутки про мать", "Omerican"}, "misc_gaysays", misc_misc)
+	CreateCheckBox("Flashlight Spammmer", 10, 315, "misc_flashlight", false, misc_misc)	
+    CreateCheckBox("Arest Leave", 10, 335, "misc_antiarest", false, misc_misc)
+	CreateDropdown("Leave Method", 10, 355, {"Suicide", "Retry", "/Hobo (Job)"}, "misc_antiarest_metod", misc_misc)
+	CreateCheckBox("Обосраца", 10, 395, "misc_supkill", false, misc_misc)
+	CreateKeybind(140, 395, "misc_supkill_key", misc_misc)
+	CreateCheckBox("Anti-Bot", 10, 415, "misc_antibot", false, misc_misc)
+	CreateCheckBox("Rainbow Player", 10, 435, "misc_rainbowply", false, misc_misc)
+	CreateCheckBox("Use Spammer", 10, 455, "misc_use", false, misc_misc)
+    CreateCheckBox("Undo Spam", 10, 475, "misc_doundo", false, misc_misc)	
+    CreateCheckBox("RP Name changer", 10, 495, "misc_rpnamer", false, misc_misc)	
+    CreateSlider("RPName Delay", 10, 515, "misc_rpnamer_time", 1, 300, 0, misc_misc)
 	
 	CreateCheckBox("Fake Lags", 10, 30, "bsp_fake_lags", false, bsendpacket_tab)
 	CreateSlider("FakeLag Limit", 10, 50, "bsp_fake_lags_value", 1, 128, 0, bsendpacket_tab)
@@ -2925,6 +2983,34 @@ local function DoESP()
 						DrawOutlinedText("Dist:" .. distance, "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["ds_x"], MinY-config["ds_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["ds_pos"] == 4 then  
 						DrawOutlinedText("Dist:" .. distance, "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["ds_x"], MaxY+config["ds_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						end
+					end
+					if config["esp_player_dormant_ind"] then
+						surface.SetFont("ESP_Font_Flag")
+                        local w, h = surface.GetTextSize("Dormant")
+						local col = string.ToColor(config.colors["esp_player_dormant_ind"])
+						if config["di_pos"] == 1 then
+						DrawOutlinedText("Dormant", "ESP_Font_Flag", MinX-config["di_x"], MinY+config["di_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						elseif config["di_pos"] == 2 then
+						DrawOutlinedText("Dormant", "ESP_Font_Flag", MaxX+config["di_x"], MinY+config["di_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						elseif config["di_pos"] == 3 then
+						DrawOutlinedText("Dormant", "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["di_x"], MinY-config["di_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						elseif config["di_pos"] == 4 then  
+						DrawOutlinedText("Dormant", "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["di_x"], MaxY+config["di_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						end
+					end
+					if config["esp_player_money"] && v.DarkRPVars then
+						surface.SetFont("ESP_Font_Flag")
+                        local w, h = surface.GetTextSize(tostring(v.DarkRPVars.money).. " $")
+						local col = string.ToColor(config.colors["esp_player_money"])
+						if config["mn_pos"] == 1 then
+						DrawOutlinedText(tostring(v.DarkRPVars.money).. " $", "ESP_Font_Flag", MinX-config["mn_x"], MinY+config["mn_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						elseif config["mn_pos"] == 2 then
+						DrawOutlinedText(tostring(v.DarkRPVars.money).. " $", "ESP_Font_Flag", MaxX+config["mn_x"], MinY+config["mn_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						elseif config["mn_pos"] == 3 then
+						DrawOutlinedText(tostring(v.DarkRPVars.money).. " $", "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["mn_x"], MinY-config["mn_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						elseif config["mn_pos"] == 4 then  
+						DrawOutlinedText(tostring(v.DarkRPVars.money) .. " $", "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["mn_x"], MaxY+config["mn_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						end
 					end
 					if config["esp_player_snaplines"] then
@@ -3586,170 +3672,118 @@ end)
 -- ======================= Event Logger
 
 AddHook("player_connect", RandomString(), function(data)
-if config["misc_eventlog"] then
-local name = data.name			// Same as Player:Nick()
-local steamid = data.networkid	// Same as Player:SteamID()
-local ip = data.address			// Same as Player:IPAddress()
-if config["misc_eventlog_type"] == 1 then
-local np = vgui.Create("DNotify")
-np:SetPos(5, 150)
-np:SetSize(650, 20)
-local bg = vgui.Create("DPanel", np)
-bg:Dock(FILL)
-local DLabel = vgui.Create( "DLabel", bg )
-DLabel:SetPos( 8, 6 )
-DLabel:SetSize( 650, 12 )
-DLabel:SetColor( color_white )
-DLabel:SetWrap(true)
-DLabel:SetFont("smallest_pixel")
-if ip == nil then
-notifyw3 = surface.GetTextSize(name .. " | " .. steamid .. " connected!")
-DLabel:SetText(name .. " | " .. steamid .. " connected!")
-else
-notifyw3 = surface.GetTextSize(name .. " | " .. steamid .. " connected|ip - " .. ip)
-DLabel:SetText(name .. " | " .. steamid .. " connected|ip - " .. ip)
-end
-function bg:Paint(w, h)
-	draw.RoundedBoxEx( 5, 0, 0, 5, h, Color(250,45,45,255), true, false, true, false )
-	draw.RoundedBoxEx( 3, 5, 0, 200, h, Color(25,25,25,255), false, true, false, true )
-end
-np:AddItem(bg)
-end
-end
-if config["misc_eventlog_type"] == 2 then
-local name = data.name			// Same as Player:Nick()
-local steamid = data.networkid	// Same as Player:SteamID()
-local ip = data.address			// Same as Player:IPAddress()
-if ip == nil then
-chat.AddText( Color( 250, 250, 250 ),name , " | " , steamid , " connected!"  )
-else
-chat.AddText( Color( 250, 250, 250 ),name , " | " , steamid , " connected|ip - " ,Color( 255, 250, 250 ), ip )
-end
-end
-if config["misc_eventlog_type"] == 3 then
-local name = data.name			// Same as Player:Nick()
-local steamid = data.networkid	// Same as Player:SteamID()
-local ip = data.address			// Same as Player:IPAddress()
-if ip == nil then
-MsgC( Color( 250, 250, 250 ),name , " | " , steamid , " connected!")
-else
-MsgC( Color( 250, 250, 250 ),name , " | " , steamid , " connected|ip - " ,Color( 255, 250, 250 ), ip )
-end
-end
+    local name = data.name			
+    local steamid = data.networkid	
+    local ip = data.address	
+    if config["misc_eventlog"] then
+	
+    if ip == nil then
+        addEventlistMessage(name .. " | " .. steamid .. " connected!")
+    else
+        addEventlistMessage(name .. " | " .. steamid .. " connected|ip - " .. ip)
+    end
+	
+	end
 end)
+
 AddHook("player_disconnect", RandomString(), function(data)
-if config["misc_eventlog"] then
-local name = data.name			// Same as Player:Nick()
-local steamid = data.networkid		// Same as Player:SteamID()
+local name = data.name
+local steamid = data.networkid	
 local reason = data.reason
-if config["misc_eventlog_type"] == 1 then
-local np = vgui.Create("DNotify")
-np:SetPos(5, 175)
-np:SetSize(650, 20)
-local bg = vgui.Create("DPanel", np)
-bg:Dock(FILL)
-local DLabel = vgui.Create( "DLabel", bg )
-DLabel:SetPos( 8, 6 )
-DLabel:SetSize( 650, 12 )
-DLabel:SetColor( color_white )
-DLabel:SetWrap(true)
-DLabel:SetFont("smallest_pixel")
-notifyw2 = surface.GetTextSize(name .. " | " .. steamid .. " disconnected|reason - " .. reason)
-DLabel:SetText(name .. " | " .. steamid .. " disconnected|reason - " .. reason )
-function bg:Paint(w, h)
-	draw.RoundedBoxEx( 5, 0, 0, 5, h, Color(45,45,45,255), true, false, true, false )
-	draw.RoundedBoxEx( 3, 5, 0, 400, h, Color(25,25,25,255), false, true, false, true )
-end
-np:AddItem(bg)
-end
-if config["misc_eventlog_type"] == 2 then
-chat.AddText( Color( 250, 250, 250 ),name , " | " .. steamid , " disconnected|reason - " , reason  )
-end
-if config["misc_eventlog_type"] == 3 then
-MsgC( Color( 250, 250, 250 ),name , " | " .. steamid , " disconnected|reason - " , reason  )
-end
-end end)
+    if config["misc_eventlog"] then
+        addEventlistMessage(name .. " | " .. steamid .. " disconnected|reason - " .. reason)
+	end
+end)
+
+
 AddHook("player_hurt", RandomString(), function(data)
-if config["misc_eventlog"] then
 local userid = data.userid
 local attacker = data.attacker
 local hurter = nil
-if config["misc_eventlog_type"] == 1 then
-local np = vgui.Create("DNotify")
-np:SetPos(5, 200)
-np:SetSize(650, 20)
-
-local bg = vgui.Create("DPanel", np)
-bg:Dock(FILL)
-
-for _, ply in next, player.GetAll() do
-    if (attacker == ply:UserID()) then
-	    hurter = ply
-	end
-end
-
-for _, ply in next, player.GetAll() do
-local health = ply:Health() - data.health
-if (userid == ply:UserID()) then
-
-local DLabel = vgui.Create( "DLabel", bg )
-DLabel:SetPos( 8, 6 )
-DLabel:SetSize( 650, 12 )
-DLabel:SetColor( color_white )
-DLabel:SetWrap(true)
-DLabel:SetFont("smallest_pixel")
-if hurter == nil then
-notifyw = surface.GetTextSize("??? hurted " .. ply:Name() .. "|Dealed " .. health .. " dmg|using ??? !")
-DLabel:SetText("??? hurted " .. ply:Name() .. "|Dealed " .. health .. " dmg|using ??? !")
-else
-notifyw = surface.GetTextSize( hurter:Name() .. " hurted " .. ply:Name() .. "|Dealed " .. health .. " dmg|using " .. hurter:GetActiveWeapon():GetClass() .. " !" )
-DLabel:SetText( hurter:Name() .. " hurted " .. ply:Name() .. "|Dealed " .. health .. " dmg|using " .. hurter:GetActiveWeapon():GetClass() .. " !" )
-end
-
-function bg:Paint(w, h)
-	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
-	draw.RoundedBoxEx( 5, 0, 0, 5, h, Color(hsv.r,hsv.g,hsv.b,255), true, false, true, false )
-	draw.RoundedBoxEx( 3, 5, 0, 500, h, Color(25,25,25,255), false, true, false, true )
-end
-np:AddItem(bg) end end end 
-end
-if config["misc_eventlog_type"] == 2 then
-for _, ply in next, player.GetAll() do
-    if (attacker == ply:UserID()) then
-	    hurter = ply
-	end
-end
-
-for _, ply in next, player.GetAll() do
-local health = ply:Health() - data.health
-if (userid == ply:UserID()) then
-if hurter == nil then
-chat.AddText(Color( 250, 250, 250 ),"??? hurted " , ply:Name() , "|Dealed " ,Color( 255, 128, 128 ), health ,Color( 250, 250, 250 ), " dmg|using ??? !")
-else
-chat.AddText(Color( 250, 250, 250 ),hurter:Name() , " hurted " .. ply:Name() , "|Dealed " ,Color( 255, 128, 128 ), health ,Color( 250, 250, 250 ), " dmg|using " , hurter:GetActiveWeapon():GetClass() , " !")
-end
-end
-end
-end
-if config["misc_eventlog_type"] == 3 then
-for _, ply in next, player.GetAll() do
-    if (attacker == ply:UserID()) then
-	    hurter = ply
-	end
-end
-
-for _, ply in next, player.GetAll() do
-local health = ply:Health() - data.health
-if (userid == ply:UserID()) then
-if hurter == nil then
-MsgC(Color( 250, 250, 250 ),"??? hurted " , ply:Name() , "|Dealed " ,Color( 255, 128, 128 ), health ,Color( 250, 250, 250 ), " dmg|using ??? !")
-else
-MsgC(Color( 250, 250, 250 ),hurter:Name() , " hurted " , ply:Name() , "|Dealed " ,Color( 255, 128, 128 ), health ,Color( 250, 250, 250 ), " dmg|using " , hurter:GetActiveWeapon():GetClass() , " !")
-end
-end
-end
-end
+    if config["misc_eventlog"] then
+        for _, ply in next, player.GetAll() do
+            if (attacker == ply:UserID()) then
+	            hurter = ply
+	        end
+        end
+		for _, ply in next, player.GetAll() do
+            local health = ply:Health() - data.health
+		    if (userid == ply:UserID()) then
+                if hurter == nil then
+                    addEventlistMessage("??? hurted " .. ply:Name() .. "|Dealed " .. health .. " dmg|using ??? !")
+                else
+                    addEventlistMessage(hurter:Name() .. " hurted " .. ply:Name() .. "|Dealed " .. health .. " dmg|using " .. hurter:GetActiveWeapon():GetClass() .. " !")
+                end
+            end
+        end
+    end
 end)
+
+do
+
+local csaysss = {
+	[1] = {
+		"sick resolver",
+	},
+	[2] = {
+		"Lucky Shot - Arab shot",
+		"Lucky Shot!!",
+		"Omg WTF Man Im so luckyyyy!!!",
+		"Omg Nice aim!",
+		"Чел забей",
+		"Чел ты не шарищ",
+		"Чел чекни мать",
+		"И камнем вниииииииззззззззз!",
+		"Я прямо как Ильназ Галяиев",
+		"Найс софт чел без читов ты 0",
+		"Чел ты без читов 0",
+		"Держи зонтик тебя абасали",
+		"Го 1 на 1 или зассал?Точно ты же до 1 считать не умееш...",
+		"Отправляйся в детдом!!!1",
+		"Я псрал а ты все сьел",
+		"Рукоблуд санина очко блядун вагина",
+		"Мне похуй на закон!Я буду грабить и ебать",
+		"Я муслим мне похуй на кризис мой пенис вырос",
+		"Чел в бан летиш",
+		"Чел это бабабуз как бы",
+		"Мы в НОНРП Зоне как бы да чел отлетаеш",
+		"Найс баг абуз чел папа жива?",
+		"Откисай молодой!"
+	},
+	[3] = {
+		"sick resolver",
+	},
+	[4] = {
+		"Твоя мать настолько жирная что её танк не переедет.",
+		".",
+	},
+	[5] = {
+		"sick resolver",
+	},
+}
+
+
+AddHook("entity_killed", RandomString(), function(data)
+local victim = Entity(data.entindex_killed)
+local attacker = Entity(data.entindex_attacker)
+
+    if attacker == me and attacker != victim and (victim:IsPlayer() or victim:IsBot()) then 
+        if config["misc_gaysay"] then
+			local csaysss = csaysss[config["misc_gaysays"]]
+			
+			local csay = csaysss[math.random(#csaysss)]
+			if csay:find("%s") then csay = csay:format(victim:Nick()) end
+			
+			if DarkRP then
+				csay = "/ooc " .. csay
+			end
+			
+			RunConsoleCommand("say", csay)
+        end
+	end
+end)
+
+end
 -- ======================= Sights
 AddHook("HUDPaint", RandomString(), function()
     if !ss then
@@ -4795,6 +4829,14 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 	if config["misc_fastswitch"] then
 	FastSwitch(ucmd)
 	end
+	
+	if config["misc_m9kstopper"] then
+	    if IsValid(me:GetActiveWeapon()) and me:GetActiveWeapon():GetClass():StartWith("m9k_") and ucmd:KeyDown(IN_SPEED) and AimP then
+			ucmd:RemoveKey(IN_SPEED)
+		end
+	end
+	
+	
 	if config["esp_other_freecam"] then
 		if config.keybinds["freecam_key"] == 0 then 
 			NoclipOn = true
@@ -5308,8 +5350,9 @@ timer.Simple(0, function()
 RunConsoleCommand("undo")
 end)
 end
+local actdelay = 0
 --Act spammer
-if config["antihit_act"]  then
+if config["antihit_act"] && !me:IsPlayingTaunt() && CurTime() > actdelay then
     if config["antihit_act_type"] == 1 then
     RunConsoleCommand("act", "dance")
     elseif config["antihit_act_type"] == 2 then
@@ -5331,6 +5374,7 @@ if config["antihit_act"]  then
 	elseif config["antihit_act_type"] == 10 then
 	RunConsoleCommand("act", "salute")
 	end
+actdelay = CurTime() + 0.3
 end
 function TacticalLeanDisabler()
 RunConsoleCommand("-alt1")
@@ -5521,7 +5565,7 @@ AddHook("CalcViewModelView", RandomString(), function(Weapon, ViewModel, OldPos,
     
 end)
 
-
+eventListOpen()
 --==================== Injection Welcome Message Thing
 print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
 MsgC(Color(255, 235, 200), "PenisDeda" .. penisversion .. "loaded! \n")
