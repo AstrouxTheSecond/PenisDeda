@@ -1,23 +1,52 @@
---Cheat inf
-local penisversion = "V3.8.5"
---Gavno
-local surface, draw = surface, draw
-
-local SurfaceLine = surface.DrawLine
-local DrawOutlinedText = draw.SimpleTextOutlined
-
-local ply, me = LocalPlayer(), LocalPlayer()
+--Cheat Information
+local PenisDedushki = {}
+PenisDedushki.Version = "V4"
+PenisDedushki.UpdateDate = "26.03.2022"
+PenisDedushki.Build = "1"
+--Tables
 local em = FindMetaTable"Entity"
 local wm = FindMetaTable"Weapon"
 local pm = FindMetaTable"Player"
+--Misc
+local ply, me = LocalPlayer(), LocalPlayer()
+local math, player = math, player
+local table, util = table, util
+local pairs, ipairs = pairs, ipairs
+local Vector, Angle, Color = Vector, Angle, Color
+local IsValid = IsValid
+local TraceLine, TraceHull = util.TraceLine, util.TraceHull
+local mNormalizeAng = math.NormalizeAngle
+local band, bor, bnot = bit.band, bit.bor, bit.bnot
+local TICK_INTERVAL = engine.TickInterval()
+--Math 
+local mabs, msin, mcos, mClamp, mrandom, mRand = math.abs, math.sin, math.cos, math.Clamp, math.random, math.Rand
+local mceil, mfloor, msqrt, mrad, mdeg = math.ceil, math.floor, math.sqrt, math.rad, math.deg
+local mmin, mmax = math.min, math.max
+--Draw
+local surface, draw = surface, draw
+local drawSimpleOutlinedText = draw.SimpleTextOutlined
+local surfSetDrawColor = surface.SetDrawColor
+local surfDrawLine = surface.DrawLine
+local surfDrawRect = surface.DrawRect
+local surfSetTextColor = surface.SetTextColor
+local surfSetTextPos = surface.SetTextPos --surfDrawTexturedRect
+local surfSetFont = surface.SetFont
+local surfDrawText = surface.DrawText
+local surfGetTextSize = surface.GetTextSize
+local surfDrawCircle = surface.DrawCircle
+local surfDrawTexturedRect = surface.DrawTexturedRect
+--Fonts
+surface.CreateFont("smallest_pixel", {size = 15,weight = 1000,antialias = true,shadow = true,font = "smallest_pixel-7",})
+surface.CreateFont("Arial_Menu", {size = 15,weight = 500,antialias = true,shadow = true,font = "Arial",})
+surface.CreateFont("Arial 12p", {size = 12,weight = 700,antialias = true,shadow = true,font = "Arial",})
+
+
+
+
 local config = {}
 local teamFilterSelected = {}
 config.colors = {}
 config.keybinds = {}
-//Fonts
-surface.CreateFont("smallest_pixel", {size = 15,weight = 1000,antialias = true,shadow = true,font = "smallest_pixel-7",})
-surface.CreateFont("Arial_Menu", {size = 15,weight = 500,antialias = true,shadow = true,font = "Arial",})
-surface.CreateFont("Arial 12p", {size = 12,weight = 700,antialias = true,shadow = true,font = "Arial",})
 //Game events
 gameevent.Listen("entity_killed")
 gameevent.Listen("player_connect")
@@ -64,6 +93,8 @@ config["aim_zeusbot"] = false
 config["aim_jump_check"] = false
 config["aim_nadecheck"] = false
 config["aim_bullettime"] = false
+
+config["movement_fix"] = 1
 
 config["killaura_crits"] = false
 config["killaura_key"] = false
@@ -465,10 +496,12 @@ CreateClientConVar("pd_setoverlaymat", "!textured")
 cvars.AddChangeCallback("pd_setoverlaymat", UpdateOverlayChamMaterial, "update_chams_overlay")
 CreateClientConVar("pd_setxyzmat", "!textured")
 cvars.AddChangeCallback("pd_setxyzmat", UpdateInvisibleChamMaterial, "update_chams_xyz")
+
 local function AddHook(event, name, func)
 	hooks[name] = event
 	hook.Add(event, name, func)
 end
+
 local function VerifyConfig()
 	for k, v in pairs(verifyconfig) do
 		if config[k] == nil then
@@ -490,6 +523,7 @@ local function VerifyConfig()
 		end
 	end
 end
+
 local function GetENTPos ( Ent )
 	if Ent:IsValid() then 
 		local Points = {
@@ -570,6 +604,8 @@ end )
 AddHook("ShutDown", RandomString(), function()
     render.SetRenderTarget()
 end )
+
+
 
 local renderv = render.RenderView
 local renderc = render.Clear
@@ -687,10 +723,6 @@ local function ValidateAimbot(ply)
 	end
 end
 
-
-
-
-
 local function ValidateKillaura(ply)
 	if !IsValid(ply) then return false end
 	if !ply:IsPlayer() and !ply:IsBot() then return false end
@@ -711,7 +743,11 @@ local function ValidateKillaura(ply)
 		return true
 	end
 end
+
 local playerTable = {}
+
+
+
 AddHook("Think", RandomString(), function()
 	for k, v in pairs(player.GetAll()) do
 		if ValidateESP(v) && !table.HasValue(playerTable, v) then
@@ -846,6 +882,9 @@ local function Unload()
 	print("Cheat was unloaded..")
 end
 
+
+
+do
 local function GunMod()
 --TFA
 if config["gunmod_tfa"]  then
@@ -891,6 +930,7 @@ if !config["gunmod_m9k_penetretion"]  then
 end
 if !config["gunmod_m9k_drecoil"]  then
     RunConsoleCommand("M9KDynamicRecoil", "1")
+end
 end
 end
 end
@@ -941,25 +981,7 @@ local function UpdateOnlineStaff()
 	end
 end
 timer.Create(cStaff, 5, 0, UpdateOnlineStaff)
---==================== EXPLOITS =======================--
-local function VRmodExploit()
-for k,v in ipairs(ents.FindByClass("spawned_money")) do
-    timer.Simple(k/1, function()
-        net.Start("vrmod_doors")
-            net.WriteEntity(v)
-        net.SendToServer()
-    end)
-end
-end
-local function VRmodExploit2()
-for k,v in ipairs(ents.FindByClass("spawned_weapon")) do
-    timer.Simple(k/1, function()
-        net.Start("vrmod_doors")
-            net.WriteEntity(v)
-        net.SendToServer()
-    end)
-end
-end
+
 messageJustSent = false
 messages = 0
 EventsAlpha = 0
@@ -1030,19 +1052,19 @@ local function CreateCheckBox(lbl, x, y, cfg, col, par, cpx)
 	checkBox.Paint = function(self, w, h)
 	if checkBox:GetChecked() then
 	for i = 0, 5 do
-    surface.SetDrawColor(Color(128,255,128,200))
-    surface.DrawRect(1, 2, 13, 13)
+    surfSetDrawColor(Color(128,255,128,200))
+    surfDrawRect(1, 2, 13, 13)
 	end
 	else
     for i = 0, 5 do
-    surface.SetDrawColor(Color(200,128,128,45))
-    surface.DrawRect(1, 2, 13, 13)
+    surfSetDrawColor(Color(200,128,128,45))
+    surfDrawRect(1, 2, 13, 13)
 	end
 	end
-	surface.SetDrawColor(Color(25,25,25,128)) 
+	surfSetDrawColor(Color(25,25,25,128)) 
 	surface.SetMaterial( Material("gui/gradient_up") )
-	surface.DrawTexturedRect( 0, 1, 14, 14 )
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfDrawTexturedRect( 0, 1, 14, 14 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 1, 14, 14, 1 )
 	end
 	
@@ -1054,7 +1076,7 @@ local function CreateCheckBox(lbl, x, y, cfg, col, par, cpx)
 		colorPicker:SetPos(cx+cpx, y - 1)
 		colorPicker:SetColor(string.ToColor(config.colors[cfg]))
 		colorPicker.Paint = function(self, w, h)
-		surface.SetDrawColor( 0, 0, 0, 255 )
+		surfSetDrawColor( 0, 0, 0, 255 )
 	    surface.DrawOutlinedRect( 2, 2, w-4, h-4, 1 )
 		end
 		function colorPicker:DoClick()
@@ -1068,7 +1090,7 @@ local function CreateCheckBox(lbl, x, y, cfg, col, par, cpx)
 			colorWindow.Paint = function(self, w, h)
 			draw.RoundedBox(0, 0, 0, w, 30, Color(15,15,15,255))
 			draw.RoundedBox(0, 0, 30, w, 195, Color(35,35,35,255))
-			surface.SetDrawColor( 255, 255, 255, 255 )
+			surfSetDrawColor( 255, 255, 255, 255 )
 	        surface.DrawOutlinedRect( 1, 1, w-1, h-1, 1 )
 			end
 			local frameX, frameY = frame:GetPos()
@@ -1165,19 +1187,19 @@ local function CreateCheckBoxExperemental(lbl, x, y, cfg, col, par)
 	checkBox.Paint = function(self, w, h)
 	if checkBox:GetChecked() then
 	for i = 0, 5 do
-    surface.SetDrawColor(Color(128,255,128,200))
-    surface.DrawRect(1, 2, 13, 13)
+    surfSetDrawColor(Color(128,255,128,200))
+    surfDrawRect(1, 2, 13, 13)
 	end
 	else
     for i = 0, 5 do
-    surface.SetDrawColor(Color(200,128,128,45))
-    surface.DrawRect(1, 2, 13, 13)
+    surfSetDrawColor(Color(200,128,128,45))
+    surfDrawRect(1, 2, 13, 13)
 	end
 	end
-	surface.SetDrawColor(Color(25,25,25,128)) 
+	surfSetDrawColor(Color(25,25,25,128)) 
 	surface.SetMaterial( Material("gui/gradient_up") )
-	surface.DrawTexturedRect( 0, 1, 14, 14 )
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfDrawTexturedRect( 0, 1, 14, 14 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 1, 14, 14, 1 )
 	end
 	
@@ -1252,9 +1274,9 @@ local function CreateSlider(lbl, x, y, cfg, min, max, dec, par)
 	end
 	slider.Slider.Knob:SetSize(12,8)
     slider.Slider.Knob.Paint = function(self,w,h)
-	surface.SetDrawColor(Color(255,255,255,255)) 
+	surfSetDrawColor(Color(255,255,255,255)) 
 	surface.SetMaterial( Material("gui/lmb.png") )
-	surface.DrawTexturedRect( 0, -5, 15, 15 )
+	surfDrawTexturedRect( 0, -5, 15, 15 )
 	end
 
 end
@@ -1280,17 +1302,17 @@ local function CreateDropdown(lbl, x, y, choices, cfg, par)
 	end
 	dropdown.Paint = function(self,w,h)
 		draw.RoundedBox(0, 0, 0, w, h, Color(45,45,60,150))
-		surface.SetDrawColor( 0, 0, 0, 255 )
+		surfSetDrawColor( 0, 0, 0, 255 )
 	    surface.DrawOutlinedRect( 0, 0, w, h, 1 )
 	end
 	DMenuOption.Paint = function(self, w, h)
     for i = 0, 12 do
 	draw.RoundedBox(0, 0, 0, w, h, Color(55,55,55,255))
     draw.RoundedBox(0, 1, 1, w-2, h-2, Color(55,55,75,150))
-	surface.SetDrawColor( 0, 0, 0, 150 )
+	surfSetDrawColor( 0, 0, 0, 150 )
 	surface.DrawOutlinedRect( 1, 1, w-2, h-2, 1 )    
     end
-    surface.SetDrawColor( 0, 0, 0, 0 )
+    surfSetDrawColor( 0, 0, 0, 0 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
     end
 	dropdown.DropButton.Paint = function() end
@@ -1310,8 +1332,8 @@ local function CreateKeybind(x, y, cfg, par)
  		config.keybinds[cfg] = keyBind:GetValue()
  	end
 	keyBind.Paint = function(self,w,h)
-	    surface.SetDrawColor(25,25,25,150)
-        surface.DrawRect(0, 0, w-2, h)
+	    surfSetDrawColor(25,25,25,150)
+        surfDrawRect(0, 0, w-2, h)
 	end
 end
 
@@ -1328,7 +1350,7 @@ local function CreateButton(lbl, tooltip, fnc, x, y, par)
 	end
 	button.Paint = function(self,w,h)
 		draw.RoundedBox(0, 0, 0, w, h, Color(45,45,60,150))
-		surface.SetDrawColor( 0, 0, 0, 255 )
+		surfSetDrawColor( 0, 0, 0, 255 )
 	    surface.DrawOutlinedRect( 0, 0, w, h, 1 )
 	end
 end
@@ -1344,13 +1366,13 @@ local function HSVColorButton(x, y, cfg, par)
 	hsvbox.Paint = function(self, w, h)
 	local mat = Material("icon16/rainbow.png")
 	if hsvbox:GetChecked() then
-        surface.SetDrawColor( 255, 255, 255, 255 )
+        surfSetDrawColor( 255, 255, 255, 255 )
 	    surface.SetMaterial( mat )
-	    surface.DrawTexturedRect( 0, 0, 15, 15 )
+	    surfDrawTexturedRect( 0, 0, 15, 15 )
 	else
-        surface.SetDrawColor( 111, 111, 111, 200 )
+        surfSetDrawColor( 111, 111, 111, 200 )
 	    surface.SetMaterial( mat )
-	    surface.DrawTexturedRect( 0, 0, 15, 15 )
+	    surfDrawTexturedRect( 0, 0, 15, 15 )
 	end
 	end
 end
@@ -1366,13 +1388,13 @@ local function HealthColorButton(x, y, cfg, par)
 	hbox.Paint = function(self, w, h)
 	local mat = Material("icon16/heart.png")
 	if hbox:GetChecked() then
-        surface.SetDrawColor( 255, 255, 255, 255 )
+        surfSetDrawColor( 255, 255, 255, 255 )
 	    surface.SetMaterial( mat )
-	    surface.DrawTexturedRect( 0, 0, 15, 15 )
+	    surfDrawTexturedRect( 0, 0, 15, 15 )
 	else
-        surface.SetDrawColor( 111, 111, 111, 200 )
+        surfSetDrawColor( 111, 111, 111, 200 )
 	    surface.SetMaterial( mat )
-	    surface.DrawTexturedRect( 0, 0, 15, 15 )
+	    surfDrawTexturedRect( 0, 0, 15, 15 )
 	end
 	end
 end
@@ -1381,9 +1403,9 @@ local function CreateExpButton(lbl, tooltip, fnc, x, y, par, col)
 	local expbutton = vgui.Create("DButton", par)
 	expbutton:SetSize(150, 30)
 	function expbutton:Paint(w, h)
-		surface.SetDrawColor(25,25,25,255)
-        surface.DrawRect(0, 0, w, h)
-		surface.SetDrawColor(col.r,col.g,col.b,255)
+		surfSetDrawColor(25,25,25,255)
+        surfDrawRect(0, 0, w, h)
+		surfSetDrawColor(col.r,col.g,col.b,255)
 		surface.DrawOutlinedRect( 2, 2, w-4, h-4, 1 )
 		draw.SimpleText( lbl, "smallest_pixel", w/2/2/2, 7, color_white )
 	end
@@ -1423,7 +1445,7 @@ local function CreateFilterPanel()
 		teamFilter:SetTitle("Filter By Teams")
 		function teamFilter:Paint(w, h)
 		draw.RoundedBox(0, 0, 0, w, h, Color(45,45,60,150))
-		surface.SetDrawColor( 0, 0, 0, 255 )
+		surfSetDrawColor( 0, 0, 0, 255 )
 	    surface.DrawOutlinedRect( 0, 0, w, h, 1 )
 		end
 		if teamFilterX == nil or teamFilterY == nil then
@@ -1488,7 +1510,7 @@ local function CreatePlayerList()
 		pList:SetSize(475, 200)
 		function pList:Paint(w, h)
 		draw.RoundedBox(0, 0, 0, w, h, Color(45,45,60,150))
-		surface.SetDrawColor( 0, 0, 0, 255 )
+		surfSetDrawColor( 0, 0, 0, 255 )
 	    surface.DrawOutlinedRect( 0, 0, w, h, 1 )
 		end
 		local frameW, frameH = frame:GetPos()
@@ -1579,7 +1601,7 @@ local function CreateEntityList()
 		entityFrame:SetTitle("Entity ESP")
 		function entityFrame:Paint(w, h)
 		draw.RoundedBox(0, 0, 0, w, h, Color(45,45,60,150))
-		surface.SetDrawColor( 0, 0, 0, 255 )
+		surfSetDrawColor( 0, 0, 0, 255 )
 	    surface.DrawOutlinedRect( 0, 0, w, h, 1 )
 		end
 		if entityFrameX == nil or entityFrameY == nil then
@@ -1650,7 +1672,7 @@ local function CreateMaterialList()
 		chamFrame:SetTitle("Cham Materials")
 		function chamFrame:Paint(w, h)
 		draw.RoundedBox(0, 0, 0, w, h, Color(45,45,60,150))
-		surface.SetDrawColor( 0, 0, 0, 255 )
+		surfSetDrawColor( 0, 0, 0, 255 )
 	    surface.DrawOutlinedRect( 0, 0, w, h, 1 )
 		end
 		if chamFrameX == nil or chamFrameY == nil then
@@ -1677,7 +1699,7 @@ local function CreateMaterialList()
 		draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
 	    end
 	    function sPanelS.btnGrip:Paint(w, h)
-		surface.SetDrawColor( 0, 0, 0, 255 )
+		surfSetDrawColor( 0, 0, 0, 255 )
 	    surface.DrawOutlinedRect( 0, 0, w, h, 1 )
 		draw.RoundedBox(0, 0, 0, w, h, Color(45, 45, 60, 150))
 	    end
@@ -1737,7 +1759,7 @@ function HavocGUI()
 	draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
 	end
 	function AIM_SCROLLS.btnGrip:Paint(w, h)
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
     draw.RoundedBox(0, 0, 0, w, h, Color(45, 45, 60, 150))
 	end	
@@ -1746,13 +1768,13 @@ function HavocGUI()
     combat_aimbot:SetPos(10,5)
     function combat_aimbot:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surface.SetDrawColor( 255, 255, 255, 255 ) 
+    surfSetDrawColor( 255, 255, 255, 255 ) 
     surface.SetMaterial(Material("icon16/gun.png"))
-    surface.DrawTexturedRect( 2, 2, 15, 15 )
+    surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "Aimbot:", "DermaDefault", 19, 2, color_white )
     end
 	local combat_accuracy = vgui.Create( "DPanel", AIM_SCROLL )
@@ -1760,13 +1782,13 @@ function HavocGUI()
     combat_accuracy:SetPos(220,5)
     function combat_accuracy:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surface.SetDrawColor( 255, 255, 255, 255 ) 
+    surfSetDrawColor( 255, 255, 255, 255 ) 
     surface.SetMaterial(Material("icon16/wand.png"))
-    surface.DrawTexturedRect( 2, 2, 15, 15 )
+    surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "Accuracy:", "DermaDefault", 19, 2, color_white )
     end
 	local combat_triggerbot = vgui.Create( "DPanel", AIM_SCROLL )
@@ -1774,13 +1796,13 @@ function HavocGUI()
     combat_triggerbot:SetPos(220,310)
     function combat_triggerbot:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surface.SetDrawColor( 255, 255, 255, 255 ) 
+    surfSetDrawColor( 255, 255, 255, 255 ) 
     surface.SetMaterial(Material("icon16/cursor.png"))
-    surface.DrawTexturedRect( 2, 2, 15, 15 )
+    surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "Triggerbot:", "DermaDefault", 19, 2, color_white )
     end
 	local combat_gunmod = vgui.Create( "DPanel", AIM_SCROLL )
@@ -1788,13 +1810,13 @@ function HavocGUI()
     combat_gunmod:SetPos(220,400)
     function combat_gunmod:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surface.SetDrawColor( 255, 255, 255, 255 ) 
+    surfSetDrawColor( 255, 255, 255, 255 ) 
     surface.SetMaterial(Material("icon16/fire.png"))
-    surface.DrawTexturedRect( 2, 2, 15, 15 )
+    surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "GunMod(Admin):", "DermaDefault", 19, 2, color_white )
     end
 	local combat_filter = vgui.Create( "DPanel", AIM_SCROLL )
@@ -1802,13 +1824,13 @@ function HavocGUI()
     combat_filter:SetPos(430,5)
     function combat_filter:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surface.SetDrawColor( 255, 255, 255, 255 ) 
+    surfSetDrawColor( 255, 255, 255, 255 ) 
     surface.SetMaterial(Material("icon16/wrench.png"))
-    surface.DrawTexturedRect( 2, 2, 15, 15 )
+    surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "Filter:", "DermaDefault", 19, 2, color_white )
     end
 	local combat_killaura = vgui.Create( "DPanel", AIM_SCROLL )
@@ -1816,13 +1838,13 @@ function HavocGUI()
     combat_killaura:SetPos(640,5)
     function combat_killaura:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surface.SetDrawColor( 255, 255, 255, 255 ) 
+    surfSetDrawColor( 255, 255, 255, 255 ) 
     surface.SetMaterial(Material("icon16/emoticon_evilgrin.png"))
-    surface.DrawTexturedRect( 2, 2, 15, 15 )
+    surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "KillAura:", "DermaDefault", 19, 2, color_white )
     end
 	local combat_helpers = vgui.Create( "DPanel", AIM_SCROLL )
@@ -1830,13 +1852,13 @@ function HavocGUI()
     combat_helpers:SetPos(860,5)
     function combat_helpers:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surface.SetDrawColor( 255, 255, 255, 255 ) 
+    surfSetDrawColor( 255, 255, 255, 255 ) 
     surface.SetMaterial(Material("icon16/keyboard_mute.png"))
-    surface.DrawTexturedRect( 2, 2, 15, 15 )
+    surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "Helpers:", "DermaDefault", 19, 2, color_white )
     end
 	local AA_SCROLL = vgui.Create( "DScrollPanel", SHEET )
@@ -1852,51 +1874,65 @@ function HavocGUI()
 	draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
 	end
 	function AA_SCROLLS.btnGrip:Paint(w, h)
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
     draw.RoundedBox(0, 0, 0, w, h, Color(45, 45, 60, 150))
 	end	
-	local combat_antihit = vgui.Create( "DPanel", AA_SCROLL )
-    combat_antihit:SetSize(200,330)
-    combat_antihit:SetPos(5,5)
-    function combat_antihit:Paint(w, h)
+	local antiaim_global = vgui.Create( "DPanel", AA_SCROLL )
+    antiaim_global:SetSize(200,400)
+    antiaim_global:SetPos(5,5)
+    function antiaim_global:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surface.SetDrawColor( 255, 255, 255, 255 ) 
+    surfSetDrawColor( 255, 255, 255, 255 ) 
     surface.SetMaterial(Material("icon16/arrow_rotate_clockwise.png"))
-    surface.DrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "Animations:", "DermaDefault", 19, 2, color_white )
-    end
-	local combat_antihitnotanim = vgui.Create( "DPanel", AA_SCROLL )
-    combat_antihitnotanim:SetSize(200,330)
-    combat_antihitnotanim:SetPos(210,5)
-    function combat_antihitnotanim:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surface.SetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surface.SetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surface.SetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/link_break.png"))
-    surface.DrawTexturedRect( 2, 2, 15, 15 )
+    surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "Anti-Aim:", "DermaDefault", 19, 2, color_white )
     end
-	local antihit_misc = vgui.Create( "DPanel", AA_SCROLL )
-    antihit_misc:SetSize(200,330)
-    antihit_misc:SetPos(420,5)
-    function antihit_misc:Paint(w, h)
+	local antiaim_fakes = vgui.Create( "DPanel", AA_SCROLL )
+    antiaim_fakes:SetSize(200,400)
+    antiaim_fakes:SetPos(210,5)
+    function antiaim_fakes:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surface.SetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("vgui/resource/icon_vac_new"))
-    surface.DrawTexturedRect( 2, 2, 15, 15 )
+    surfSetDrawColor( 255, 255, 255, 255 ) 
+    surface.SetMaterial(Material("icon16/arrow_rotate_clockwise.png"))
+    surfDrawTexturedRect( 2, 2, 15, 15 )
+    draw.SimpleText( "Fake Angle:", "DermaDefault", 19, 2, color_white )
+    end
+	local antiaim_misc = vgui.Create( "DPanel", AA_SCROLL )
+    antiaim_misc:SetSize(200,400)
+    antiaim_misc:SetPos(420,5)
+    function antiaim_misc:Paint(w, h)
+	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
+	surfSetDrawColor( 0, 0, 0, 255 )
+	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
+	surfSetDrawColor( 0, 0, 0, 255 )
+	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
+    surfSetDrawColor( 255, 255, 255, 255 ) 
+    surface.SetMaterial(Material("icon16/arrow_rotate_clockwise.png"))
+    surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "Misc:", "DermaDefault", 19, 2, color_white )
+    end
+	local antiaim_visual = vgui.Create( "DPanel", AA_SCROLL )
+    antiaim_visual:SetSize(200,400)
+    antiaim_visual:SetPos(630,5)
+    function antiaim_visual	:Paint(w, h)
+	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
+	surfSetDrawColor( 0, 0, 0, 255 )
+	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
+	surfSetDrawColor( 0, 0, 0, 255 )
+	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
+    surfSetDrawColor( 255, 255, 255, 255 ) 
+    surface.SetMaterial(Material("icon16/arrow_rotate_clockwise.png"))
+    surfDrawTexturedRect( 2, 2, 15, 15 )
+    draw.SimpleText( "Visualisation:", "DermaDefault", 19, 2, color_white )
     end
 	local VISUAL_SCROLL = vgui.Create( "DScrollPanel", SHEET )
     VISUAL_SCROLL:Dock( FILL )
@@ -1920,15 +1956,15 @@ function HavocGUI()
     visual_player:SetPos(5,5)
     function visual_player:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surface.SetDrawColor( 255, 255, 255, 255 ) 
+    surfSetDrawColor( 255, 255, 255, 255 ) 
     surface.SetMaterial(Material("icon16/add.png"))
-    surface.DrawTexturedRect( 2, 2, 15, 15 )
+    surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "Player ESP:", "DermaDefault", 19, 2, color_white )
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 5, 35, 190, 560, 1 )
 	draw.SimpleText( "-= Main Elements =-", "DermaDefault", 50, 20, color_white )
 	surface.DrawOutlinedRect( 200, 35, 190, 200, 1 )
@@ -1945,13 +1981,13 @@ function HavocGUI()
     visual_player_settings:SetPos(5,610)
     function visual_player_settings:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surface.SetDrawColor( 255, 255, 255, 255 ) 
+    surfSetDrawColor( 255, 255, 255, 255 ) 
     surface.SetMaterial(Material("icon16/bullet_wrench.png"))
-    surface.DrawTexturedRect( 2, 2, 15, 15 )
+    surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "ESP Settings:", "DermaDefault", 19, 2, color_white )
     end
 	local SELF_SCROLL = vgui.Create( "DScrollPanel", SHEET )
@@ -1967,7 +2003,7 @@ function HavocGUI()
 	draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
 	end
 	function SELF_SCROLLS.btnGrip:Paint(w, h)
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
     draw.RoundedBox(0, 0, 0, w, h, Color(45, 45, 60, 150))
 	end
@@ -1977,13 +2013,13 @@ function HavocGUI()
     visual_npc:SetPos(420,5)
     function visual_npc:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surface.SetDrawColor( 255, 255, 255, 255 ) 
+    surfSetDrawColor( 255, 255, 255, 255 ) 
     surface.SetMaterial(Material("icon16/monkey.png"))
-    surface.DrawTexturedRect( 2, 2, 15, 15 )
+    surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "NPCs:", "DermaDefault", 19, 2, color_white )
     end
 	]]
@@ -1992,13 +2028,13 @@ function HavocGUI()
     visual_self_view:SetPos(5,5)
     function visual_self_view:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surface.SetDrawColor( 255, 255, 255, 255 ) 
+    surfSetDrawColor( 255, 255, 255, 255 ) 
     surface.SetMaterial(Material("icon16/zoom.png"))
-    surface.DrawTexturedRect( 2, 2, 15, 15 )
+    surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "View:", "DermaDefault", 19, 2, color_white )
     end
 	local visual_self = vgui.Create( "DPanel", SELF_SCROLL )
@@ -2006,13 +2042,13 @@ function HavocGUI()
     visual_self:SetPos(210,5)
     function visual_self:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surface.SetDrawColor( 255, 255, 255, 255 ) 
+    surfSetDrawColor( 255, 255, 255, 255 ) 
     surface.SetMaterial(Material("icon16/user_edit.png"))
-    surface.DrawTexturedRect( 2, 2, 15, 15 )
+    surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "Self:", "DermaDefault", 19, 2, color_white )
     end
 
@@ -2021,13 +2057,13 @@ function HavocGUI()
     visual_self_hud:SetPos(415,5)
     function visual_self_hud:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surface.SetDrawColor( 255, 255, 255, 255 ) 
+    surfSetDrawColor( 255, 255, 255, 255 ) 
     surface.SetMaterial(Material("icon16/vcard_add.png"))
-    surface.DrawTexturedRect( 2, 2, 15, 15 )
+    surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "HUD:", "DermaDefault", 19, 2, color_white )
     end
 	local WORLD_SCROLL = vgui.Create( "DScrollPanel", SHEET )
@@ -2043,7 +2079,7 @@ function HavocGUI()
 	draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
 	end
 	function WORLD_SCROLLS.btnGrip:Paint(w, h)
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
     draw.RoundedBox(0, 0, 0, w, h, Color(45, 45, 60, 150))
 	end
@@ -2052,13 +2088,13 @@ function HavocGUI()
     world_effects:SetPos(5,5)
     function world_effects:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surface.SetDrawColor( 255, 255, 255, 255 ) 
+    surfSetDrawColor( 255, 255, 255, 255 ) 
     surface.SetMaterial(Material("icon16/weather_cloudy.png"))
-    surface.DrawTexturedRect( 2, 2, 15, 15 )
+    surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "Effects:", "DermaDefault", 19, 2, color_white )
     end
 	local world_colors = vgui.Create( "DPanel", WORLD_SCROLL )
@@ -2066,13 +2102,13 @@ function HavocGUI()
     world_colors:SetPos(210,5)
     function world_colors:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surface.SetDrawColor( 255, 255, 255, 255 ) 
+    surfSetDrawColor( 255, 255, 255, 255 ) 
     surface.SetMaterial(Material("icon16/color_wheel.png"))
-    surface.DrawTexturedRect( 2, 2, 15, 15 )
+    surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "Colors:", "DermaDefault", 19, 2, color_white )
     end
 	local world_cc = vgui.Create( "DPanel", WORLD_SCROLL )
@@ -2080,13 +2116,13 @@ function HavocGUI()
     world_cc:SetPos(420,5)
     function world_cc:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surface.SetDrawColor( 255, 255, 255, 255 ) 
+    surfSetDrawColor( 255, 255, 255, 255 ) 
     surface.SetMaterial(Material("icon16/film_edit.png"))
-    surface.DrawTexturedRect( 2, 2, 15, 15 )
+    surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "Color Correction:", "DermaDefault", 19, 2, color_white )
     end
 	local world_ents = vgui.Create( "DPanel", WORLD_SCROLL )
@@ -2094,13 +2130,13 @@ function HavocGUI()
     world_ents:SetPos(630,5)
     function world_ents:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surface.SetDrawColor( 255, 255, 255, 255 ) 
+    surfSetDrawColor( 255, 255, 255, 255 ) 
     surface.SetMaterial(Material("icon16/bricks.png"))
-    surface.DrawTexturedRect( 2, 2, 15, 15 )
+    surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "Entity:", "DermaDefault", 19, 2, color_white )
     end
 	local MISC_SCROLL = vgui.Create( "DScrollPanel", SHEET )
@@ -2116,7 +2152,7 @@ function HavocGUI()
 	draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
 	end
 	function MISC_SCROLLS.btnGrip:Paint(w, h)
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
     draw.RoundedBox(0, 0, 0, w, h, Color(45, 45, 60, 150))
 	end
@@ -2125,13 +2161,13 @@ function HavocGUI()
     misc_movement:SetPos(5,5)
     function misc_movement:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surface.SetDrawColor( 255, 255, 255, 255 ) 
+    surfSetDrawColor( 255, 255, 255, 255 ) 
     surface.SetMaterial(Material("icon16/arrow_branch.png"))
-    surface.DrawTexturedRect( 2, 2, 15, 15 )
+    surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "Movement:", "DermaDefault", 19, 2, color_white )
     end
 	local bsendpacket_tab = vgui.Create( "DPanel", MISC_SCROLL )
@@ -2139,13 +2175,13 @@ function HavocGUI()
     bsendpacket_tab:SetPos(5,510)
     function bsendpacket_tab:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surface.SetDrawColor( 255, 255, 255, 255 ) 
+    surfSetDrawColor( 255, 255, 255, 255 ) 
     surface.SetMaterial(Material("icon16/bullet_error.png"))
-    surface.DrawTexturedRect( 2, 2, 15, 15 )
+    surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "bSendPacket:", "DermaDefault", 19, 2, color_white )
     end
 	local misc_misc = vgui.Create( "DPanel", MISC_SCROLL )
@@ -2153,13 +2189,13 @@ function HavocGUI()
     misc_misc:SetPos(210,5)
     function misc_misc:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surface.SetDrawColor( 255, 255, 255, 255 ) 
+    surfSetDrawColor( 255, 255, 255, 255 ) 
     surface.SetMaterial(Material("icon16/page_white_text.png"))
-    surface.DrawTexturedRect( 2, 2, 15, 15 )
+    surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "Misc:", "DermaDefault", 19, 2, color_white )
     end
 
@@ -2177,7 +2213,7 @@ function HavocGUI()
 	draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
 	end
 	function CFG_SCROLLS.btnGrip:Paint(w, h)
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
     draw.RoundedBox(0, 0, 0, w, h, Color(45, 45, 60, 150))
 	end
@@ -2186,13 +2222,13 @@ function HavocGUI()
     cfg_tab:SetPos(5,5)
     function cfg_tab:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surface.SetDrawColor( 0, 0, 0, 255 )
+	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surface.SetDrawColor( 255, 255, 255, 255 ) 
+    surfSetDrawColor( 255, 255, 255, 255 ) 
     surface.SetMaterial(Material("icon16/page_white_put.png"))
-    surface.DrawTexturedRect( 2, 2, 15, 15 )
+    surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "Config:", "DermaDefault", 19, 2, color_white )
     end
 	
@@ -2233,10 +2269,10 @@ function HavocGUI()
 	CreateCheckBox("Auto Slow", 10, 50, "autoslow", false, combat_accuracy)
 	CreateCheckBox("Auto Crouch", 10, 70, "autocrouch", false, combat_accuracy)
 	CreateCheckBoxExperemental("NoSpread", 10, 90, "aim_nospread", false, combat_accuracy)	
-	CreateDropdown("NoSpread Type", 10, 110, {"MD5", "Module", "Module 2"}, "aim_nospread_type", combat_accuracy)
-	CreateCheckBox("Prediction", 10, 150, "aim_prediction", false, combat_accuracy)	
-	CreateDropdown("Prediction Method", 10, 170, {"Default", "Velocity", "Engine"}, "aim_prediction_metod", combat_accuracy)
+	--CreateDropdown("NoSpread Type", 10, 110, {"MD5", "Module", "Module 2"}, "aim_nospread_type", combat_accuracy)
+	CreateCheckBox("Velocity Prediction", 10, 150, "aim_prediction", false, combat_accuracy)	
 	CreateCheckBox("Bullet Time", 10, 220, "aim_bullettime", false, combat_accuracy)	
+	CreateDropdown("Movement Fix type", 10, 240, {"Static", "Static 2"}, "movement_fix", combat_accuracy)
 	
 	CreateCheckBox("Ignore Friends", 10, 30, "aim_ignorefriends", false, combat_filter)
 	CreateCheckBox("Ignore BOTS", 10, 50, "aim_ignorebots", false, combat_filter)
@@ -2274,23 +2310,23 @@ function HavocGUI()
 	CreateCheckBox("Fast Switch", 10, 70, "misc_fastswitch", false, combat_helpers)
 	CreateCheckBox("M9K Sprint disabler", 10, 90, "misc_m9kstopper", false, combat_helpers)
 	--AA
-	CreateCheckBox("Dance Spam", 10, 30, "antihit_act", false, combat_antihit)
-	CreateDropdown("Act", 10, 50, {"Dance", "Robot", "Sex", "Bow", "Wave", "Zombie", "Disagree", "Forward", "Pers", "Salute"}, "antihit_act_type", combat_antihit)
-	CreateCheckBox("Tactical Leaning", 10, 90, "antihit_lean", false, combat_antihit)
-	CreateDropdown("Leaning Direction", 10, 110, {"Left", "Right", "Directional", "Directional Inverted"}, "antihit_lean_dir", combat_antihit)
-	CreateButton("Fix Leaning", "offs leaning.", TacticalLeanDisabler, 10, 160, combat_antihit)
+	--CreateCheckBox("Dance Spam", 10, 30, "antihit_act", false, combat_antihit)
+	--CreateDropdown("Act", 10, 50, {"Dance", "Robot", "Sex", "Bow", "Wave", "Zombie", "Disagree", "Forward", "Pers", "Salute"}, "antihit_act_type", combat_antihit)
+	--CreateCheckBox("Tactical Leaning", 10, 90, "antihit_lean", false, combat_antihit)
+	--CreateDropdown("Leaning Direction", 10, 110, {"Left", "Right", "Directional", "Directional Inverted"}, "antihit_lean_dir", combat_antihit)
+	--CreateButton("Fix Leaning", "offs leaning.", TacticalLeanDisabler, 10, 160, combat_antihit)
 	
 	--AntiAims
-	CreateCheckBox("Enable Anti-Aim", 10, 30, "antihit_antiaim", false, combat_antihitnotanim)
-	CreateDropdown("Yaw Base", 10, 50, {"Static", "Sway", "Jitter", "LBY"}, "yaw_base", combat_antihitnotanim)
-	CreateDropdown("Pitch", 10, 90, {"None","Zero", "Down", "Up", "Fake Down", "Fake Up"}, "pitch_add", combat_antihitnotanim)
+	--CreateCheckBox("Enable Anti-Aim", 10, 30, "antihit_antiaim", false, combat_antihitnotanim)
+	--CreateDropdown("Yaw Base", 10, 50, {"Static", "Sway", "Jitter", "LBY"}, "yaw_base", combat_antihitnotanim)
+	--CreateDropdown("Pitch", 10, 90, {"None","Zero", "Down", "Up", "Fake Down", "Fake Up"}, "pitch_add", combat_antihitnotanim)
 	--Fake angles
 	--CreateCheckBox("Enable Anti-Aim", 10, 30, "antihit_antiaim", false, combat_antihitnotanim)
 	--CreateDropdown("Yaw Base", 10, 50, {"Static", "Sway", "Jitter", "LBY"}, "yaw_base", combat_antihitnotanim)
 	--CreateDropdown("Pitch", 10, 90, {"None","Zero", "Down", "Up", "Fake Down", "Fake Up"}, "pitch_add", combat_antihitnotanim)	
 	--AA Misc
-	CreateCheckBox("Fake Duck", 10, 30, "antihit_fd", false, antihit_misc)
-	CreateKeybind(140, 30, "antihit_fd_key", antihit_misc)
+	CreateCheckBox("Fake Duck", 10, 30, "antihit_fd", false, antiaim_misc)
+	CreateKeybind(140, 30, "antihit_fd_key", antiaim_misc)
 	--Visuals
 	//Boxes & Bars
 	CreateCheckBox("Bounding Box", 10, 40, "esp_player_box", true, visual_player, 165)
@@ -2342,8 +2378,7 @@ function HavocGUI()
 	CreateCheckBox("Highlight Friends Box", 595, 160, "esp_player_highlight_box", true, visual_player, 165)
 	CreateCheckBox("Highlight Friends Name", 595, 180, "esp_player_highlight_name", true, visual_player, 165)
 	CreateCheckBox("ESP Compensation", 595, 200, "esp_comp", false, visual_player)
-	CreateButton("OBS Bypass", "Makes ESP OBSProof.", OBS_BYPASS, 595, 220, visual_player)
-	CreateButton("FPS Booster", "Run fps  boost commands.", FPS_FIX, 595, 245, visual_player)
+	--CreateButton("FPS Booster", "Run fps  boost commands.", FPS_FIX, 595, 245, visual_player)
 	//ESP Element Positions
 	CreateSlider("Name X", 10, 30, "name_x", -250, 250, 0, visual_player_settings)
 	CreateSlider("Name Y", 10, 70, "name_y", -250, 250, 0, visual_player_settings)
@@ -2677,6 +2712,8 @@ AddHook("Think", RandomString(), function()
 	end
 end)
 
+do
+
 --===================================
 --=================================== Visuals
 --===================================
@@ -2692,6 +2729,8 @@ function draw.Circle( x, y, radius, seg )
 	surface.DrawPoly( cir )
 end
 -- ======================= ESP
+
+
 
 local bones = {
 	{ S = "ValveBiped.Bip01_Head1", E = "ValveBiped.Bip01_Neck1" },
@@ -2725,36 +2764,36 @@ local function DoESP()
 						if config["esp_player_highlight_box"] then
 							local ColAlt
 							if table.HasValue(config["friends"], v:SteamID()) then
-								surface.SetDrawColor(string.ToColor(config.colors["esp_player_highlight_box"]))
+								surfSetDrawColor(string.ToColor(config.colors["esp_player_highlight_box"]))
 								ColAlt = string.ToColor(config.colors["esp_player_highlight_box"])
 							else
 							if config["esp_player_box_hsv"] then
 						    local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
-						    surface.SetDrawColor(hsv.r,hsv.g,hsv.b,255)
+						    surfSetDrawColor(hsv.r,hsv.g,hsv.b,255)
 						    else
-						    surface.SetDrawColor(string.ToColor(config.colors["esp_player_box"]))
+						    surfSetDrawColor(string.ToColor(config.colors["esp_player_box"]))
 							ColAlt = string.ToColor(config.colors["esp_player_box"])
 							end
 							end
 						else
 						if config["esp_player_box_hsv"] then
 						local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
-						surface.SetDrawColor(hsv.r,hsv.g,hsv.b,255)
+						surfSetDrawColor(hsv.r,hsv.g,hsv.b,255)
 						else
-						surface.SetDrawColor(string.ToColor(config.colors["esp_player_box"]))
+						surfSetDrawColor(string.ToColor(config.colors["esp_player_box"]))
 						ColAlt = string.ToColor(config.colors["esp_player_box"])
 						end
 						end
 						if config["esp_player_box_mode"] == 2 then
 							local XLen, YLen = MaxX - MinX, MaxY - MinY
-							SurfaceLine( MaxX, MaxY, MinX + XLen * 0.7, MaxY)
-							SurfaceLine( MinX, MaxY, MinX + XLen * 0.3, MaxY)
-							SurfaceLine( MaxX, MaxY, MaxX, MinY + YLen * 0.75)
-							SurfaceLine( MaxX, MinY, MaxX, MinY + YLen * 0.25)
-							SurfaceLine( MinX, MinY, MaxX - XLen * 0.7, MinY )
-							SurfaceLine( MaxX, MinY, MaxX - XLen * 0.3, MinY )
-							SurfaceLine( MinX, MinY, MinX, MaxY - YLen * 0.75)
-							SurfaceLine( MinX, MaxY, MinX, MaxY - YLen * 0.25)
+							surfDrawLine( MaxX, MaxY, MinX + XLen * 0.7, MaxY)
+							surfDrawLine( MinX, MaxY, MinX + XLen * 0.3, MaxY)
+							surfDrawLine( MaxX, MaxY, MaxX, MinY + YLen * 0.75)
+							surfDrawLine( MaxX, MinY, MaxX, MinY + YLen * 0.25)
+							surfDrawLine( MinX, MinY, MaxX - XLen * 0.7, MinY )
+							surfDrawLine( MaxX, MinY, MaxX - XLen * 0.3, MinY )
+							surfDrawLine( MinX, MinY, MinX, MaxY - YLen * 0.75)
+							surfDrawLine( MinX, MaxY, MinX, MaxY - YLen * 0.25)
 						elseif config["esp_player_box_mode"] == 3 then
 							cam.Start3D()
 							    if config["esp_player_box_hsv"] then
@@ -2768,32 +2807,32 @@ local function DoESP()
 						local XLen, YLen = MaxX - MinX, MaxY - MinY
 						if config["esp_player_box_hsv"] then
 						local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
-						surface.SetDrawColor(hsv.r,hsv.g,hsv.b,255)
+						surfSetDrawColor(hsv.r,hsv.g,hsv.b,255)
 						else
-						surface.SetDrawColor(string.ToColor(config.colors["esp_player_box"]))
+						surfSetDrawColor(string.ToColor(config.colors["esp_player_box"]))
                         end						
 	                    surface.SetMaterial( Material("gui/ps_hover.png") ) 
-	                    surface.DrawTexturedRect( MinX, MinY, XLen, YLen )
+	                    surfDrawTexturedRect( MinX, MinY, XLen, YLen )
                         elseif config["esp_player_box_mode"] == 5 then
 						local XLen, YLen = MaxX - MinX, MaxY - MinY
 						if config["esp_player_box_hsv"] then
 						local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
-						surface.SetDrawColor(hsv.r,hsv.g,hsv.b,255)
+						surfSetDrawColor(hsv.r,hsv.g,hsv.b,255)
 						else
-						surface.SetDrawColor(string.ToColor(config.colors["esp_player_box"]))
+						surfSetDrawColor(string.ToColor(config.colors["esp_player_box"]))
                         end	
 	                    surface.SetMaterial( Material("gui/sm_hover.png") ) 
-	                    surface.DrawTexturedRect( MinX, MinY, XLen, YLen ) 							
+	                    surfDrawTexturedRect( MinX, MinY, XLen, YLen ) 							
 						else
-							SurfaceLine( MaxX, MaxY, MinX, MaxY )
-							SurfaceLine( MaxX, MaxY, MaxX, MinY )
-							SurfaceLine( MinX, MinY, MaxX, MinY )
-							SurfaceLine( MinX, MinY, MinX, MaxY )
+							surfDrawLine( MaxX, MaxY, MinX, MaxY )
+							surfDrawLine( MaxX, MaxY, MaxX, MinY )
+							surfDrawLine( MinX, MinY, MaxX, MinY )
+							surfDrawLine( MinX, MinY, MinX, MaxY )
 						end
 					end
 					if config["esp_player_name"] then
-						surface.SetFont("ESP_Font_Main")
-						local w, h = surface.GetTextSize(v:Nick())
+						surfSetFont("ESP_Font_Main")
+						local w, h = surfGetTextSize(v:Nick())
 						local col
 						if config["esp_player_highlight_name"] then
 							if table.HasValue(config["friends"], v:SteamID()) then
@@ -2805,13 +2844,13 @@ local function DoESP()
 							col = string.ToColor(config.colors["esp_player_name"])
 						end
 						if config["name_pos"] == 1 then
-						DrawOutlinedText(v:Name(), "ESP_Font_Main", MinX-config["name_x"], MinY+config["name_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(v:Name(), "ESP_Font_Main", MinX-config["name_x"], MinY+config["name_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["name_pos"] == 2 then
-						DrawOutlinedText(v:Name(), "ESP_Font_Main", MaxX+config["name_x"], MinY+config["name_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(v:Name(), "ESP_Font_Main", MaxX+config["name_x"], MinY+config["name_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["name_pos"] == 3 then
-						DrawOutlinedText(v:Name(), "ESP_Font_Main", MaxX-(MaxX-MinX)/2-w/2+config["name_x"], MinY-config["name_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(v:Name(), "ESP_Font_Main", MaxX-(MaxX-MinX)/2-w/2+config["name_x"], MinY-config["name_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["name_pos"] == 4 then  
-						DrawOutlinedText(v:Name(), "ESP_Font_Main", MaxX-(MaxX-MinX)/2-w/2+config["name_x"], MaxY+config["name_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(v:Name(), "ESP_Font_Main", MaxX-(MaxX-MinX)/2-w/2+config["name_x"], MaxY+config["name_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						end
 					end
 					if config["esp_player_hp"] then
@@ -2825,47 +2864,47 @@ local function DoESP()
 						local appliedBar2 = (MinX - MaxX) - barlen2
 						colnormal = string.ToColor(config.colors["esp_player_hp"])
 						if config["esp_player_hp_type"] == 1 then	
-						surface.SetDrawColor(0, 0, 0, 250)
-						SurfaceLine( MinX-2, MinY, MinX-2, MaxY )
-						SurfaceLine( MinX-3, MinY, MinX-3, MaxY )
-						surface.SetDrawColor(colnormal)
-						SurfaceLine( MinX-2, MinY-appliedBar, MinX-2, MaxY )
-						SurfaceLine( MinX-3, MinY-appliedBar, MinX-3, MaxY )
+						surfSetDrawColor(0, 0, 0, 250)
+						surfDrawLine( MinX-2, MinY, MinX-2, MaxY )
+						surfDrawLine( MinX-3, MinY, MinX-3, MaxY )
+						surfSetDrawColor(colnormal)
+						surfDrawLine( MinX-2, MinY-appliedBar, MinX-2, MaxY )
+						surfDrawLine( MinX-3, MinY-appliedBar, MinX-3, MaxY )
 						elseif config["esp_player_hp_type"] == 2 then
-						surface.SetDrawColor(0, 0, 0, 250)
-						SurfaceLine( MaxX+2, MaxY, MaxX+2, MinY )
-						SurfaceLine( MaxX+3, MaxY, MaxX+3, MinY )
-                        surface.SetDrawColor(colnormal)
-						SurfaceLine( MaxX+2, MaxY, MaxX+2, MinY-appliedBar )
-						SurfaceLine( MaxX+3, MaxY, MaxX+3, MinY-appliedBar )
+						surfSetDrawColor(0, 0, 0, 250)
+						surfDrawLine( MaxX+2, MaxY, MaxX+2, MinY )
+						surfDrawLine( MaxX+3, MaxY, MaxX+3, MinY )
+                        surfSetDrawColor(colnormal)
+						surfDrawLine( MaxX+2, MaxY, MaxX+2, MinY-appliedBar )
+						surfDrawLine( MaxX+3, MaxY, MaxX+3, MinY-appliedBar )
 						elseif config["esp_player_hp_type"] == 3 then
-                        surface.SetDrawColor(0, 0, 0, 250)
-						SurfaceLine( MinX, MinY-2, MaxX, MinY-2 )
-						SurfaceLine( MinX, MinY-3, MaxX, MinY-3 )
-                        surface.SetDrawColor(colnormal)
-						SurfaceLine( MinX-appliedBar2, MinY-2, MaxX, MinY-2 )
-						SurfaceLine( MinX-appliedBar2, MinY-3, MaxX, MinY-3 )
+                        surfSetDrawColor(0, 0, 0, 250)
+						surfDrawLine( MinX, MinY-2, MaxX, MinY-2 )
+						surfDrawLine( MinX, MinY-3, MaxX, MinY-3 )
+                        surfSetDrawColor(colnormal)
+						surfDrawLine( MinX-appliedBar2, MinY-2, MaxX, MinY-2 )
+						surfDrawLine( MinX-appliedBar2, MinY-3, MaxX, MinY-3 )
 						elseif config["esp_player_hp_type"] == 4 then
-						surface.SetDrawColor(0, 0, 0, 250)
-						SurfaceLine( MinX, MaxY+2, MaxX, MaxY+2 )
-						SurfaceLine( MinX, MaxY+3, MaxX, MaxY+3 )
-                        surface.SetDrawColor(colnormal)
-						SurfaceLine( MinX-appliedBar2, MaxY+2, MaxX, MaxY+2 )
-						SurfaceLine( MinX-appliedBar2, MaxY+3, MaxX, MaxY+3 )
+						surfSetDrawColor(0, 0, 0, 250)
+						surfDrawLine( MinX, MaxY+2, MaxX, MaxY+2 )
+						surfDrawLine( MinX, MaxY+3, MaxX, MaxY+3 )
+                        surfSetDrawColor(colnormal)
+						surfDrawLine( MinX-appliedBar2, MaxY+2, MaxX, MaxY+2 )
+						surfDrawLine( MinX-appliedBar2, MaxY+3, MaxX, MaxY+3 )
 						end
 					end
 					if config["esp_player_health"] then
-						surface.SetFont("ESP_Font_Flag")
-						local w, h = surface.GetTextSize(v:Health())
+						surfSetFont("ESP_Font_Flag")
+						local w, h = surfGetTextSize(v:Health())
 						local col = string.ToColor(config.colors["esp_player_health"])
 						if config["health_pos"] == 1 then
-						DrawOutlinedText(v:Health(), "ESP_Font_Flag", MinX-config["health_x"], MinY+config["health_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(v:Health(), "ESP_Font_Flag", MinX-config["health_x"], MinY+config["health_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["health_pos"] == 2 then
-						DrawOutlinedText(v:Health(), "ESP_Font_Flag", MaxX+config["health_x"], MinY+config["health_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(v:Health(), "ESP_Font_Flag", MaxX+config["health_x"], MinY+config["health_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["health_pos"] == 3 then
-						DrawOutlinedText(v:Health(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["health_x"], MinY-config["health_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(v:Health(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["health_x"], MinY-config["health_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["health_pos"] == 4 then  
-						DrawOutlinedText(v:Health(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["health_x"], MaxY+config["health_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(v:Health(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["health_x"], MaxY+config["health_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						end
 					end
 					if config["esp_player_ap"] then
@@ -2880,146 +2919,146 @@ local function DoESP()
 						colnormal = string.ToColor(config.colors["esp_player_ap"])
 						if v:Armor() > 0 then
 						if config["esp_player_ap_type"] == 1 then	
-						surface.SetDrawColor(0, 0, 0, 225)
-						SurfaceLine( MinX-2, MinY, MinX-2, MaxY )
-						SurfaceLine( MinX-3, MinY, MinX-3, MaxY )
-						surface.SetDrawColor(colnormal)
-						SurfaceLine( MinX-2, MinY-appliedBar, MinX-2, MaxY )
-						SurfaceLine( MinX-3, MinY-appliedBar, MinX-3, MaxY )
+						surfSetDrawColor(0, 0, 0, 225)
+						surfDrawLine( MinX-2, MinY, MinX-2, MaxY )
+						surfDrawLine( MinX-3, MinY, MinX-3, MaxY )
+						surfSetDrawColor(colnormal)
+						surfDrawLine( MinX-2, MinY-appliedBar, MinX-2, MaxY )
+						surfDrawLine( MinX-3, MinY-appliedBar, MinX-3, MaxY )
 						elseif config["esp_player_ap_type"] == 2 then
-						surface.SetDrawColor(0, 0, 0, 225)
-						SurfaceLine( MaxX+2, MaxY, MaxX+2, MinY )
-						SurfaceLine( MaxX+3, MaxY, MaxX+3, MinY )
-                        surface.SetDrawColor(colnormal)
-						SurfaceLine( MaxX+2, MaxY, MaxX+2, MinY-appliedBar )
-						SurfaceLine( MaxX+3, MaxY, MaxX+3, MinY-appliedBar )
+						surfSetDrawColor(0, 0, 0, 225)
+						surfDrawLine( MaxX+2, MaxY, MaxX+2, MinY )
+						surfDrawLine( MaxX+3, MaxY, MaxX+3, MinY )
+                        surfSetDrawColor(colnormal)
+						surfDrawLine( MaxX+2, MaxY, MaxX+2, MinY-appliedBar )
+						surfDrawLine( MaxX+3, MaxY, MaxX+3, MinY-appliedBar )
 						elseif config["esp_player_ap_type"] == 3 then
-                        surface.SetDrawColor(0, 0, 0, 225)
-						SurfaceLine( MinX, MinY-2, MaxX, MinY-2 )
-						SurfaceLine( MinX, MinY-3, MaxX, MinY-3 )
-                        surface.SetDrawColor(colnormal)
-						SurfaceLine( MinX-appliedBar2, MinY-2, MaxX, MinY-2 )
-						SurfaceLine( MinX-appliedBar2, MinY-3, MaxX, MinY-3 )
+                        surfSetDrawColor(0, 0, 0, 225)
+						surfDrawLine( MinX, MinY-2, MaxX, MinY-2 )
+						surfDrawLine( MinX, MinY-3, MaxX, MinY-3 )
+                        surfSetDrawColor(colnormal)
+						surfDrawLine( MinX-appliedBar2, MinY-2, MaxX, MinY-2 )
+						surfDrawLine( MinX-appliedBar2, MinY-3, MaxX, MinY-3 )
 						elseif config["esp_player_ap_type"] == 4 then
-						surface.SetDrawColor(0, 0, 0, 225)
-						SurfaceLine( MinX, MaxY+2, MaxX, MaxY+2 )
-						SurfaceLine( MinX, MaxY+3, MaxX, MaxY+3 )
-                        surface.SetDrawColor(colnormal)
-						SurfaceLine( MinX-appliedBar2, MaxY+2, MaxX, MaxY+2 )
-						SurfaceLine( MinX-appliedBar2, MaxY+3, MaxX, MaxY+3 )
+						surfSetDrawColor(0, 0, 0, 225)
+						surfDrawLine( MinX, MaxY+2, MaxX, MaxY+2 )
+						surfDrawLine( MinX, MaxY+3, MaxX, MaxY+3 )
+                        surfSetDrawColor(colnormal)
+						surfDrawLine( MinX-appliedBar2, MaxY+2, MaxX, MaxY+2 )
+						surfDrawLine( MinX-appliedBar2, MaxY+3, MaxX, MaxY+3 )
 						end
 						end
 					end
 					if config["esp_player_armor"] then
-						surface.SetFont("ESP_Font_Flag")
-						local w, h = surface.GetTextSize(v:Armor())
+						surfSetFont("ESP_Font_Flag")
+						local w, h = surfGetTextSize(v:Armor())
 						local col = string.ToColor(config.colors["esp_player_armor"])
 					if v:Armor() > 0 or frame then
 						if config["armor_pos"] == 1 then
-						DrawOutlinedText(v:Armor(), "ESP_Font_Flag", MinX-config["armor_x"], MinY+config["armor_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(v:Armor(), "ESP_Font_Flag", MinX-config["armor_x"], MinY+config["armor_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["armor_pos"] == 2 then
-						DrawOutlinedText(v:Armor(), "ESP_Font_Flag", MaxX+config["armor_x"], MinY+config["armor_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(v:Armor(), "ESP_Font_Flag", MaxX+config["armor_x"], MinY+config["armor_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["armor_pos"] == 3 then
-						DrawOutlinedText(v:Armor(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["armor_x"], MinY-config["armor_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(v:Armor(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["armor_x"], MinY-config["armor_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["armor_pos"] == 4 then  
-						DrawOutlinedText(v:Armor(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["armor_x"], MaxY+config["armor_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(v:Armor(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["armor_x"], MaxY+config["armor_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						end
 					end
 					end
 					if config["esp_player_weapon"] then
-						surface.SetFont("ESP_Font_Flag")
+						surfSetFont("ESP_Font_Flag")
 					if IsValid(v:GetActiveWeapon()) then
-						local w, h = surface.GetTextSize(config["esp_player_weapon_fancy"] and v:GetActiveWeapon():GetPrintName() or v:GetActiveWeapon():GetClass())
+						local w, h = surfGetTextSize(config["esp_player_weapon_fancy"] and v:GetActiveWeapon():GetPrintName() or v:GetActiveWeapon():GetClass())
 						local col = string.ToColor(config.colors["esp_player_weapon"])
 						if config["wep_pos"] == 1 then
-						DrawOutlinedText(config["esp_player_weapon_fancy"] and v:GetActiveWeapon():GetPrintName() or v:GetActiveWeapon():GetClass(), "ESP_Font_Flag", MinX-config["wep_x"], MinY+config["wep_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(config["esp_player_weapon_fancy"] and v:GetActiveWeapon():GetPrintName() or v:GetActiveWeapon():GetClass(), "ESP_Font_Flag", MinX-config["wep_x"], MinY+config["wep_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["wep_pos"] == 2 then
-						DrawOutlinedText(config["esp_player_weapon_fancy"] and v:GetActiveWeapon():GetPrintName() or v:GetActiveWeapon():GetClass(), "ESP_Font_Flag", MaxX+config["wep_x"], MinY+config["wep_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(config["esp_player_weapon_fancy"] and v:GetActiveWeapon():GetPrintName() or v:GetActiveWeapon():GetClass(), "ESP_Font_Flag", MaxX+config["wep_x"], MinY+config["wep_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["wep_pos"] == 3 then
-						DrawOutlinedText(config["esp_player_weapon_fancy"] and v:GetActiveWeapon():GetPrintName() or v:GetActiveWeapon():GetClass(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["wep_x"], MinY-config["wep_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(config["esp_player_weapon_fancy"] and v:GetActiveWeapon():GetPrintName() or v:GetActiveWeapon():GetClass(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["wep_x"], MinY-config["wep_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["wep_pos"] == 4 then  
-						DrawOutlinedText(config["esp_player_weapon_fancy"] and v:GetActiveWeapon():GetPrintName() or v:GetActiveWeapon():GetClass(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["wep_x"], MaxY+config["wep_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(config["esp_player_weapon_fancy"] and v:GetActiveWeapon():GetPrintName() or v:GetActiveWeapon():GetClass(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["wep_x"], MaxY+config["wep_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						end
 					end
 					end
 					if config["esp_player_rank"] then
-						surface.SetFont("ESP_Font_Flag")
-                        local w, h = surface.GetTextSize(v:GetUserGroup())
+						surfSetFont("ESP_Font_Flag")
+                        local w, h = surfGetTextSize(v:GetUserGroup())
 						local col = string.ToColor(config.colors["esp_player_rank"])
 						if config["rank_pos"] == 1 then
-						DrawOutlinedText(v:GetUserGroup(), "ESP_Font_Flag", MinX-config["rank_x"], MinY+config["rank_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(v:GetUserGroup(), "ESP_Font_Flag", MinX-config["rank_x"], MinY+config["rank_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["rank_pos"] == 2 then
-						DrawOutlinedText(v:GetUserGroup(), "ESP_Font_Flag", MaxX+config["rank_x"], MinY+config["rank_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(v:GetUserGroup(), "ESP_Font_Flag", MaxX+config["rank_x"], MinY+config["rank_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["rank_pos"] == 3 then
-						DrawOutlinedText(v:GetUserGroup(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["rank_x"], MinY-config["rank_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(v:GetUserGroup(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["rank_x"], MinY-config["rank_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["rank_pos"] == 4 then  
-						DrawOutlinedText(v:GetUserGroup(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["rank_x"], MaxY+config["rank_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(v:GetUserGroup(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["rank_x"], MaxY+config["rank_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						end
 					end
 					if config["esp_player_team"] then
-						surface.SetFont("ESP_Font_Flag")
-                        local w, h = surface.GetTextSize(team.GetName(v:Team()))
+						surfSetFont("ESP_Font_Flag")
+                        local w, h = surfGetTextSize(team.GetName(v:Team()))
 						local col = team.GetColor(v:Team())
 						if config["tm_pos"] == 1 then
-						DrawOutlinedText(team.GetName(v:Team()), "ESP_Font_Flag", MinX-config["tm_x"], MinY+config["tm_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(team.GetName(v:Team()), "ESP_Font_Flag", MinX-config["tm_x"], MinY+config["tm_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["tm_pos"] == 2 then
-						DrawOutlinedText(team.GetName(v:Team()), "ESP_Font_Flag", MaxX+config["tm_x"], MinY+config["tm_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(team.GetName(v:Team()), "ESP_Font_Flag", MaxX+config["tm_x"], MinY+config["tm_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["tm_pos"] == 3 then
-						DrawOutlinedText(team.GetName(v:Team()), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["tm_x"], MinY-config["tm_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(team.GetName(v:Team()), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["tm_x"], MinY-config["tm_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["tm_pos"] == 4 then  
-						DrawOutlinedText(team.GetName(v:Team()), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["tm_x"], MaxY+config["tm_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(team.GetName(v:Team()), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["tm_x"], MaxY+config["tm_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						end
 					end
 					if config["esp_player_distance"] then
-						surface.SetFont("ESP_Font_Flag")
-                        local w, h = surface.GetTextSize(v:GetUserGroup())
+						surfSetFont("ESP_Font_Flag")
+                        local w, h = surfGetTextSize(v:GetUserGroup())
 						local col = string.ToColor(config.colors["esp_player_distance"])
 						local distance = math.Round((LocalPlayer():GetPos() - v:GetPos()):Length())
 						if config["ds_pos"] == 1 then
-						DrawOutlinedText("Dist:" .. distance, "ESP_Font_Flag", MinX-config["ds_x"], MinY+config["ds_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText("Dist:" .. distance, "ESP_Font_Flag", MinX-config["ds_x"], MinY+config["ds_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["ds_pos"] == 2 then
-						DrawOutlinedText("Dist:" .. distance, "ESP_Font_Flag", MaxX+config["ds_x"], MinY+config["ds_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText("Dist:" .. distance, "ESP_Font_Flag", MaxX+config["ds_x"], MinY+config["ds_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["ds_pos"] == 3 then
-						DrawOutlinedText("Dist:" .. distance, "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["ds_x"], MinY-config["ds_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText("Dist:" .. distance, "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["ds_x"], MinY-config["ds_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["ds_pos"] == 4 then  
-						DrawOutlinedText("Dist:" .. distance, "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["ds_x"], MaxY+config["ds_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText("Dist:" .. distance, "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["ds_x"], MaxY+config["ds_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						end
 					end
 					if config["esp_player_dormant_ind"] then
-						surface.SetFont("ESP_Font_Flag")
-                        local w, h = surface.GetTextSize("Dormant")
+						surfSetFont("ESP_Font_Flag")
+                        local w, h = surfGetTextSize("Dormant")
 						local col = string.ToColor(config.colors["esp_player_dormant_ind"])
 						if config["di_pos"] == 1 then
-						DrawOutlinedText("Dormant", "ESP_Font_Flag", MinX-config["di_x"], MinY+config["di_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText("Dormant", "ESP_Font_Flag", MinX-config["di_x"], MinY+config["di_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["di_pos"] == 2 then
-						DrawOutlinedText("Dormant", "ESP_Font_Flag", MaxX+config["di_x"], MinY+config["di_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText("Dormant", "ESP_Font_Flag", MaxX+config["di_x"], MinY+config["di_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["di_pos"] == 3 then
-						DrawOutlinedText("Dormant", "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["di_x"], MinY-config["di_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText("Dormant", "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["di_x"], MinY-config["di_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["di_pos"] == 4 then  
-						DrawOutlinedText("Dormant", "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["di_x"], MaxY+config["di_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText("Dormant", "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["di_x"], MaxY+config["di_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						end
 					end
 					if config["esp_player_money"] && v.DarkRPVars then
-						surface.SetFont("ESP_Font_Flag")
-                        local w, h = surface.GetTextSize(tostring(v.DarkRPVars.money).. " $")
+						surfSetFont("ESP_Font_Flag")
+                        local w, h = surfGetTextSize(tostring(v.DarkRPVars.money).. " $")
 						local col = string.ToColor(config.colors["esp_player_money"])
 						if config["mn_pos"] == 1 then
-						DrawOutlinedText(tostring(v.DarkRPVars.money).. " $", "ESP_Font_Flag", MinX-config["mn_x"], MinY+config["mn_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(tostring(v.DarkRPVars.money).. " $", "ESP_Font_Flag", MinX-config["mn_x"], MinY+config["mn_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["mn_pos"] == 2 then
-						DrawOutlinedText(tostring(v.DarkRPVars.money).. " $", "ESP_Font_Flag", MaxX+config["mn_x"], MinY+config["mn_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(tostring(v.DarkRPVars.money).. " $", "ESP_Font_Flag", MaxX+config["mn_x"], MinY+config["mn_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["mn_pos"] == 3 then
-						DrawOutlinedText(tostring(v.DarkRPVars.money).. " $", "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["mn_x"], MinY-config["mn_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(tostring(v.DarkRPVars.money).. " $", "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["mn_x"], MinY-config["mn_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["mn_pos"] == 4 then  
-						DrawOutlinedText(tostring(v.DarkRPVars.money) .. " $", "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["mn_x"], MaxY+config["mn_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(tostring(v.DarkRPVars.money) .. " $", "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["mn_x"], MaxY+config["mn_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						end
 					end
 					if config["esp_player_snaplines"] then
 					if config["esp_player_snaplines_pos"] == 1 then
-						surface.SetDrawColor( string.ToColor(config.colors["esp_player_snaplines"]))
-						SurfaceLine( ScrW() / 2 - 1, ScrH() , MaxX - ( MaxX - MinX ) / 2 - 1, MaxY )
+						surfSetDrawColor( string.ToColor(config.colors["esp_player_snaplines"]))
+						surfDrawLine( ScrW() / 2 - 1, ScrH() , MaxX - ( MaxX - MinX ) / 2 - 1, MaxY )
 					elseif config["esp_player_snaplines_pos"] == 2 then
-					    surface.SetDrawColor( string.ToColor(config.colors["esp_player_snaplines"]))
-						SurfaceLine( ScrW() / 2 , ScrH() / 2 , MaxX - ( MaxX - MinX ) / 2 - 1, MaxY )
+					    surfSetDrawColor( string.ToColor(config.colors["esp_player_snaplines"]))
+						surfDrawLine( ScrW() / 2 , ScrH() / 2 , MaxX - ( MaxX - MinX ) / 2 - 1, MaxY )
 				    elseif config["esp_player_snaplines_pos"] == 3 && config["esp_player_snaplines"] then
 
 					end
@@ -3034,8 +3073,8 @@ local function DoESP()
 							if v:LookupBone(b.S) != nil && v:LookupBone(b.E) != nil then
 								local spos, epos = v:GetBonePosition(v:LookupBone(b.S)):ToScreen(), v:GetBonePosition(v:LookupBone(b.E)):ToScreen()
 								if spos.visible && epos.visible then
-									surface.SetDrawColor( string.ToColor(config.colors["esp_player_skeleton"]) )
-									SurfaceLine( spos.x, spos.y, epos.x, epos.y )
+									surfSetDrawColor( string.ToColor(config.colors["esp_player_skeleton"]) )
+									surfDrawLine( spos.x, spos.y, epos.x, epos.y )
 								end
 							end
 						end
@@ -3054,15 +3093,15 @@ local function DoESP()
 						end
 					end
 					if v.Traitor then
-						surface.SetFont("ESP_Font_Flag")
-						local w, h = surface.GetTextSize("Traitor")
-						DrawOutlinedText("Traitor", "ESP_Font_Flag", MaxX+5, MinY + h, Color(255, 0, 0) , TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						surfSetFont("ESP_Font_Flag")
+						local w, h = surfGetTextSize("Traitor")
+						drawSimpleOutlinedText("Traitor", "ESP_Font_Flag", MaxX+5, MinY + h, Color(255, 0, 0) , TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 					end
 					if config["misc_ttt"] && engine.ActiveGamemode() == "murder" then
 						if v:HasWeapon("weapon_mu_knife") then
-							surface.SetFont("ESP_Font_Flag")
-							local w, h = surface.GetTextSize("Murderer")
-							DrawOutlinedText("Murderer", "ESP_Font_Flag", MaxX+5, MinY + h, Color(255, 0, 0) , TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))	
+							surfSetFont("ESP_Font_Flag")
+							local w, h = surfGetTextSize("Murderer")
+							drawSimpleOutlinedText("Murderer", "ESP_Font_Flag", MaxX+5, MinY + h, Color(255, 0, 0) , TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))	
 						end 	
 					end
 				end
@@ -3073,16 +3112,16 @@ local function DoESP()
 				if v && v:GetOwner() != LocalPlayer() && IsValid(v) && v:GetPos():Distance(LocalPlayer():GetPos()) <= config["esp_player_render_distance"] then
 					local MaxX, MaxY, MinX, MinY, V1, V2, V3, V4, V5, V6, V7, V8, isVis = GetENTPos( v )
 					if config["esp_entity_box"] then
-						surface.SetDrawColor(string.ToColor(config.colors["esp_entity_box"]))
-						SurfaceLine( MaxX, MaxY, MinX, MaxY )
-						SurfaceLine( MaxX, MaxY, MaxX, MinY )
-						SurfaceLine( MinX, MinY, MaxX, MinY )
-						SurfaceLine( MinX, MinY, MinX, MaxY )
+						surfSetDrawColor(string.ToColor(config.colors["esp_entity_box"]))
+						surfDrawLine( MaxX, MaxY, MinX, MaxY )
+						surfDrawLine( MaxX, MaxY, MaxX, MinY )
+						surfDrawLine( MinX, MinY, MaxX, MinY )
+						surfDrawLine( MinX, MinY, MinX, MaxY )
 					end
 					if config["esp_entity_name"] then
-						surface.SetFont("ESP_Font_Flag")
-						local w, h = surface.GetTextSize(v:GetClass())
-						DrawOutlinedText(v:GetClass(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2, MinY-1, string.ToColor(config.colors["esp_entity_name"]), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						surfSetFont("ESP_Font_Flag")
+						local w, h = surfGetTextSize(v:GetClass())
+						drawSimpleOutlinedText(v:GetClass(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2, MinY-1, string.ToColor(config.colors["esp_entity_name"]), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 					end
 				end
 			end
@@ -3090,15 +3129,15 @@ local function DoESP()
 		if config["misc_observerlist"] then
 			for k, v in ipairs(observingPlayers.watcher) do
 				if IsValid(v) then
-					surface.SetFont("ESP_Font_Main")
-					local nameWidth, nameHeight = surface.GetTextSize("Observer: "..v:Name())
+					surfSetFont("ESP_Font_Main")
+					local nameWidth, nameHeight = surfGetTextSize("Observer: "..v:Name())
 					draw.SimpleText("Observer: "..v:Name(), "ESP_Font_Main", ScrW() - nameWidth - 2, 0 + (15 * ( k - 1 ) ), Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
 				end
 			end
 			for k, v in ipairs(observingPlayers.spec) do
 				if IsValid(v) then
-	 				surface.SetFont("ESP_Font_Main")
-					local nameWidth, nameHeight = surface.GetTextSize("Spectator: "..v:Name())
+	 				surfSetFont("ESP_Font_Main")
+					local nameWidth, nameHeight = surfGetTextSize("Spectator: "..v:Name())
 					draw.SimpleText("Spectator: "..v:Name(), "ESP_Font_Main", ScrW() - nameWidth - 2, -15 + (15 * #observingPlayers.watcher) + (15 * k - 1), Color(255, 0, 0), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
 				end
 			end
@@ -3108,8 +3147,8 @@ local function DoESP()
 				if IsValid(v) then
 					local a
 					if v:IsSuperAdmin() then a = "Superadmin" elseif v:IsAdmin() then a = "Admin" else a = v:GetUserGroup() end
-					surface.SetFont("ESP_Font_Main")
-					local nameWidth, nameHeight = surface.GetTextSize(v:Name().." ("..a..")")
+					surfSetFont("ESP_Font_Main")
+					local nameWidth, nameHeight = surfGetTextSize(v:Name().." ("..a..")")
 					draw.SimpleText(v:Name().." ("..a..")", "ESP_Font_Main", 2, 0 + (15 * ( k - 1 ) ), Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
 				end
 			end
@@ -3122,18 +3161,18 @@ local function DoESP()
 		cam.End3D()
 		end
 		if config["esp_npc_name"] then
-		surface.SetFont("ESP_Font_Main")
-		local w, h = surface.GetTextSize(v:GetClass())
-		DrawOutlinedText(v:GetClass(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2, MinY-1, string.ToColor(config.colors["esp_npc_name"]), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+		surfSetFont("ESP_Font_Main")
+		local w, h = surfGetTextSize(v:GetClass())
+		drawSimpleOutlinedText(v:GetClass(), "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2, MinY-1, string.ToColor(config.colors["esp_npc_name"]), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 		end
 		if config["esp_npc_health"] then
-		surface.SetFont("ESP_Font_Main")
-		local w, h = surface.GetTextSize(v:GetClass())
-		DrawOutlinedText(v:Health() .. "HP", "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2, MinY-10, string.ToColor(config.colors["esp_npc_health"]), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+		surfSetFont("ESP_Font_Main")
+		local w, h = surfGetTextSize(v:GetClass())
+		drawSimpleOutlinedText(v:Health() .. "HP", "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2, MinY-10, string.ToColor(config.colors["esp_npc_health"]), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 		end
 		if config["esp_npc_snaplines"] then
-		surface.SetDrawColor( string.ToColor(config.colors["esp_npc_snaplines"]))
-		SurfaceLine( ScrW() / 2 - 1, ScrH() , MaxX - ( MaxX - MinX ) / 2 - 1, MaxY )
+		surfSetDrawColor( string.ToColor(config.colors["esp_npc_snaplines"]))
+		surfDrawLine( ScrW() / 2 - 1, ScrH() , MaxX - ( MaxX - MinX ) / 2 - 1, MaxY )
 		end
 	    end
 	end
@@ -3172,6 +3211,9 @@ end
 
 SwapRender(true)
 
+end
+
+do
 --================HUD============--
 --keystrokes
 surface.CreateFont("KeyStroke", {
@@ -3187,12 +3229,12 @@ local color_black = Color(20, 20, 20)
 local gray = Color(30, 30, 30)
 local size = 35
     if LocalPlayer():KeyDown(key) then
-        surface.SetDrawColor(rainbow_col.r, rainbow_col.g, rainbow_col.b)
-        surface.DrawRect(x, y, size * 3, size)
+        surfSetDrawColor(rainbow_col.r, rainbow_col.g, rainbow_col.b)
+        surfDrawRect(x, y, size * 3, size)
         draw.SimpleText(""..text.."", "KeyStroke", x+26, y+7, color_black)
     else
-        surface.SetDrawColor(gray)
-        surface.DrawRect(x, y, size * 3, size)
+        surfSetDrawColor(gray)
+        surfDrawRect(x, y, size * 3, size)
         draw.SimpleText(""..text.."", "KeyStroke", x+26, y+7, color_white)
     end
 end
@@ -3202,13 +3244,13 @@ local color_white = Color(255,255,255)
 local color_black = Color(20, 20, 20)
 local gray = Color(30, 30, 30)
 local size = 35
-    surface.SetDrawColor(rainbow_col.r, rainbow_col.g, rainbow_col.b, 100)
+    surfSetDrawColor(rainbow_col.r, rainbow_col.g, rainbow_col.b, 100)
     if LocalPlayer():KeyDown(key) then 
-        surface.DrawRect(x, y, size, size)
+        surfDrawRect(x, y, size, size)
         draw.SimpleText(""..text.."", "KeyStroke", x+11, y+7, color_black)
     else
-        surface.SetDrawColor(gray)
-        surface.DrawRect(x, y, size, size)
+        surfSetDrawColor(gray)
+        surfDrawRect(x, y, size, size)
         draw.SimpleText(""..text.."", "KeyStroke", x+11, y+7, color_white)
     end
 end
@@ -3218,13 +3260,13 @@ local color_white = Color(255,255,255)
 local color_black = Color(20, 20, 20)
 local gray = Color(30, 30, 30)
 local size = 53
-    surface.SetDrawColor(rainbow_col.r, rainbow_col.g, rainbow_col.b, 100)
+    surfSetDrawColor(rainbow_col.r, rainbow_col.g, rainbow_col.b, 100)
     if LocalPlayer():KeyDown(key) then 
-        surface.DrawRect(x, y, size, 35)
+        surfDrawRect(x, y, size, 35)
         draw.SimpleText(""..text.."", "KeyStroke", x+11, y+7, color_black)
     else
-        surface.SetDrawColor(gray)
-        surface.DrawRect(x, y, size, 35)
+        surfSetDrawColor(gray)
+        surfDrawRect(x, y, size, 35)
         draw.SimpleText(""..text.."", "KeyStroke", x+11, y+7, color_white)
     end
 end
@@ -3235,31 +3277,31 @@ local cur_fps = tostring(math.floor(1 / RealFrameTime()))
     if !ss then
 	    if config["hud_velo"] then
 		    local velo = math.Round(LocalPlayer():GetVelocity():Length())		    
-			surface.SetDrawColor( -velo / 50, velo*3, 0, 200 ) 
+			surfSetDrawColor( -velo / 50, velo*3, 0, 200 ) 
 	        surface.SetMaterial(Material("gui/center_gradient")) 
-	        surface.DrawTexturedRect( ((ScrW()/2) - 250), (ScrH()-100), 512, 18 )
+	        surfDrawTexturedRect( ((ScrW()/2) - 250), (ScrH()-100), 512, 18 )
 			draw.SimpleText( velo, "TargetID", (ScrW()/2), ScrH() - 100, Color(255 ,255,255) )
 		end
 	    if config["esp_ent_crosshair"] then
 		    draw.SimpleText( LocalPlayer():GetEyeTrace().Entity, "smallest_pixel", (ScrW()/2) - 100, ScrH() / 2 + 65, color_white )
 		end
         if config["hud_watermark"] then
-		    surface.SetDrawColor( 25, 25, 25, 200 ) 
+		    surfSetDrawColor( 25, 25, 25, 200 ) 
 	        surface.SetMaterial(Material("gui/gradient")) 
-	        surface.DrawTexturedRect( 0, 0, 512, 18 )
+	        surfDrawTexturedRect( 0, 0, 512, 18 )
             draw.SimpleText( "PenisDeda.NET V2|BETA|username: " .. LocalPlayer():Name() .. " |gm: " .. engine.ActiveGamemode(), "smallest_pixel", 0, 0, color_white )
         end
         if config["hud_fps_indicator"] then
 		if config["hud_watermark"] then
-		surface.SetDrawColor( 25, 25, 25, 200 ) 
+		surfSetDrawColor( 25, 25, 25, 200 ) 
 	    surface.SetMaterial(Material("gui/gradient")) 
-	    surface.DrawTexturedRect( 0, 19, 512, 18 )
+	    surfDrawTexturedRect( 0, 19, 512, 18 )
 		draw.SimpleText( "Frames:" .. cur_fps , "smallest_pixel", 0, 19, color_white )
 		draw.SimpleText( " |latency:" .. LocalPlayer():Ping() .. " |tick:"..math.Round(1/engine.TickInterval()-1), "smallest_pixel", 70, 19, color_white )
 		else
-		surface.SetDrawColor( 25, 25, 25, 200 ) 
+		surfSetDrawColor( 25, 25, 25, 200 ) 
 	    surface.SetMaterial(Material("gui/gradient")) 
-	    surface.DrawTexturedRect( 0, 0, 512, 18 )
+	    surfDrawTexturedRect( 0, 0, 512, 18 )
 		draw.SimpleText( "Frames:" .. cur_fps , "smallest_pixel", 0, 0, color_white )
 		draw.SimpleText( " |latency:" .. LocalPlayer():Ping() .. " |tick:"..math.Round(1/engine.TickInterval()-1), "smallest_pixel", 70, 0, color_white )
         end		
@@ -3270,18 +3312,18 @@ local cur_fps = tostring(math.floor(1 / RealFrameTime()))
 		if config["hud_topline"] then
 		local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
 		    if config["hud_topline_style"] == 1 then
-			surface.SetDrawColor(0,0,0,255)
-            surface.DrawRect(0, 0, ScrW(), 4)
-			surface.SetDrawColor(hsv.r,hsv.g,hsv.b,255)
-            surface.DrawRect(1, 1, ScrW(), 2)
+			surfSetDrawColor(0,0,0,255)
+            surfDrawRect(0, 0, ScrW(), 4)
+			surfSetDrawColor(hsv.r,hsv.g,hsv.b,255)
+            surfDrawRect(1, 1, ScrW(), 2)
 			elseif config["hud_topline_style"] == 2 then
-			surface.SetDrawColor(hsv.r,hsv.g,hsv.b,255)
-            surface.DrawRect(0, 0, ScrW(), 4)
+			surfSetDrawColor(hsv.r,hsv.g,hsv.b,255)
+            surfDrawRect(0, 0, ScrW(), 4)
 			elseif config["hud_topline_style"] == 3 then
-			surface.SetDrawColor(hsv.r,hsv.g,hsv.b,200)
-            surface.DrawRect(0, 0, ScrW(), 4)
+			surfSetDrawColor(hsv.r,hsv.g,hsv.b,200)
+            surfDrawRect(0, 0, ScrW(), 4)
 	        surface.SetMaterial(Material("gui/gradient_down"))
-	        surface.DrawTexturedRect( 0, 4, ScrW(), 15 )
+	        surfDrawTexturedRect( 0, 4, ScrW(), 15 )
 			end
 		end
 		if config["hud_arraylist"] then
@@ -3316,10 +3358,10 @@ local cur_fps = tostring(math.floor(1 / RealFrameTime()))
 		end
 		if config["hud_crosshair"] then
 		if config["hud_crosshair_type"] == 1 then
-		surface.SetDrawColor(0,0,0,255)
-        surface.DrawRect(ScrW() / 2 - 2, ScrH() / 2 - 2, 4, 4)
-		surface.SetDrawColor(0,255,0,255)
-        surface.DrawRect((ScrW() / 2) - 1, (ScrH() / 2) - 1, 2, 2)
+		surfSetDrawColor(0,0,0,255)
+        surfDrawRect(ScrW() / 2 - 2, ScrH() / 2 - 2, 4, 4)
+		surfSetDrawColor(0,255,0,255)
+        surfDrawRect((ScrW() / 2) - 1, (ScrH() / 2) - 1, 2, 2)
 		elseif config["hud_crosshair_type"] == 2 then
 		draw.SimpleText( "卐", "Trebuchet24", ScrW() / 2, ScrH() / 2, color_white, TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER )
 		end
@@ -3358,7 +3400,7 @@ local cur_fps = tostring(math.floor(1 / RealFrameTime()))
 		local X2 = math.tan( math.rad( LocalPlayer():GetFOV() / 2 ) )
 		local r = X1 / X2
 		local pxR = r * ( ScrW() / 2 )
-		surface.DrawCircle(ScrW() / 2, ScrH() / 2, pxR, string.ToColor(config.colors["esp_other_drawfov"]))
+		surfDrawCircle(ScrW() / 2, ScrH() / 2, pxR, string.ToColor(config.colors["esp_other_drawfov"]))
 	    end
 		if config["esp_other_drawfov_fill"] && config["aim_master_toggle"] then
 		local X1 = math.tan( math.rad( config["aim_fov"] ) / 1.25 )
@@ -3366,12 +3408,12 @@ local cur_fps = tostring(math.floor(1 / RealFrameTime()))
 		local r = X1 / X2
 		local pxR = r * ( ScrW() / 2 )
 		local col = string.ToColor(config.colors["esp_other_drawfov"])
-		surface.SetDrawColor(col.r,col.g,col.b,col.a/2.5)
+		surfSetDrawColor(col.r,col.g,col.b,col.a/2.5)
 	    surface.SetMaterial(Material("vgui/white"))
 		draw.Circle(ScrW() / 2, ScrH() / 2,pxR,30)
 	    end
 		if config["esp_self_velocity_crosshair"] then
-		surface.SetDrawColor(string.ToColor(config.colors["esp_self_velocity_crosshair"]))
+		surfSetDrawColor(string.ToColor(config.colors["esp_self_velocity_crosshair"]))
 	    surface.SetMaterial(Material("vgui/white"))
 		draw.Circle(ScrW() / 2, ScrH() / 2,LocalPlayer():GetVelocity():Length() / 4,180)
 		end
@@ -3385,11 +3427,11 @@ if config["hud_aimbotstatus"] then
 	local pos = LocalPlayer():GetBonePosition(LocalPlayer():LookupBone("ValveBiped.Bip01_Pelvis"))		
 	cam.Start3D2D( pos, angle, 1 )
 	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
-	    surface.SetDrawColor( hsv.r, hsv.g, hsv.b, 50 )
+	    surfSetDrawColor( hsv.r, hsv.g, hsv.b, 50 )
 	    surface.SetMaterial(Material("vgui/white"))
 		draw.Circle( 0, 0, 135 + math.sin( CurTime() ) * 15, 30 )
-		surface.DrawCircle( 0, 0, 135 + math.sin( CurTime() ) * 15, Color( hsv.r, hsv.g, hsv.b ) )
-		surface.DrawCircle( 1, 0, 135 + math.sin( CurTime() ) * 15, Color( hsv.r, hsv.g, hsv.b ) )
+		surfDrawCircle( 0, 0, 135 + math.sin( CurTime() ) * 15, Color( hsv.r, hsv.g, hsv.b ) )
+		surfDrawCircle( 1, 0, 135 + math.sin( CurTime() ) * 15, Color( hsv.r, hsv.g, hsv.b ) )
 	cam.End3D2D()
 end
 if config["esp_self_hat"] && config["esp_self_hat_type"] == 1 && !config["esp_self_customagent"] then
@@ -3398,8 +3440,8 @@ local angle = Angle( 0, 0, 0 )
 local pos = LocalPlayer():GetBonePosition(LocalPlayer():LookupBone("ValveBiped.Bip01_Head1")) + Vector(0,0,10)	
 	cam.Start3D2D( pos, angle, 1 )
 	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
-	    surface.SetDrawColor( hsv.r, hsv.g, hsv.b, 50 )
-		surface.DrawCircle( 0, 0, 5, Color( hsv.r, hsv.g, hsv.b ) )
+	    surfSetDrawColor( hsv.r, hsv.g, hsv.b, 50 )
+		surfDrawCircle( 0, 0, 5, Color( hsv.r, hsv.g, hsv.b ) )
 	cam.End3D2D()
 else end
 end
@@ -3408,6 +3450,9 @@ end )
 AddHook("HUDPaint", RandomString(), HackHUD)
 --Hats
 
+end
+
+do
 local hatmodel = ClientsideModel( "models/player/items/humans/top_hat.mdl" )
 hatmodel:SetNoDraw( true )
 
@@ -3496,6 +3541,10 @@ for k, v in ipairs(player.GetAll()) do
 end
 end
 end)
+
+end
+
+do
 --Смачная зигота !!
 local function DEG2RAD(x) return x * math.pi / 180 end
 local function RAD2DEG(x) return x * 180 / math.pi end
@@ -3539,9 +3588,9 @@ local function draw_svaston(x, y, size)
         local p_2 =((a / math.cos(gamma)) * math.sin(DEG2RAD(rotationdegree + (i * 90) + RAD2DEG(gamma))))
         local p_3 =((a / math.cos(gamma)) * math.cos(DEG2RAD(rotationdegree + (i * 90) + RAD2DEG(gamma))))
 
-        surface.SetDrawColor(hsv2rgb(rainbow,1, 1, 1))
-        surface.DrawLine(x, y, x + p_0, y - p_1)
-        surface.DrawLine(x + p_0, y - p_1, x + p_2, y - p_3)
+        surfSetDrawColor(hsv2rgb(rainbow,1, 1, 1))
+        surfDrawLine(x, y, x + p_0, y - p_1)
+        surfDrawLine(x + p_0, y - p_1, x + p_2, y - p_3)
     end
     rotationdegree = rotationdegree + (frametime * 150)
 end
@@ -3568,6 +3617,11 @@ local hidecrosshair = {
 }
 AddHook( "HUDShouldDraw", RandomString(), function( name ) if config["hud_disable_hl2_hud"] then if ( hide[ name ] ) then return false end end end)
 AddHook( "HUDShouldDraw", RandomString(), function( name ) if config["hud_crosshair"] then if ( hidecrosshair[ name ] ) then return false end end end)
+
+end
+
+
+do
 -- ======================= Bullet Tracers
 -- Self
 tracerTable = {}
@@ -3648,11 +3702,11 @@ if config["esp_player_hitmarker"] then
             continue;
         end
         v[2] = v[2] - FrameTime()
-        surface.SetDrawColor(255, 255,255)
-        surface.DrawLine( pos.x - 8, pos.y - 8, pos.x - 2, pos.y - 2 )
-        surface.DrawLine( pos.x - 8, pos.y + 8, pos.x - 2, pos.y + 2 )
-        surface.DrawLine( pos.x + 8, pos.y - 8, pos.x + 2, pos.y - 2 )
-        surface.DrawLine( pos.x + 8, pos.y + 8, pos.x + 2, pos.y + 2 )
+        surfSetDrawColor(255, 255,255)
+        surfDrawLine( pos.x - 8, pos.y - 8, pos.x - 2, pos.y - 2 )
+        surfDrawLine( pos.x - 8, pos.y + 8, pos.x - 2, pos.y + 2 )
+        surfDrawLine( pos.x + 8, pos.y - 8, pos.x + 2, pos.y - 2 )
+        surfDrawLine( pos.x + 8, pos.y + 8, pos.x + 2, pos.y + 2 )
     end
 end
 end)
@@ -3669,6 +3723,10 @@ AddHook("PlayerTraceAttack", RandomString(), function (ent, dmg, dir, trace)
 end)
 -- ======================= KillStreak counter
 
+end
+
+
+do
 -- ======================= Event Logger
 
 AddHook("player_connect", RandomString(), function(data)
@@ -3719,7 +3777,7 @@ local hurter = nil
     end
 end)
 
-do
+
 
 local csaysss = {
 	[1] = {
@@ -3784,6 +3842,8 @@ local attacker = Entity(data.entindex_attacker)
 end)
 
 end
+
+do
 -- ======================= Sights
 AddHook("HUDPaint", RandomString(), function()
     if !ss then
@@ -3920,7 +3980,12 @@ AddHook("RenderScreenspaceEffects", RandomString(), function()
 		end
 	end
 end)
+
+end
+
 -- ======================= Fog
+
+do
 
 AddHook("SetupWorldFog", RandomString(), function()
 	if !ss then
@@ -4058,8 +4123,8 @@ if config["esp_other_skyboxrect"] then
 render.OverrideDepthEnable( true, false )
 cam.Start2D()
 color = string.ToColor(config.colors["esp_other_skyboxrect"])
-surface.SetDrawColor(color.r, color.g, color.b)
-surface.DrawRect(0,0,ScrW(), ScrH())
+surfSetDrawColor(color.r, color.g, color.b)
+surfDrawRect(0,0,ScrW(), ScrH())
 cam.End2D()
 render.OverrideDepthEnable( false, false )
 end
@@ -4146,8 +4211,11 @@ end
 AddHook("PostRender", RandomString(), EndOfLightingMod)
 AddHook("PreDrawHUD", RandomString(), EndOfLightingMod)
 
+end
+
 --=================================== Camera Modifications
 
+do
 
 AddHook("CalcView", RandomString(), function(ply, pos, ang, fov, origin )
 	if ss then return end
@@ -4236,16 +4304,6 @@ if !config["esp_other_thirdperson"] && intp && config["esp_other_thirdperson_wal
 end
 end)
  
-AddHook("CalcView", RandomString(), function(p, o, a, f)
-    if config["aim_nospread"] then
-    local view = {};
-    view.angles = (fa && fa || a);
-    view.fov = f;
-    view.origin = o;
-    return view;
-    end
-end);
- 
 local OEyeAngles = OEyeAngles or FindMetaTable( "Player" ).SetEyeAngles
 
 FindMetaTable( "Player" ).SetEyeAngles = function( self, angle )
@@ -4256,7 +4314,11 @@ FindMetaTable( "Player" ).SetEyeAngles = function( self, angle )
 
 end
 
+end
+
 --=================================== CreateMove (Aimbot, Triggerbot, BHop, AutoStrafe, Autofire, Misc Calcs)
+
+do
 
 local predictedWeapons = {
 	["weapon_crossbow"] = 3110
@@ -4265,7 +4327,7 @@ local predictedWeapons = {
 local pred, realAng
 
 local function FixMovement(cmd, fa)
-	
+	if config["movement_fix"] == 1 then
 	local vec = Vector(cmd:GetForwardMove(), cmd:GetSideMove(), 0)
 	local vel = math.sqrt(vec.x * vec.x + vec.y * vec.y)
 	local mang = vec:Angle()
@@ -4274,12 +4336,17 @@ local function FixMovement(cmd, fa)
 	if ( ( cmd:GetViewAngles().p + 90 ) % 360 ) > 180 then
 		yaw = 180 - yaw
 	end
-
 	yaw = ( ( yaw + 180 ) % 360 ) - 180
-
 	cmd:SetForwardMove( math.cos( math.rad( yaw ) ) * vel )
 	cmd:SetSideMove( math.sin( math.rad( yaw ) ) * vel )
-
+    elseif config["movement_fix"] == 2 then
+    vec = Vector( cmd:GetForwardMove(), cmd:GetSideMove(), cmd:GetUpMove() )
+    vel = math.sqrt( vec.x * vec.x + vec.y * vec.y )
+    mang = vec:Angle()
+    yaw = math.rad( cmd:GetViewAngles().y - fa.y + mang.y )
+    cmd:SetForwardMove( (math.cos(yaw) * vel) * 1 )
+    cmd:SetSideMove( math.sin(yaw) * vel )
+    end
 end
 
 local function GetAngleDiffrence(from, to)
@@ -4729,8 +4796,6 @@ local function YawAA(ucmd)
 end
 --===========Nospread/Norecoil
 
-local e, err = pcall(function() require("dickwrap") end);
-if(err) then print("badv"); return; end
 local ofb = em.FireBullets;
 local cones = {};
 local nullvec = Vector() * -1;
@@ -4813,14 +4878,15 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 		    if LocalPlayer():KeyDown(IN_DUCK) then ucmd:RemoveKey(IN_DUCK) end
 		end
     end
-	if config["aim_silent"] && !config["antihit_antiaim"] then
-		if(!realAng) then realAng = ucmd:GetViewAngles() end
-		realAng = realAng + Angle(ucmd:GetMouseY() * .023, ucmd:GetMouseX() * -.023, 0)
-		realAng.x = math.NormalizeAngle(realAng.x)
-		realAng.p = math.Clamp(realAng.p, -89, 89)
-		if ucmd:CommandNumber() == 0 then ucmd:SetViewAngles(realAng) return end
-	else
-		if ucmd:CommandNumber() == 0 then return end
+	if config["aim_silent"] then
+	    if(!realAng) then realAng = ucmd:GetViewAngles(); end
+	    realAng = realAng + Angle(ucmd:GetMouseY() * .023, ucmd:GetMouseX() * -.023, 0);
+	    realAng.x = math.NormalizeAngle(realAng.x);
+	    realAng.p = math.Clamp(realAng.p, -89, 89);
+	    if(ucmd:CommandNumber() == 0) then
+		    ucmd:SetViewAngles(realAng);
+		    return;
+        end
 	end
 	if config["misc_scrollattack"] then
 	ScrollAttack(ucmd)
@@ -5065,6 +5131,10 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 								AimSpot = Prediction(v, AimSpot)
 
 							end
+							
+							if config["aim_prediction"] then							    
+								AimSpot = VelocityPrediction(AimSpot, v)
+							end
 
 							local FinAngle = ( AimSpot - CurPos ):Angle()
 							FinAngle:Normalize()
@@ -5224,13 +5294,13 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 	end
 end)
 
-
---==========NoSpread 
+end
 
 --===================================
 --=================================== Misc
 --===================================
 
+do
 
 --Fall Prediction
 isCanTrace = true
@@ -5284,15 +5354,15 @@ AddHook("HUDPaint",RandomString(),function()
             local g = e.y
             cam.End3D()
             cam.Start2D()
-            surface.SetFont("56")
-            local h = surface.GetTextSize(tostring(d.num))
-            surface.SetTextColor(0, 0, 0, 255 * d.life)
-            surface.SetTextPos(f - h / 2, g)
-            surface.DrawText(tostring(d.num))
-            surface.SetFont("45")
-            surface.SetTextColor(255, 45 - d.num, 45 - d.num, 255 * d.life)
-            surface.SetTextPos(f - h / 2, g)
-            surface.DrawText(tostring(d.num))
+            surfSetFont("56")
+            local h = surfGetTextSize(tostring(d.num))
+            surfSetTextColor(0, 0, 0, 255 * d.life)
+            surfSetTextPos(f - h / 2, g)
+            surfDrawText(tostring(d.num))
+            surfSetFont("45")
+            surfSetTextColor(255, 45 - d.num, 45 - d.num, 255 * d.life)
+            surfSetTextPos(f - h / 2, g)
+            surfDrawText(tostring(d.num))
             d.pos = d.pos + Vector(0, 0, RealFrameTime() * 32)
             d.pos = d.pos + d.vec * RealFrameTime() * 8
             d.life = d.life - RealFrameTime() * 1 / 0.75
@@ -5483,6 +5553,8 @@ for k, v in pairs(player.GetAll()) do
     end
 end
 end)
+
+end
 --=================================== TTT
 
 for _,v in ipairs(player.GetAll()) do
@@ -5567,10 +5639,39 @@ end)
 
 eventListOpen()
 --==================== Injection Welcome Message Thing
-print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
-MsgC(Color(255, 235, 200), "PenisDeda" .. penisversion .. "loaded! \n")
+--[[function AnarchySign()
+color_red = Color(255, 25, 25)
+draw.RoundedBox( 0, 0, 0, ScrW(), ScrH(), Color(12,12,12,200) )
+draw.SimpleText( "████████████████████████████████████████", "DermaDefault", 15, 15, color_red )
+draw.SimpleText( "████████████████░░██████████████████████", "DermaDefault", 15, 35, color_red )
+draw.SimpleText( "███████████████▀░░░▀▀▀▀▀▀███████████████", "DermaDefault", 15, 55, color_red )
+draw.SimpleText( "███████████▀▀░░░░░░░░░░░░░░▀▀███████████", "DermaDefault", 15, 75, color_red )
+draw.SimpleText( "████████▀░░░░▄▄░░░▄░░▀███▄▄░░░░▀████████", "DermaDefault", 15, 95, color_red )
+draw.SimpleText( "█████▀░░▄████▀░░▄████░░░███████▄░░▀█████", "DermaDefault", 15, 115, color_red )
+draw.SimpleText( "████▀░░▄█████░░░██████░░░▀██████▄░░▀████", "DermaDefault", 15, 135, color_red )
+draw.SimpleText( "████░░██████░░▄███████▀▀░░░░░░░░░░░░▄▄██", "DermaDefault", 15, 155, color_red )
+draw.SimpleText( "████░░█████░░░▀▀▀░░░░░░░░▄░░░▄████░░████", "DermaDefault", 15, 175, color_red )
+draw.SimpleText( "███▀░░░▀░░░░░░░░▄▄▄▄▄██████░░░▀██░░░████", "DermaDefault", 15, 195, color_red )
+draw.SimpleText( "██▄░░░░░▄▄░░░███████████████▄░░▀▀░░▄████", "DermaDefault", 15, 215, color_red )
+draw.SimpleText( "██████▄░░▀░░░█████████████████▄░░░░▄████", "DermaDefault", 15, 235, color_red )
+draw.SimpleText( "██████▄░░░░░█████████████████▀░░░░██████", "DermaDefault", 15, 255, color_red )
+draw.SimpleText( "████████░░░░░▀▀██████████▀▀░░░░▄░░░▀████", "DermaDefault", 15, 275, color_red )
+draw.SimpleText( "███████▀░░▄▄▄░░░░░░░░░░░░░░▄▄████▄░░▀███", "DermaDefault", 15, 295, color_red )
+draw.SimpleText( "███████░░░█████▄▄▄▄▄▄▄▄▄▄█████████▄▄▄███", "DermaDefault", 15, 315, color_red )
+draw.SimpleText( "██████▄▄▄███████████████████████████████", "DermaDefault", 15, 335, color_red )
+draw.SimpleText( "████████████████████████████████████████", "DermaDefault", 15, 355, color_red )
 
-notification.AddLegacy("Loaded PenisDeda " .. penisversion .."  | " .. os.date("%I:%M %p"), NOTIFY_HINT, 5)
+draw.SimpleText( "PenisDeda.LUA Activated!", "Trebuchet24", 15, 365, color_red )
+end
+AddHook("HUDPaint", "LoadingScreen", AnarchySign)
+
+timer.Create("LoadingScreen", 3, 1, function() hook.Remove("HUDPaint", "LoadingScreen") end)]]
+
+
+MsgC(Color(255, 25, 25), "\n████████████████████████████████████████\n████████████████░░██████████████████████\n███████████████▀░░░▀▀▀▀▀▀███████████████\n███████████▀▀░░░░░░░░░░░░░░▀▀███████████\n████████▀░░░░▄▄░░░▄░░▀███▄▄░░░░▀████████\n██████▀░░░▄███░░░██▄░░░██████▄░░░▀██████\n█████▀░░▄████▀░░▄████░░░███████▄░░▀█████\n████▀░░▄█████░░░██████░░░▀██████▄░░▀████\n████░░░█████▀░░████████▄░░▀████▀▀░░░░▀██\n████░░██████░░▄███████▀▀░░░░░░░░░░░░▄▄██\n████░░█████░░░▀▀▀░░░░░░░░▄░░░▄████░░████\n███▀░░░▀░░░░░░░░▄▄▄▄▄██████░░░▀██░░░████\n██▄░░░░░▄▄░░░███████████████▄░░▀▀░░▄████\n█████▄░░▀░░░█████████████████▄░░░░▄█████\n██████▄░░░░░█████████████████▀░░░░██████\n████████░░░░░▀▀██████████▀▀░░░░▄░░░▀████\n███████▀░░▄▄▄░░░░░░░░░░░░░░▄▄████▄░░▀███\n███████░░░█████▄▄▄▄▄▄▄▄▄▄█████████▄▄▄███\n██████▄▄▄███████████████████████████████\n████████████████████████████████████████\n")
+MsgC(Color(255, 235, 200), "PenisDeda" .. PenisDedushki.Version .. "loaded! \n")
+
+notification.AddLegacy("Loaded PenisDeda " .. PenisDedushki.Version .."  | " .. os.date("%I:%M %p"), NOTIFY_HINT, 5)
 
 for k, v in ipairs(files) do
 	if string.lower(v) == "default.json" then
