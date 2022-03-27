@@ -1,8 +1,8 @@
 --Cheat Information
 local PenisDedushki = {}
 PenisDedushki.Version = "V4"
-PenisDedushki.UpdateDate = "26.03.2022"
-PenisDedushki.Build = "1"
+PenisDedushki.UpdateDate = "27.03.2022"
+PenisDedushki.Build = "3"
 --Tables
 local em = FindMetaTable"Entity"
 local wm = FindMetaTable"Weapon"
@@ -93,6 +93,9 @@ config["aim_zeusbot"] = false
 config["aim_jump_check"] = false
 config["aim_nadecheck"] = false
 config["aim_bullettime"] = false
+config["aim_facestab"] = false
+config["aim_knifebot"] = false
+config["aim_animknife"] = false
 
 config["movement_fix"] = 1
 
@@ -148,6 +151,7 @@ config["esp_self_chams_wep"] = false
 config["esp_self_hat_type"] = 1
 config["esp_self_customagent"] = false
 config["esp_self_customagent_agent"] = 1
+config["esp_self_fakelagchams"] = false
 
 config["esp_self_bullet_tracers"] = false
 
@@ -373,6 +377,7 @@ config.colors["esp_self_chams"] = "255 180 255 150"
 config.colors["esp_self_chams_wep"] = "255 11 11 150"
 config.colors["esp_player_money"] = "45 255 45 150"
 config.colors["esp_player_dormant_ind"] = "55 45 45 150"
+config.colors["esp_self_fakelagchams"] = "200 200 255 150"
 
 config.colors["esp_npc_box"] = "255 255 255 255"
 config.colors["esp_npc_halo"] = "255 255 255 255"
@@ -1849,7 +1854,7 @@ function HavocGUI()
     end
 	local combat_helpers = vgui.Create( "DPanel", AIM_SCROLL )
     combat_helpers:SetSize(200,300)
-    combat_helpers:SetPos(860,5)
+    combat_helpers:SetPos(855,5)
     function combat_helpers:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
 	surfSetDrawColor( 0, 0, 0, 255 )
@@ -2309,6 +2314,10 @@ function HavocGUI()
 	CreateCheckBox("Scroll Attack", 10, 50, "misc_scrollattack", false, combat_helpers)
 	CreateCheckBox("Fast Switch", 10, 70, "misc_fastswitch", false, combat_helpers)
 	CreateCheckBox("M9K Sprint disabler", 10, 90, "misc_m9kstopper", false, combat_helpers)
+	
+	CreateCheckBox("Force Backstab", 10, 110, "aim_facestab", false, combat_helpers)
+	CreateCheckBox("Knife BOT", 10, 130, "aim_knifebot", false, combat_helpers)
+	--CreateCheckBox("Knife Animation", 10, 150, "aim_animknife", false, combat_helpers)
 	--AA
 	--CreateCheckBox("Dance Spam", 10, 30, "antihit_act", false, combat_antihit)
 	--CreateDropdown("Act", 10, 50, {"Dance", "Robot", "Sex", "Bow", "Wave", "Zombie", "Disagree", "Forward", "Pers", "Salute"}, "antihit_act_type", combat_antihit)
@@ -2455,6 +2464,10 @@ function HavocGUI()
 	CreateDropdown("Hat model", 10, 210, {"Nimbus", "Hat", "Cap", "Bomb"}, "esp_self_hat_type", visual_self)
 	CreateCheckBox("Agent Changer", 10, 250, "esp_self_customagent", false, visual_self, 165)	
 	CreateDropdown("Agent", 10, 270, {"SAS", "Pirat", "Anarchist", "Pro"}, "esp_self_customagent_agent", visual_self)
+	CreateCheckBox("Fake Lag Chams", 10, 310, "esp_self_fakelagchams", true, visual_self, 165)	
+	
+	
+	
 	--CreateCheckBox("Self Chmas", 10, 210, "esp_self_chams", true, visual_self, 165)
 	--CreateCheckBox("Self Weapon Chmas", 10, 230, "esp_self_chams_wep", true, visual_self, 165)
 	
@@ -3892,6 +3905,68 @@ for k,v in next, player.GetAll() do
 end
 end)
 -- ======================= Chams
+--FL Chams
+local FakeLaggModelChams = NULL
+local function CopyPoseParams(pEntityFrom, pEntityTo)
+    for i = 0, pEntityFrom:GetNumPoseParameters() - 1 do
+        local flMin, flMax = pEntityFrom:GetPoseParameterRange(i)
+        local sPose = pEntityFrom:GetPoseParameterName(i)
+        pEntityTo:SetPoseParameter(sPose, math.Remap(pEntityFrom:GetPoseParameter(sPose), 0, 1, flMin, flMax))
+    end
+end
+
+local alpha2 = 1;
+local plus_or_minus2 = true;
+local function DrawFakeLagModel()
+    local col = string.ToColor(config.colors["esp_self_fakelagchams"])
+    if(FakeLaggModelChams == NULL) then
+        FakeLaggModelChams = ClientsideModel(LocalPlayer():GetModel(), 1)
+        FakeLaggModelChams.cs_filter = true
+    end
+    FakeLaggModelChams:SetNoDraw(true)
+    if bSendPacket then
+        FakeLaggModelChams:SetSequence(LocalPlayer():GetSequence())
+        FakeLaggModelChams:SetCycle(LocalPlayer():GetCycle())
+        
+        FakeLaggModelChams:SetModel(LocalPlayer():GetModel())
+        FakeLaggModelChams:SetPos(LocalPlayer():GetPos())
+        
+        CopyPoseParams(LocalPlayer(),FakeLaggModelChams)
+        
+        FakeLaggModelChams:InvalidateBoneCache()
+        FakeLaggModelChams:SetRenderAngles(Angle(0, LocalPlayer():GetAngles().y, 0))
+    end
+    cam.Start3D()
+        if(FakeLaggModelChams:IsValid()) then
+            render.SuppressEngineLighting(true)     
+            FakeLaggModelChams:SetRenderMode(RENDERMODE_TRANSALPHA)
+            render.MaterialOverride(Material("models/shiny"))
+            render.SetColorModulation( col.r/255,col.g/255,col.b/255)
+
+            if alpha2 <= 0 then
+                plus_or_minus2 = !plus_or_minus2;
+            elseif alpha2 >= 0.5 then
+                plus_or_minus2 = !plus_or_minus2;
+            end
+            if plus_or_minus2 then
+                alpha2 = alpha2 - 0.005
+            else
+                alpha2 = alpha2 + 0.005
+            end
+            alpha2 = math.Clamp(alpha2, 0, 0.5);
+    
+            render.SetBlend(alpha2)
+
+            FakeLaggModelChams:DrawModel()
+
+            render.SetBlend(1)
+
+            render.SetColorModulation( 1,1,1 )
+
+            render.SuppressEngineLighting(false) 
+        end
+    cam.End3D()
+end
 
 AddHook("RenderScreenspaceEffects", RandomString(), function()
 
@@ -3979,6 +4054,7 @@ AddHook("RenderScreenspaceEffects", RandomString(), function()
 			v:SetRenderMode(0)
 		end
 	end
+    if config["esp_self_fakelagchams"] && config["bsp_fake_lags"] && LocalPlayer():GetVelocity():Length() > 50 then DrawFakeLagModel() end
 end)
 
 end
@@ -4817,34 +4893,76 @@ local function PredictSpread(ucmd, ang)
     return(ang);
 end
 
+
+--[[function FakeLag(ucmd)
+    local lagsmount = ucmd:CommandNumber()
+    if config["bsp_fake_lags"] and config["bsp_fake_lags_value"] > 0 then
+        bSendPacket = (lagsmount % config["bsp_fake_lags_value"]) == 0
+    else
+        bSendPacket = ucmd:CommandNumber() % 2 == 1 
+    end
+end]]
+--Facestab
+local function FroceBackStap( ucmd )
+    --RMB
+    local ent = LocalPlayer():GetEyeTrace().Entity
+	local wep = LocalPlayer():GetActiveWeapon()
+	target = ent
+	local pose = LocalPlayer():GetEyeTrace().HitPos
+	plyangle = ucmd:GetViewAngles()
+        if target:IsPlayer() and pose:Distance(LocalPlayer():GetPos()) < 65 then
+            bd = true
+        end
+    if(bd == true) then
+	    if wep:IsValid() and string.find(wep:GetClass(),"csgo") and ent:IsPlayer() then		    
+			target = ent
+            ucmd:SetViewAngles(plyangle + Angle(45, 90 , 0))
+            RunConsoleCommand("+attack2")
+            timer.Simple(0.07, function() RunConsoleCommand("-attack2") end)
+            timer.Simple(0.05, function() bd = false end)			
+		end
+    end
+end
+local function KnifeBotik( ucmd )
+    local ent = LocalPlayer():GetEyeTrace().Entity
+	local wep = LocalPlayer():GetActiveWeapon()
+	target = ent
+	local pose = LocalPlayer():GetEyeTrace().HitPos
+    if wep:IsValid() and string.find(wep:GetClass(),"csgo") and ent:IsPlayer() then	
+        if target:IsPlayer() and pose:Distance(LocalPlayer():GetPos()) < 90 then
+		    ucmd:RemoveKey(bit.bor(ucmd:GetButtons(), 2048))
+            ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 1))
+		elseif target:IsPlayer() and pose:Distance(LocalPlayer():GetPos()) < 65 then
+		    ucmd:RemoveKey(bit.bor(ucmd:GetButtons(), 1))
+		    ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 2048))
+        end
+    end
+end
+--[[local function KnifeAnimation( ucmd )  
+    local wep = LocalPlayer():GetActiveWeapon()
+    if wep:IsValid() and string.find(wep:GetClass(),"csgo") then	
+	    if !ucmd:KeyDown(bit.bor(ucmd:GetButtons(), 8192)) then
+            timer.Create("KnifeAnims", 1, 1, function()
+			ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 8192))
+			end)
+		end
+    end
+end]]
 AddHook("CreateMove", RandomString(), function(ucmd, world_click)
-
-
-
-    local pitch, yaw
-    if config["antihit_antiaim"] then
-        if LocalPlayer():Alive() then 
-	        if !ucmd.KeyDown(KEY_E) or !ucmd.MouseDown(107) or !input.IsMouseDown(108) then 
-	            if config["yaw_base"] == 1 then
-	            yaw, pitch = YawAA(ucmd)
-		        end
-		        if config["pitch_add"] != 1 then
-		        pitch = PitchAA(ucmd)
-		        end	 	
-	            local angles = Angle(pitch, yaw, 0)
-	            ucmd:SetViewAngles(angles)
-	            else
-	            local angles = ucmd:GetViewAngles()
-			end
-	    end 
+    if config["aim_facestab"] then
+        FroceBackStap(ucmd)
 	end
-	
-	
-	
+	if config["aim_knifebot"] then
+        KnifeBotik(ucmd)
+	end
+	--[[if config["aim_animknife"] then
+        KnifeAnimation(ucmd)
+	end]]
+    --bSendPacket = true
     bSendPacket = 0
     if config["bsp_fake_lags"] then
 		if config["bsp_fake_lags_conditions"] == 1 then  
-            bSendPacket = (ucmd:CommandNumber() % config["bsp_fake_lags_value"]) < 3 --
+            bSendPacket = (ucmd:CommandNumber() % config["bsp_fake_lags_value"]) < 3 
 	    elseif config["bsp_fake_lags_conditions"] == 2 then
 		    if LocalPlayer():GetVelocity():Length() > 50 then
 		        bSendPacket = (ucmd:CommandNumber() % config["bsp_fake_lags_value"]) < 3
@@ -4869,7 +4987,7 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 		    if !ucmd:KeyDown(IN_ATTACK) then
 		        bSendPacket = (ucmd:CommandNumber() % config["bsp_fake_lags_value"]) < 3
 		    end
-		end	
+	    end
     end
     if config["antihit_fd"] then
         if input.IsKeyDown(config.keybinds["antihit_fd_key"]) then
@@ -5638,34 +5756,7 @@ AddHook("CalcViewModelView", RandomString(), function(Weapon, ViewModel, OldPos,
 end)
 
 eventListOpen()
---==================== Injection Welcome Message Thing
---[[function AnarchySign()
-color_red = Color(255, 25, 25)
-draw.RoundedBox( 0, 0, 0, ScrW(), ScrH(), Color(12,12,12,200) )
-draw.SimpleText( "████████████████████████████████████████", "DermaDefault", 15, 15, color_red )
-draw.SimpleText( "████████████████░░██████████████████████", "DermaDefault", 15, 35, color_red )
-draw.SimpleText( "███████████████▀░░░▀▀▀▀▀▀███████████████", "DermaDefault", 15, 55, color_red )
-draw.SimpleText( "███████████▀▀░░░░░░░░░░░░░░▀▀███████████", "DermaDefault", 15, 75, color_red )
-draw.SimpleText( "████████▀░░░░▄▄░░░▄░░▀███▄▄░░░░▀████████", "DermaDefault", 15, 95, color_red )
-draw.SimpleText( "█████▀░░▄████▀░░▄████░░░███████▄░░▀█████", "DermaDefault", 15, 115, color_red )
-draw.SimpleText( "████▀░░▄█████░░░██████░░░▀██████▄░░▀████", "DermaDefault", 15, 135, color_red )
-draw.SimpleText( "████░░██████░░▄███████▀▀░░░░░░░░░░░░▄▄██", "DermaDefault", 15, 155, color_red )
-draw.SimpleText( "████░░█████░░░▀▀▀░░░░░░░░▄░░░▄████░░████", "DermaDefault", 15, 175, color_red )
-draw.SimpleText( "███▀░░░▀░░░░░░░░▄▄▄▄▄██████░░░▀██░░░████", "DermaDefault", 15, 195, color_red )
-draw.SimpleText( "██▄░░░░░▄▄░░░███████████████▄░░▀▀░░▄████", "DermaDefault", 15, 215, color_red )
-draw.SimpleText( "██████▄░░▀░░░█████████████████▄░░░░▄████", "DermaDefault", 15, 235, color_red )
-draw.SimpleText( "██████▄░░░░░█████████████████▀░░░░██████", "DermaDefault", 15, 255, color_red )
-draw.SimpleText( "████████░░░░░▀▀██████████▀▀░░░░▄░░░▀████", "DermaDefault", 15, 275, color_red )
-draw.SimpleText( "███████▀░░▄▄▄░░░░░░░░░░░░░░▄▄████▄░░▀███", "DermaDefault", 15, 295, color_red )
-draw.SimpleText( "███████░░░█████▄▄▄▄▄▄▄▄▄▄█████████▄▄▄███", "DermaDefault", 15, 315, color_red )
-draw.SimpleText( "██████▄▄▄███████████████████████████████", "DermaDefault", 15, 335, color_red )
-draw.SimpleText( "████████████████████████████████████████", "DermaDefault", 15, 355, color_red )
-
-draw.SimpleText( "PenisDeda.LUA Activated!", "Trebuchet24", 15, 365, color_red )
-end
-AddHook("HUDPaint", "LoadingScreen", AnarchySign)
-
-timer.Create("LoadingScreen", 3, 1, function() hook.Remove("HUDPaint", "LoadingScreen") end)]]
+--==================== PostInject
 
 
 MsgC(Color(255, 25, 25), "\n████████████████████████████████████████\n████████████████░░██████████████████████\n███████████████▀░░░▀▀▀▀▀▀███████████████\n███████████▀▀░░░░░░░░░░░░░░▀▀███████████\n████████▀░░░░▄▄░░░▄░░▀███▄▄░░░░▀████████\n██████▀░░░▄███░░░██▄░░░██████▄░░░▀██████\n█████▀░░▄████▀░░▄████░░░███████▄░░▀█████\n████▀░░▄█████░░░██████░░░▀██████▄░░▀████\n████░░░█████▀░░████████▄░░▀████▀▀░░░░▀██\n████░░██████░░▄███████▀▀░░░░░░░░░░░░▄▄██\n████░░█████░░░▀▀▀░░░░░░░░▄░░░▄████░░████\n███▀░░░▀░░░░░░░░▄▄▄▄▄██████░░░▀██░░░████\n██▄░░░░░▄▄░░░███████████████▄░░▀▀░░▄████\n█████▄░░▀░░░█████████████████▄░░░░▄█████\n██████▄░░░░░█████████████████▀░░░░██████\n████████░░░░░▀▀██████████▀▀░░░░▄░░░▀████\n███████▀░░▄▄▄░░░░░░░░░░░░░░▄▄████▄░░▀███\n███████░░░█████▄▄▄▄▄▄▄▄▄▄█████████▄▄▄███\n██████▄▄▄███████████████████████████████\n████████████████████████████████████████\n")
