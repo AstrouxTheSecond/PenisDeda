@@ -96,6 +96,7 @@ config["aim_bullettime"] = false
 config["aim_facestab"] = false
 config["aim_knifebot"] = false
 config["aim_animknife"] = false
+config["aim_act_disabler"] = false
 
 config["movement_fix"] = 1
 
@@ -2317,10 +2318,10 @@ function HavocGUI()
 	
 	CreateCheckBox("Force Backstab", 10, 110, "aim_facestab", false, combat_helpers)
 	CreateCheckBox("Knife BOT", 10, 130, "aim_knifebot", false, combat_helpers)
-	--CreateCheckBox("Knife Animation", 10, 150, "aim_animknife", false, combat_helpers)
+	CreateCheckBox("Knife Animation", 10, 150, "aim_animknife", false, combat_helpers)
+	CreateCheckBox("Act Disabler", 10, 170, "aim_act_disabler", false, combat_helpers)
 	--AA
-	--CreateCheckBox("Dance Spam", 10, 30, "antihit_act", false, combat_antihit)
-	--CreateDropdown("Act", 10, 50, {"Dance", "Robot", "Sex", "Bow", "Wave", "Zombie", "Disagree", "Forward", "Pers", "Salute"}, "antihit_act_type", combat_antihit)
+	
 	--CreateCheckBox("Tactical Leaning", 10, 90, "antihit_lean", false, combat_antihit)
 	--CreateDropdown("Leaning Direction", 10, 110, {"Left", "Right", "Directional", "Directional Inverted"}, "antihit_lean_dir", combat_antihit)
 	--CreateButton("Fix Leaning", "offs leaning.", TacticalLeanDisabler, 10, 160, combat_antihit)
@@ -2336,6 +2337,8 @@ function HavocGUI()
 	--AA Misc
 	CreateCheckBox("Fake Duck", 10, 30, "antihit_fd", false, antiaim_misc)
 	CreateKeybind(140, 30, "antihit_fd_key", antiaim_misc)
+	CreateCheckBox("Dance Spam", 10, 50, "antihit_act", false, antiaim_misc)
+	CreateDropdown("Act", 10, 70, {"Dance", "Robot", "Sex", "Bow", "Wave", "Zombie", "Disagree", "Forward", "Pers", "Salute"}, "antihit_act_type", antiaim_misc)
 	--Visuals
 	//Boxes & Bars
 	CreateCheckBox("Bounding Box", 10, 40, "esp_player_box", true, visual_player, 165)
@@ -3554,6 +3557,24 @@ for k, v in ipairs(player.GetAll()) do
 end
 end
 end)
+AddHook("PrePlayerDraw",RandomString(), function(ply)
+	if config["aim_act_disabler"] and ply != me then
+		for i = 0, 13 do
+			if ply:IsValidLayer(i) then
+				local seqname = ply:GetSequenceName(ply:GetLayerSequence(i))
+				if seqname:StartWith("taunt_") then
+					ply:SetLayerDuration(i, 0.001)
+					break
+				end
+			end
+		end
+	end
+	--if settings.Visuals.AntiAimChams and ply == me then
+	--	return true
+	--end
+end)
+
+
 
 end
 
@@ -4903,7 +4924,7 @@ end
     end
 end]]
 --Facestab
-local function FroceBackStap( ucmd )
+local function ForceBackStap( ucmd )
     --RMB
     local ent = LocalPlayer():GetEyeTrace().Entity
 	local wep = LocalPlayer():GetActiveWeapon()
@@ -4938,7 +4959,7 @@ local function KnifeBotik( ucmd )
         end
     end
 end
---[[local function KnifeAnimation( ucmd )  
+local function KnifeAnimation( ucmd )  
     local wep = LocalPlayer():GetActiveWeapon()
     if wep:IsValid() and string.find(wep:GetClass(),"csgo") then	
 	    if !ucmd:KeyDown(bit.bor(ucmd:GetButtons(), 8192)) then
@@ -4947,17 +4968,17 @@ end
 			end)
 		end
     end
-end]]
+end
 AddHook("CreateMove", RandomString(), function(ucmd, world_click)
     if config["aim_facestab"] then
-        FroceBackStap(ucmd)
+        ForceBackStap(ucmd)
 	end
 	if config["aim_knifebot"] then
         KnifeBotik(ucmd)
 	end
-	--[[if config["aim_animknife"] then
+	if config["aim_animknife"] then
         KnifeAnimation(ucmd)
-	end]]
+	end
     --bSendPacket = true
     bSendPacket = 0
     if config["bsp_fake_lags"] then
