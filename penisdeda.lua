@@ -2381,7 +2381,7 @@ function HavocGUI()
 	--Visuals
 	//Boxes & Bars
 	CreateCheckBox("Bounding Box", 10, 40, "esp_player_box", true, visual_player, 165)
-	CreateDropdown("Box Style", 10, 60, {"Default", "Corners", "3D Box", "Neon Red", "Neon Blue"}, "esp_player_box_mode", visual_player)
+	CreateDropdown("Box Style", 10, 60, {"Line | Box", "Line | Corners", "3D Box", "Neon Red", "Neon Blue", "Box | Default", "Box | Outlined"}, "esp_player_box_mode", visual_player)
 	CreateCheckBox("Health Bar", 10, 100, "esp_player_hp", true, visual_player, 165)
 	CreateDropdown("Health Bar Pos", 10, 120, {"Left", "Right", "Up", "Down"}, "esp_player_hp_type", visual_player)	
 	CreateCheckBox("Armor Bar", 10, 160, "esp_player_ap", true, visual_player, 165)
@@ -2877,7 +2877,16 @@ local function DoESP()
 						surfSetDrawColor(string.ToColor(config.colors["esp_player_box"]))
                         end	
 	                    surface.SetMaterial( Material("gui/sm_hover.png") ) 
-	                    surfDrawTexturedRect( MinX, MinY, XLen, YLen ) 							
+	                    surfDrawTexturedRect( MinX, MinY, XLen, YLen ) 	
+                        elseif config["esp_player_box_mode"] == 6 then
+						local XLen, YLen = MaxX - MinX, MaxY - MinY
+						surface.DrawOutlinedRect( MinX, MinY, XLen, YLen, 1 )
+						elseif config["esp_player_box_mode"] == 7 then
+						local XLen, YLen = MaxX - MinX, MaxY - MinY
+						surfSetDrawColor(Color(0,0,0))
+						surface.DrawOutlinedRect( MinX, MinY, XLen, YLen, 3 )
+						surfSetDrawColor(string.ToColor(config.colors["esp_player_box"]))
+						surface.DrawOutlinedRect( MinX+1, MinY+1, XLen-2, YLen-2, 1 )
 						else
 							surfDrawLine( MaxX, MaxY, MinX, MaxY )
 							surfDrawLine( MaxX, MaxY, MaxX, MinY )
@@ -5157,21 +5166,18 @@ local function AAFM( cmd )
 end
 
 AddHook("CreateMove", RandomString(), function(ucmd)
-    --AntiAim
-	if (!ucmd:KeyDown(IN_ATTACK) || !ucmd:KeyDown(IN_ATTACK2)) || !ucmd:KeyDown(IN_USE) || !ply:GetMoveType() == MOVETYPE_LADDER || input.IsKeyDown(config.keybinds["aim_onkey_key"]) || input.IsMouseDown(config.keybinds["aim_onkey_key"]) then
-	StopAngles = true 
-	else StopAngles = false
+    --AntiAim	
+	if config["aa_enable"] then
+	    if !ucmd:KeyDown(IN_ATTACK) or !ucmd:KeyDown(IN_ATTACK2) or !ucmd:KeyDown(IN_USE) or !ply:GetMoveType() == MOVETYPE_LADDER or input.IsKeyDown(config.keybinds["aim_onkey_key"]) or input.IsMouseDown(config.keybinds["aim_onkey_key"]) then
+	    Antihit(ucmd) 
+		end
+	else
+	    bSendPacket = true
 	end
-	
-	--if !StopAngles then
-	    if config["aa_enable"] then
-	        Antihit(ucmd) 
-	    else
-	        bSendPacket = true
-	    end
-		AAS(ucmd)
-		AAFM(ucmd)
-	--end
+	if (!ucmd:KeyDown(IN_ATTACK) or !ucmd:KeyDown(IN_ATTACK2)) or !ucmd:KeyDown(IN_USE) or !ply:GetMoveType() == MOVETYPE_LADDER or input.IsKeyDown(config.keybinds["aim_onkey_key"]) or input.IsMouseDown(config.keybinds["aim_onkey_key"]) then
+    AAS(ucmd)
+    AAFM(ucmd)
+	end
 end)
 AddHook("CreateMove", RandomString(), function(ucmd, world_click)
     if config["aim_facestab"] then
