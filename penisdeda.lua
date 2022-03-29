@@ -129,11 +129,32 @@ config["antihit_act_type"] = 1
 config["antihit_lean"] = false
 config["antihit_lean_dir"] = 1
 
-config["antihit_antiaim"] = false
-config["yaw_base"] = 1
-config["yaw_add"] = 1
-config["pitch_add"] = 1
-config["legit_aa"] = false
+config["aa_enable"] = false
+config["aa_pitch"] = 1
+config["aa_yaw"] = 1
+config["aa_lby"] = 1
+config["aa_yaw_add"] = 1
+config["aa_cpitch"] = 1
+config["aa_cyaw"] = 1
+config["aa_jitter_range"] = 1
+
+config["fa_enable"] = false
+config["fa_pitch"] = 1
+config["fa_yaw"] = 1
+config["fa_lby"] = 1
+config["fa_yaw_add"] = 1
+config["fa_cpitch"] = 1
+config["fa_cyaw"] = 1
+config["fa_jitter_range"] = 1
+
+config["aa_chams"] = false
+config["fa_chams"] = false
+
+
+
+
+
+config["antihit_act"] = false
 
 config["antihit_fd"] = false
 
@@ -405,8 +426,9 @@ config.keybinds["antihit_fd_key"] = 0
 
 config["friends"] = {}
 config["entities"] = {}
-//Exploits 
-exp_vrmod = false
+
+StopAngles = false
+
 //Misc
 local hooks = {}
 local verifyconfig = config
@@ -1908,7 +1930,7 @@ function HavocGUI()
 	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
     surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/arrow_rotate_clockwise.png"))
+    surface.SetMaterial(Material("icon16/emoticon_happy.png"))
     surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "Fake Angle:", "DermaDefault", 19, 2, color_white )
     end
@@ -1936,7 +1958,7 @@ function HavocGUI()
 	surfSetDrawColor( 0, 0, 0, 255 )
 	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
     surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/arrow_rotate_clockwise.png"))
+    surface.SetMaterial(Material("icon16/eye.png"))
     surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "Visualisation:", "DermaDefault", 19, 2, color_white )
     end
@@ -2320,20 +2342,37 @@ function HavocGUI()
 	CreateCheckBox("Knife BOT", 10, 130, "aim_knifebot", false, combat_helpers)
 	CreateCheckBox("Knife Animation", 10, 150, "aim_animknife", false, combat_helpers)
 	CreateCheckBox("Act Disabler", 10, 170, "aim_act_disabler", false, combat_helpers)
-	--AA
+	--Anti-Aim
+	CreateCheckBox("Enable Anti-Aim", 10, 30, "aa_enable", false, antiaim_global)
+	CreateDropdown("Pitch", 10, 50, {"None", "Zero", "Down", "Up", "Fake Down", "Fake Up", "Random", "Custom"}, "aa_pitch", antiaim_global)
+	CreateDropdown("Yaw", 10, 90, {"None", "Backward", "Forward", "Left", "Right", "Jitter", "Spin", "Custom"}, "aa_yaw", antiaim_global)
+	CreateDropdown("LBY", 10, 130, {"None", "LBY Normal", "LBY Breaker"}, "aa_lby", antiaim_global)
+	CreateSlider("Yaw Add", 2, 170, "aa_yaw_add", 0, 180, 0, antiaim_global)
+	CreateSlider("Custom Yaw", 2, 210, "aa_cyaw", 0, 180, 0, antiaim_global)
+	CreateSlider("Custom Pitch", 2, 250, "aa_cpitch", 0, 180, 0, antiaim_global)
+	CreateSlider("Jitter Range", 2, 290, "aa_jitter_range", 0, 180, 0, antiaim_global)
 	
-	--CreateCheckBox("Tactical Leaning", 10, 90, "antihit_lean", false, combat_antihit)
-	--CreateDropdown("Leaning Direction", 10, 110, {"Left", "Right", "Directional", "Directional Inverted"}, "antihit_lean_dir", combat_antihit)
-	--CreateButton("Fix Leaning", "offs leaning.", TacticalLeanDisabler, 10, 160, combat_antihit)
+	--Fake-Angles
+	CreateCheckBox("Enable Fake Angles", 10, 30, "fa_enable", false, antiaim_fakes)
+	CreateDropdown("Fake Pitch", 10, 50, {"None", "Zero", "Down", "Up", "Fake Down", "Fake Up", "Random", "Custom"}, "fa_pitch", antiaim_fakes)
+	CreateDropdown("Fake Yaw", 10, 90, {"None", "Backward", "Forward", "Left", "Right", "Jitter", "Spin", "Custom"}, "fa_yaw", antiaim_fakes)
+	CreateSlider("Yaw Add", 2, 170, "fa_yaw_add", 0, 180, 0, antiaim_fakes)
+	CreateSlider("Custom Yaw", 2, 210, "fa_cyaw", 0, 180, 0, antiaim_fakes)
+	CreateSlider("Custom Pitch", 2, 250, "fa_cpitch", 0, 180, 0, antiaim_fakes)
+	CreateSlider("Jitter Range", 2, 290, "fa_jitter_range", 0, 180, 0, antiaim_fakes)
 	
-	--AntiAims
-	--CreateCheckBox("Enable Anti-Aim", 10, 30, "antihit_antiaim", false, combat_antihitnotanim)
-	--CreateDropdown("Yaw Base", 10, 50, {"Static", "Sway", "Jitter", "LBY"}, "yaw_base", combat_antihitnotanim)
-	--CreateDropdown("Pitch", 10, 90, {"None","Zero", "Down", "Up", "Fake Down", "Fake Up"}, "pitch_add", combat_antihitnotanim)
-	--Fake angles
-	--CreateCheckBox("Enable Anti-Aim", 10, 30, "antihit_antiaim", false, combat_antihitnotanim)
-	--CreateDropdown("Yaw Base", 10, 50, {"Static", "Sway", "Jitter", "LBY"}, "yaw_base", combat_antihitnotanim)
-	--CreateDropdown("Pitch", 10, 90, {"None","Zero", "Down", "Up", "Fake Down", "Fake Up"}, "pitch_add", combat_antihitnotanim)	
+	--AA Chams
+	CreateCheckBox("Fake Angle Chams", 10, 30, "aa_chams", false, antiaim_visual)
+	CreateCheckBox("Real Angle Chams", 10, 50, "fa_chams", false, antiaim_visual)
+	
+	
+	
+	--[[
+	CreateCheckBox("Tactical Leaning", 10, 90, "antihit_lean", false, combat_antihit)
+	CreateDropdown("Leaning Direction", 10, 110, {"Left", "Right", "Directional", "Directional Inverted"}, "antihit_lean_dir", combat_antihit)
+	CreateButton("Fix Leaning", "offs leaning.", TacticalLeanDisabler, 10, 160, combat_antihit)
+	]]
+	
 	--AA Misc
 	CreateCheckBox("Fake Duck", 10, 30, "antihit_fd", false, antiaim_misc)
 	CreateKeybind(140, 30, "antihit_fd_key", antiaim_misc)
@@ -4037,6 +4076,114 @@ local function DrawFakeLagModel()
     cam.End3D()
 end
 
+fakeangles = Angle(0,0,0)
+AntiAimAngle = Angle(0,0,0)
+AntiAimFakeAngle = Angle(0,0,0)
+fakeModelChams = NULL
+fakeAAModelChams = NULL
+FakeLaggModelChams = NULL
+local function CopyPoseParams(pEntityFrom, pEntityTo)
+    for i = 0, pEntityFrom:GetNumPoseParameters() - 1 do
+        local flMin, flMax = pEntityFrom:GetPoseParameterRange(i)
+        local sPose = pEntityFrom:GetPoseParameterName(i)
+        pEntityTo:SetPoseParameter(sPose, math.Remap(pEntityFrom:GetPoseParameter(sPose), 0, 1, flMin, flMax))
+    end
+end
+function DrawFakeAngle()
+    if(fakeModelChams == NULL) then
+        fakeModelChams = ClientsideModel(LocalPlayer():GetModel(), 1)
+        fakeModelChams.cs_filter = true
+    end
+    fakeModelChams:SetNoDraw(true)
+    fakeModelChams:SetSequence(LocalPlayer():GetSequence())
+    fakeModelChams:SetCycle(LocalPlayer():GetCycle())
+        
+    fakeModelChams:SetModel(LocalPlayer():GetModel())
+    fakeModelChams:SetPos(LocalPlayer():GetPos())
+        
+    CopyPoseParams(LocalPlayer(), fakeModelChams)
+
+    fakeModelChams:SetPoseParameter("aim_pitch", AntiAimAngle.x)
+    fakeModelChams:SetPoseParameter("head_pitch", AntiAimAngle.x)
+    fakeModelChams:SetPoseParameter("head_yaw", AntiAimAngle.y)
+    fakeModelChams:SetPoseParameter("aim_yaw", AntiAimAngle.y)
+        
+    fakeModelChams:InvalidateBoneCache()
+    fakeModelChams:SetRenderAngles(Angle(0, AntiAimAngle.y, 0))
+    cam.Start3D()
+        if(fakeModelChams:IsValid()) then
+            render.SuppressEngineLighting(true)     
+            fakeModelChams:SetRenderMode(RENDERMODE_TRANSALPHA)
+            render.MaterialOverride()
+            render.SetColorModulation(0,255,0)
+
+            render.SetBlend(200)
+
+            fakeModelChams:DrawModel()
+
+            render.SetBlend(1)
+
+            render.SetColorModulation( 1,1,1 )
+
+            render.SuppressEngineLighting(false) 
+        end
+    cam.End3D()
+end
+local alpha = 1;
+local plus_or_minus = true;
+function DrawFakeAAAngle()
+    if(fakeAAModelChams == NULL) then
+        fakeAAModelChams = ClientsideModel(LocalPlayer():GetModel(), 1)
+        fakeAAModelChams.cs_filter = true
+    end
+    fakeAAModelChams:SetNoDraw(true)
+    fakeAAModelChams:SetSequence(LocalPlayer():GetSequence())
+    fakeAAModelChams:SetCycle(LocalPlayer():GetCycle())
+        
+    fakeAAModelChams:SetModel(LocalPlayer():GetModel())
+    fakeAAModelChams:SetPos(LocalPlayer():GetPos())
+        
+    CopyPoseParams(LocalPlayer(),fakeAAModelChams)
+
+    fakeAAModelChams:SetPoseParameter("aim_pitch", AntiAimFakeAngle.x)
+    fakeAAModelChams:SetPoseParameter("head_yaw", AntiAimFakeAngle.y)
+    fakeAAModelChams:SetPoseParameter("head_pitch", AntiAimFakeAngle.x)
+    fakeAAModelChams:SetPoseParameter("aim_yaw", AntiAimFakeAngle.y)
+        
+    fakeAAModelChams:InvalidateBoneCache()
+    fakeAAModelChams:SetRenderAngles(Angle(0, AntiAimFakeAngle.y, 0))
+    cam.Start3D()
+        if(fakeAAModelChams:IsValid()) then
+            render.SuppressEngineLighting(true)     
+            fakeAAModelChams:SetRenderMode(RENDERMODE_TRANSALPHA)
+            render.MaterialOverride(chamsHMaterialZ)
+            render.SetColorModulation(255,0,0)
+
+            if alpha <= 0 then
+                plus_or_minus = !plus_or_minus;
+            elseif alpha >= 0.5 then
+                plus_or_minus = !plus_or_minus;
+            end
+            if plus_or_minus then
+                alpha = alpha - 0.005
+            else
+                alpha = alpha + 0.005
+            end
+            alpha = math.Clamp(alpha, 0, 0.5);
+    
+            render.SetBlend(alpha)
+
+            fakeAAModelChams:DrawModel()
+
+            render.SetBlend(1)
+
+            render.SetColorModulation( 1,1,1 )
+
+            render.SuppressEngineLighting(false) 
+        end
+    cam.End3D()
+end
+
 AddHook("RenderScreenspaceEffects", RandomString(), function()
 
 	local colorFix = (1 / 255)
@@ -4124,7 +4271,12 @@ AddHook("RenderScreenspaceEffects", RandomString(), function()
 		end
 	end
     if config["esp_self_fakelagchams"] && config["bsp_fake_lags"] && LocalPlayer():GetVelocity():Length() > 50 then DrawFakeLagModel() end
+	if config["fa_chams"] then DrawFakeAngle() end
+    if config["aa_chams"] then DrawFakeAAAngle() end
 end)
+
+
+
 
 end
 
@@ -4617,30 +4769,7 @@ local function DealySwing( ucmd )
 	    timer.Simple( dswing_delay, function() dswing_occur = true end )
     end
 end
-local function AutoSlow( ucmd )
-ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 262144));
-end
-local function AutoCrouch( ucmd )
-ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 4));
-end
-local function AutoReload( ucmd )
-ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 8192));
-end
-local function AirDuck( ucmd )
-ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 4));
-end
-local function ForceDuck( ucmd )
-ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 4));
-end
-local function CritJump( ucmd )
-ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 2));
-end
-local function MoveForward( ucmd )
-ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 8));
-end
-local function MoveBack( ucmd )
-ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 16));
-end
+
 local function Micromovement( ucmd )
 if config.keybinds["misc_mm_keybind"] != 0 then
 if(input.IsKeyDown(config.keybinds["misc_mm_keybind"])) then
@@ -4971,16 +5100,6 @@ local function PredictSpread(ucmd, ang)
     ang.y, ang.x = math.NormalizeAngle(ang.y), math.NormalizeAngle(ang.x);
     return(ang);
 end
-
-
---[[function FakeLag(ucmd)
-    local lagsmount = ucmd:CommandNumber()
-    if config["bsp_fake_lags"] and config["bsp_fake_lags_value"] > 0 then
-        bSendPacket = (lagsmount % config["bsp_fake_lags_value"]) == 0
-    else
-        bSendPacket = ucmd:CommandNumber() % 2 == 1 
-    end
-end]]
 --Facestab
 local function ForceBackStap( ucmd )
     --RMB
@@ -5017,16 +5136,43 @@ local function KnifeBotik( ucmd )
         end
     end
 end
-local function KnifeAnimation( ucmd )  
-    local wep = LocalPlayer():GetActiveWeapon()
-    if wep:IsValid() and string.find(wep:GetClass(),"csgo") then	
-	    if !ucmd:KeyDown(bit.bor(ucmd:GetButtons(), 8192)) then
-            timer.Create("KnifeAnims", 1, 1, function()
-			ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 8192))
-			end)
-		end
+local function AAS( ucmd ) 
+	if(!fakeangles) then fakeangles = ucmd:GetViewAngles(); end
+	fakeangles = fakeangles + Angle(ucmd:GetMouseY() * .023, ucmd:GetMouseX() * -.023, 0);
+	fakeangles.x = math.NormalizeAngle(fakeangles.x);
+	fakeangles.p = math.Clamp(fakeangles.p, -89, 89);
+	if(ucmd:CommandNumber() == 0) then
+		ucmd:SetViewAngles(fakeangles);
+		return;
     end
 end
+
+local function AAFM( cmd )
+    local move = Vector( cmd:GetForwardMove(), cmd:GetSideMove(), cmd:GetUpMove() )
+    local speed = math.sqrt( move.x * move.x + move.y * move.y )
+    local mang = move:Angle()
+    local yaw = math.rad( cmd:GetViewAngles().y - fakeangles.y + mang.y )
+    cmd:SetForwardMove( (math.cos(yaw) * speed) * 1 )
+    cmd:SetSideMove( math.sin(yaw) * speed )
+end
+
+AddHook("CreateMove", RandomString(), function(ucmd)
+    --AntiAim
+	if (!ucmd:KeyDown(IN_ATTACK) || !ucmd:KeyDown(IN_ATTACK2)) || !ucmd:KeyDown(IN_USE) || !ply:GetMoveType() == MOVETYPE_LADDER || input.IsKeyDown(config.keybinds["aim_onkey_key"]) || input.IsMouseDown(config.keybinds["aim_onkey_key"]) then
+	StopAngles = true 
+	else StopAngles = false
+	end
+	
+	--if !StopAngles then
+	    if config["aa_enable"] then
+	        Antihit(ucmd) 
+	    else
+	        bSendPacket = true
+	    end
+		AAS(ucmd)
+		AAFM(ucmd)
+	--end
+end)
 AddHook("CreateMove", RandomString(), function(ucmd, world_click)
     if config["aim_facestab"] then
         ForceBackStap(ucmd)
@@ -5037,8 +5183,6 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 	if config["aim_animknife"] then
         KnifeAnimation(ucmd)
 	end
-    --bSendPacket = true
-    bSendPacket = 0
     if config["bsp_fake_lags"] then
 		if config["bsp_fake_lags_conditions"] == 1 then  
             bSendPacket = (ucmd:CommandNumber() % config["bsp_fake_lags_value"]) < 3 
@@ -5067,6 +5211,8 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 		        bSendPacket = (ucmd:CommandNumber() % config["bsp_fake_lags_value"]) < 3
 		    end
 	    end
+	else
+	    bSendPacket = ucmd:CommandNumber() % 2 == 1 
     end
     if config["antihit_fd"] then
         if input.IsKeyDown(config.keybinds["antihit_fd_key"]) then
@@ -5251,7 +5397,7 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 	    if LocalPlayer():Alive() then
 		    if LocalPlayer():IsOnGround() then 
 			    if !LocalPlayer():KeyDown(4) then
-		            ForceDuck(ucmd)
+		            ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 4));
 				end
 		    end
 	    end
@@ -5260,7 +5406,7 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 	if config["misc_airduckmetod"] == 1 then
 		if LocalPlayer():Alive() then
 			if !LocalPlayer():IsOnGround() then 
-			AirDuck(ucmd)
+			ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 4));
 			end
 		end
 	end
@@ -5288,8 +5434,8 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 	end
 	end
 	end
-
-	if config["aim_master_toggle"] then
+	--Aimbot
+	if config["aim_master_toggle"] && StopAngles then
 		if !config["aim_onkey"] || ( config.keybinds["aim_onkey_key"] != 0 && ( ( config.keybinds["aim_onkey_key"] >= 107 && config.keybinds["aim_onkey_key"] <= 113 ) && input.IsMouseDown(config.keybinds["aim_onkey_key"]) ) || input.IsKeyDown(config.keybinds["aim_onkey_key"]) ) && !frame then
 			if !LocalPlayer():Alive() then return end
 			if IsValid(LocalPlayer():GetActiveWeapon()) && LocalPlayer():GetActiveWeapon():Clip1() != 0 then
@@ -5393,10 +5539,10 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 								end
 							end
 							if AimP && InFOV && AutofireWallCheck(v) && config["autoslow"] then
-							AutoSlow(ucmd)
+							ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 262144));
 							end
 							if AimP && InFOV && AutofireWallCheck(v) && config["autocrouch"] then
-							AutoCrouch(ucmd)
+							ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 4));
 							end
                             if config["aim_autoreload"] then
 							    if IsValid(LocalPlayer():GetActiveWeapon()) && LocalPlayer():GetActiveWeapon():Clip1() == 0 then
@@ -5408,7 +5554,7 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 								    if LocalPlayer():GetActiveWeapon():GetClass() == "mc_weapon_sword_diamond" then
 									    if math.Round((LocalPlayer():GetPos() - v:GetPos()):Length()) <= 150 then
 										if !input.IsKeyDown(KEY_SPACE) then
-                                            CritJump(ucmd)
+                                            ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 2));
 									    end
 										end
 								    end
@@ -5417,11 +5563,11 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 							if AimP && InFOV && AutofireWallCheck(v) && config["killaura_magnet"] && KillAuraP then
 							    if math.Round((LocalPlayer():GetPos() - v:GetPos()):Length()) <= 150 then
 							        if !LocalPlayer():KeyDown(8) then
-							            MoveForward(ucmd)
+							            ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 8));
 							        end
 								elseif math.Round((LocalPlayer():GetPos() - v:GetPos()):Length()) <= 45 then
 							        if !LocalPlayer():KeyDown(16) then
-							            MoveBack(ucmd)
+							            ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 16));
 							        end
 							    end
 							end
@@ -5833,6 +5979,107 @@ AddHook("CalcViewModelView", RandomString(), function(Weapon, ViewModel, OldPos,
 	return EyePos, EyeAngle
     
 end)
+--================================Anti-Aim
+local real_switch = 0
+local real_plus = true
+local fake_switch = 0
+local fake_plus = true
+bSendPacket = true
+fakeangles = Angle(0,0,0)
+function Antihit(cmd)
+    if config["aa_enable"] then
+        local yaw = 0
+        local pich = 0 
+
+        local fakeyaw = 0
+        local fakepich = 0
+        --== PITCH ==--
+	    if config["aa_pitch"] == 1 then 
+		pich = fakeangles.x 
+		elseif config["aa_pitch"] == 2 then	
+		pich = 0 
+		elseif config["aa_pitch"] == 3 then	
+		pich = 80 
+		elseif config["aa_pitch"] == 4 then	
+		pich = -80
+		elseif config["aa_pitch"] == 5 then	
+		pich = -180
+		elseif config["aa_pitch"] == 6 then	
+		pich = 180.00000762939
+		elseif config["aa_pitch"] == 7 then	
+		pich = mrandom(0,180)
+		elseif config["aa_pitch"] == 8 then	
+		pich = config["aa_cpitch"]
+		end
+	    --== YAW ==--
+		if config["aa_yaw"] == 1 then	
+		yaw = fakeangles.y 
+		elseif config["aa_yaw"] == 2 then	
+		yaw = fakeangles.y-180 
+		elseif config["aa_yaw"] == 3 then	
+		yaw = fakeangles.y
+		elseif config["aa_yaw"] == 4 then	
+		yaw = fakeangles.y-90
+		elseif config["aa_yaw"] == 5 then	
+		yaw = fakeangles.y+90
+		elseif config["aa_yaw"] == 6 then	
+		yaw = mrandom(-config["aa_jitter_range"],config["aa_jitter_range"])
+		elseif config["aa_yaw"] == 7 then	
+		yaw = mNormalizeAng(CurTime() * 360)
+		elseif config["aa_yaw"] == 8 then	
+		yaw = config["aa_cyaw"]
+		end
+		
+		--======================= Fake Angles =======================--
+		
+	    if config["fa_pitch"] == 1 then 
+		fakepich = fakeangles.x 
+		elseif config["fa_pitch"] == 2 then	
+		fakepich = 0 
+		elseif config["fa_pitch"] == 3 then	
+		fakepich = 80 
+		elseif config["fa_pitch"] == 4 then	
+		fakepich = -80
+		elseif config["fa_pitch"] == 5 then	
+		fakepich = -180
+		elseif config["fa_pitch"] == 6 then	
+		fakepich = 180.00000762939
+		elseif config["fa_pitch"] == 7 then	
+		fakepich = mrandom(0,180)
+		elseif config["fa_pitch"] == 8 then	
+		fakepich = config["fa_cpitch"]
+		end
+	    --== YAW ==--
+		if config["fa_yaw"] == 1 then	
+		fakeyaw = fakeangles.y 
+		elseif config["fa_yaw"] == 2 then	
+		fakeyaw = fakeangles.y-180 
+		elseif config["fa_yaw"] == 3 then	
+		fakeyaw = fakeangles.y
+		elseif config["fa_yaw"] == 4 then	
+		fakeyaw = fakeangles.y-90
+		elseif config["fa_yaw"] == 5 then	
+		fakeyaw = fakeangles.y+90
+		elseif config["fa_yaw"] == 6 then	
+		fakeyaw = mrandom(-config["fa_jitter_range"],config["fa_jitter_range"])
+		elseif config["fa_yaw"] == 7 then	
+		fakeyaw = mNormalizeAng(CurTime() * 360)
+		elseif config["fa_yaw"] == 8 then	
+		fakeyaw = config["fa_cyaw"]
+		end		
+		
+		
+		if !bSendPacket then
+            cmd:SetViewAngles(Angle(pich,yaw,0))
+            AntiAimAngle = cmd:GetViewAngles()
+        elseif bSendPacket then
+            if config["fa_enable"] then
+                cmd:SetViewAngles(Angle(fakepich,fakeyaw,0))
+                AntiAimFakeAngle = cmd:GetViewAngles()
+            end
+        end
+    end
+end
 
 eventListOpen()
 --==================== PostInject
