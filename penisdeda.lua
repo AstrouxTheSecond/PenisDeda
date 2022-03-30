@@ -427,8 +427,6 @@ config.keybinds["antihit_fd_key"] = 0
 config["friends"] = {}
 config["entities"] = {}
 
-StopAngles = false
-
 //Misc
 local hooks = {}
 local verifyconfig = config
@@ -5077,16 +5075,6 @@ AddHook("Move", RandomString() , function()
     if(!IsFirstTimePredicted()) then return end
 	servertime = CurTime()
 end)
-
-local function PitchAA(ucmd)
-	pitch = 180
-	return pitch
-end
-
-local function YawAA(ucmd)
-	yaw = 180
-	return yaw
-end
 --===========Nospread/Norecoil
 
 local ofb = em.FireBullets;
@@ -5145,40 +5133,47 @@ local function KnifeBotik( ucmd )
         end
     end
 end
-local function AAS( ucmd ) 
-	if(!fakeangles) then fakeangles = ucmd:GetViewAngles(); end
-	fakeangles = fakeangles + Angle(ucmd:GetMouseY() * .023, ucmd:GetMouseX() * -.023, 0);
+local function AAS( cmd ) 
+if not ( me:GetMoveType() == MOVETYPE_NOCLIP or me:GetMoveType() == MOVETYPE_LADDER or me:WaterLevel() > 1 or (cmd:KeyDown(IN_ATTACK) or cmd:KeyDown(IN_ATTACK2)) or cmd:KeyDown(IN_USE) or (AimP && InFOV) or input.IsKeyDown(config.keybinds["aim_onkey_key"]) or input.IsMouseDown(config.keybinds["aim_onkey_key"]) ) then 
+    if config["aa_enable"] then
+	if(!fakeangles) then fakeangles = cmd:GetViewAngles(); end
+	fakeangles = fakeangles + Angle(cmd:GetMouseY() * .023, cmd:GetMouseX() * -.023, 0);
 	fakeangles.x = math.NormalizeAngle(fakeangles.x);
 	fakeangles.p = math.Clamp(fakeangles.p, -89, 89);
-	if(ucmd:CommandNumber() == 0) then
-		ucmd:SetViewAngles(fakeangles);
+	if(cmd:CommandNumber() == 0) then
+		cmd:SetViewAngles(fakeangles);
 		return;
     end
+	end
+end
 end
 
+--[[
 local function AAFM( cmd )
+if not ( me:GetMoveType() == MOVETYPE_NOCLIP or me:GetMoveType() == MOVETYPE_LADDER or me:WaterLevel() > 1 or (cmd:KeyDown(IN_ATTACK) or cmd:KeyDown(IN_ATTACK2)) or cmd:KeyDown(IN_USE) or (AimP && InFOV) or input.IsKeyDown(config.keybinds["aim_onkey_key"]) or input.IsMouseDown(config.keybinds["aim_onkey_key"]) ) then 
+    if config["aa_enable"] then
     local move = Vector( cmd:GetForwardMove(), cmd:GetSideMove(), cmd:GetUpMove() )
     local speed = math.sqrt( move.x * move.x + move.y * move.y )
     local mang = move:Angle()
     local yaw = math.rad( cmd:GetViewAngles().y - fakeangles.y + mang.y )
     cmd:SetForwardMove( (math.cos(yaw) * speed) * 1 )
     cmd:SetSideMove( math.sin(yaw) * speed )
+	end
+end
 end
 
 AddHook("CreateMove", RandomString(), function(ucmd)
-    --AntiAim	
+if config["aa_enable"] then
 	if config["aa_enable"] then
-	    if !ucmd:KeyDown(IN_ATTACK) or !ucmd:KeyDown(IN_ATTACK2) or !ucmd:KeyDown(IN_USE) or !ply:GetMoveType() == MOVETYPE_LADDER or input.IsKeyDown(config.keybinds["aim_onkey_key"]) or input.IsMouseDown(config.keybinds["aim_onkey_key"]) then
 	    Antihit(ucmd) 
-		end
 	else
 	    bSendPacket = true
 	end
-	if (!ucmd:KeyDown(IN_ATTACK) or !ucmd:KeyDown(IN_ATTACK2)) or !ucmd:KeyDown(IN_USE) or !ply:GetMoveType() == MOVETYPE_LADDER or input.IsKeyDown(config.keybinds["aim_onkey_key"]) or input.IsMouseDown(config.keybinds["aim_onkey_key"]) then
     AAS(ucmd)
     AAFM(ucmd)
-	end
-end)
+end
+end) 
+]]
 AddHook("CreateMove", RandomString(), function(ucmd, world_click)
     if config["aim_facestab"] then
         ForceBackStap(ucmd)
@@ -5441,7 +5436,7 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 	end
 	end
 	--Aimbot
-	if config["aim_master_toggle"] && StopAngles then
+	if config["aim_master_toggle"] then
 		if !config["aim_onkey"] || ( config.keybinds["aim_onkey_key"] != 0 && ( ( config.keybinds["aim_onkey_key"] >= 107 && config.keybinds["aim_onkey_key"] <= 113 ) && input.IsMouseDown(config.keybinds["aim_onkey_key"]) ) || input.IsKeyDown(config.keybinds["aim_onkey_key"]) ) && !frame then
 			if !LocalPlayer():Alive() then return end
 			if IsValid(LocalPlayer():GetActiveWeapon()) && LocalPlayer():GetActiveWeapon():Clip1() != 0 then
@@ -5545,10 +5540,10 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 								end
 							end
 							if AimP && InFOV && AutofireWallCheck(v) && config["autoslow"] then
-							ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 262144));
+							ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 262144))
 							end
 							if AimP && InFOV && AutofireWallCheck(v) && config["autocrouch"] then
-							ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 4));
+							ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 4))
 							end
                             if config["aim_autoreload"] then
 							    if IsValid(LocalPlayer():GetActiveWeapon()) && LocalPlayer():GetActiveWeapon():Clip1() == 0 then
@@ -5560,7 +5555,7 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 								    if LocalPlayer():GetActiveWeapon():GetClass() == "mc_weapon_sword_diamond" then
 									    if math.Round((LocalPlayer():GetPos() - v:GetPos()):Length()) <= 150 then
 										if !input.IsKeyDown(KEY_SPACE) then
-                                            ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 2));
+                                            ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 2))
 									    end
 										end
 								    end
@@ -5569,11 +5564,11 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 							if AimP && InFOV && AutofireWallCheck(v) && config["killaura_magnet"] && KillAuraP then
 							    if math.Round((LocalPlayer():GetPos() - v:GetPos()):Length()) <= 150 then
 							        if !LocalPlayer():KeyDown(8) then
-							            ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 8));
+							            ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 8))
 							        end
 								elseif math.Round((LocalPlayer():GetPos() - v:GetPos()):Length()) <= 45 then
 							        if !LocalPlayer():KeyDown(16) then
-							            ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 16));
+							            ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 16))
 							        end
 							    end
 							end
@@ -5763,6 +5758,18 @@ end end)
 end
 
 AddHook("Think", RandomString(), function()
+--RGB Gun/Ply
+    local col = HSVToColor( ( CurTime() * config["misc_rainbow_speed"] ) % 360, 1, 1 )
+	if config["misc_rainbow"] then
+		if me:Alive() && IsValid(me:GetActiveWeapon()) && me:GetActiveWeapon():GetClass() == "weapon_physgun" then
+			me:SetWeaponColor( Color(col.r, col.g, col.b):ToVector() )
+		end
+	end
+	if config["misc_rainbowply"] then
+		if me:Alive() then
+		    me:SetPlayerColor(Vector(col.r/255,col.g/255,col.b/255))
+		end
+	end
 --Undo Spam
 if config["misc_doundo"] then
 timer.Simple(0, function() 
@@ -5931,32 +5938,12 @@ AddHook("Think", RandomString(), function()
 	end
 end)
 
---=================================== Rainbow Physgun
-
-AddHook("Think", RandomString(), function()
-	if !ss then
-		if config["misc_rainbow"] then
-			local col = HSVToColor( ( CurTime() * config["misc_rainbow_speed"] ) % 360, 1, 1 )
-			if LocalPlayer():Alive() && IsValid(LocalPlayer():GetActiveWeapon()) && LocalPlayer():GetActiveWeapon():GetClass() == "weapon_physgun" then
-				LocalPlayer():SetWeaponColor( Color(col.r, col.g, col.b):ToVector() )
-			end
-		end
-		if config["misc_rainbowply"] then
-		local col = HSVToColor( ( CurTime() * config["misc_rainbow_speed"] ) % 360, 1, 1 )
-		if LocalPlayer():Alive() then
-		LocalPlayer():SetPlayerColor(Vector(col.r/255,col.g/255,col.b/255))
-		end
-		end
-	end
-end)
-
 --=================================== Viewmodel Changer
 
 AddHook("CalcViewModelView", RandomString(), function(Weapon, ViewModel, OldPos, OldAngle, EyePos, EyeAngle)
 
 	if ss then return end
-	 
-	
+		
 	if config["misc_bob"] then
 		EyeAngle = OldAngle
 	end
@@ -5986,14 +5973,14 @@ AddHook("CalcViewModelView", RandomString(), function(Weapon, ViewModel, OldPos,
     
 end)
 --================================Anti-Aim
-local real_switch = 0
+--[[local real_switch = 0
 local real_plus = true
 local fake_switch = 0
 local fake_plus = true
 bSendPacket = true
 fakeangles = Angle(0,0,0)
-function Antihit(cmd)
-    if config["aa_enable"] then
+function Antihit( cmd )
+	if config["aa_enable"] then
         local yaw = 0
         local pich = 0 
 
@@ -6074,18 +6061,21 @@ function Antihit(cmd)
 		fakeyaw = config["fa_cyaw"]
 		end		
 		
-		
-		if !bSendPacket then
-            cmd:SetViewAngles(Angle(pich,yaw,0))
-            AntiAimAngle = cmd:GetViewAngles()
-        elseif bSendPacket then
-            if config["fa_enable"] then
-                cmd:SetViewAngles(Angle(fakepich,fakeyaw,0))
-                AntiAimFakeAngle = cmd:GetViewAngles()
+		if not ( me:GetMoveType() == MOVETYPE_NOCLIP or me:GetMoveType() == MOVETYPE_LADDER or me:WaterLevel() > 1 or (cmd:KeyDown(IN_ATTACK) or cmd:KeyDown(IN_ATTACK2)) or cmd:KeyDown(IN_USE) or (AimP && InFOV) or input.IsKeyDown(config.keybinds["aim_onkey_key"]) or input.IsMouseDown(config.keybinds["aim_onkey_key"]) ) or frame then 
+		    if !bSendPacket then
+                cmd:SetViewAngles(Angle(pich,yaw,0))
+                AntiAimAngle = cmd:GetViewAngles()
+            elseif bSendPacket then
+                if config["fa_enable"] then
+           			cmd:SetViewAngles(Angle(fakepich,fakeyaw,0))
+                    AntiAimFakeAngle = cmd:GetViewAngles()
+                end
             end
-        end
+		end
     end
-end
+end]]
+
+
 
 eventListOpen()
 --==================== PostInject
