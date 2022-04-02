@@ -1,7 +1,8 @@
 --Cheat Information
 local PenisDedushki = {}
-PenisDedushki.Version = "V4.3"
+PenisDedushki.Version = "V4"
 PenisDedushki.UpdateDate = "27.03.2022"
+PenisDedushki.Build = "3"
 --Tables
 local em = FindMetaTable"Entity"
 local wm = FindMetaTable"Weapon"
@@ -61,6 +62,7 @@ require("dickwrap")
 require("enginepred")
 require("context")
 require("bsendpacket")
+--require("fhook")
 //PenisDeduration
 config["aim_master_toggle"] = false
 config["aim_onkey"] = false
@@ -96,6 +98,7 @@ config["aim_facestab"] = false
 config["aim_knifebot"] = false
 config["aim_animknife"] = false
 config["aim_act_disabler"] = false
+config["aim_interp"] = false
 
 config["movement_fix"] = 1
 
@@ -343,6 +346,8 @@ config["misc_doundo"] = false
 config["misc_rpnamer"] = false
 config["misc_rpnamer_time"] = 35
 config["misc_circlestrafer"] = false
+
+config["misc_fnamechanger"] = false
 
 config["config_name"] = nil
 config["name_font_size"] = 12
@@ -2161,7 +2166,20 @@ function HavocGUI()
     surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "Misc:", "DermaDefault", 19, 2, color_white )
     end
-
+    local misc_name = vgui.Create( "DPanel", MISC_SCROLL )
+    misc_name:SetSize(200,300)
+    misc_name:SetPos(420,5)
+    function misc_name:Paint(w, h)
+	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
+	surfSetDrawColor( 0, 0, 0, 255 )
+	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
+	surfSetDrawColor( 0, 0, 0, 255 )
+	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
+    surfSetDrawColor( 255, 255, 255, 255 ) 
+    surface.SetMaterial(Material("icon16/emoticon_waii.png"))
+    surfDrawTexturedRect( 2, 2, 15, 15 )
+    draw.SimpleText( "Player:", "DermaDefault", 19, 2, color_white )
+    end
 	
 	local CFG_SCROLL = vgui.Create( "DScrollPanel", SHEET )
     CFG_SCROLL:Dock( FILL )
@@ -2266,6 +2284,7 @@ function HavocGUI()
 	CreateCheckBox("Knife BOT", 10, 130, "aim_knifebot", false, combat_helpers)
 	CreateCheckBox("Knife Animation", 10, 150, "aim_animknife", false, combat_helpers)
 	CreateCheckBox("Act Disabler", 10, 170, "aim_act_disabler", false, combat_helpers)
+	CreateCheckBox("Interp Disabler", 10, 190, "aim_interp", false, combat_helpers)
 	--Anti-Aim
 	CreateCheckBox("Enable Anti-Aim", 10, 30, "aa_enable", false, antiaim_global)
 	CreateDropdown("Pitch", 10, 50, {"None", "Zero", "Down", "Up", "Fake Down", "Fake Up", "Random", "Custom"}, "aa_pitch", antiaim_global)
@@ -2534,6 +2553,8 @@ function HavocGUI()
     CreateCheckBox("Undo Spam", 10, 475, "misc_doundo", false, misc_misc)	
     CreateCheckBox("RP Name changer", 10, 495, "misc_rpnamer", false, misc_misc)	
     CreateSlider("RPName Delay", 10, 515, "misc_rpnamer_time", 1, 300, 0, misc_misc)
+	
+	CreateCheckBox("Name Stealer", 10, 30, "misc_fnamechanger", false, misc_name)
 	
 	CreateCheckBox("Fake Lags", 10, 30, "bsp_fake_lags", false, bsendpacket_tab)
 	CreateSlider("FakeLag Limit", 10, 50, "bsp_fake_lags_value", 1, 128, 0, bsendpacket_tab)
@@ -3816,7 +3837,7 @@ local csaysss = {
 		"Чел это бабабуз как бы",
 		"Мы в НОНРП Зоне как бы да чел отлетаеш",
 		"Найс баг абуз чел папа жива?",
-		"Loading… ██████████ 100% Lifehack.cfg Activated",
+		"Loading… ██████████ Lifehack.cfg Activated",
 		"Tapt by Anti-Hack",
 		"Kys 1yo autist",
 		"Ало скорая тут такой случай шкiла упала в месорубку",
@@ -4670,11 +4691,12 @@ local function isVisible( v )
 	if !config["aim_ignoreinvis"] then
 		return true
 	end
-    local ent = LocalPlayer():GetEyeTrace().Entity
+	--if !dop or !ply  or !pos then return true end
+	
 	local ply = LocalPlayer()	
 	local pos = v:LocalToWorld(v:OBBCenter())	
-	local dop = v:GetBonePosition(v:LookupBone("ValveBiped.Bip01_Head1")) + Vector(0, 0, 0)   
-	
+	local dop = v:GetBonePosition(v:LookupBone("ValveBiped.Bip01_Head1")) + Vector(0,0,1)
+
 	if config["aim_hitbox"] == 1 then     
 	    pos = HitScan(v) 	
 	elseif config["aim_hitbox"] == 2 && v:LookupBone("ValveBiped.Bip01_Head1") != nil then
@@ -5012,7 +5034,7 @@ local function PredictSpread(ucmd, ang)
     ang.y, ang.x = math.NormalizeAngle(ang.y), math.NormalizeAngle(ang.x);
     return(ang);
 end
-local function AutofireWallCheck( v )
+--[[local function AutofireWallCheck( v ) -- Мусорная функция
     local ent = LocalPlayer():GetEyeTrace().Entity
 	local ply = LocalPlayer()	
 	local pos = v:LocalToWorld(v:OBBCenter())	
@@ -5043,7 +5065,7 @@ local function AutofireWallCheck( v )
 		end
 	    return false
 	end
-end
+end]]
 --Facestab
 local function ForceBackStap( ucmd )
     --RMB
@@ -5120,9 +5142,15 @@ end
 end) 
 
 AddHook("CreateMove", RandomString(), function(ucmd, world_click)
+    if config["aim_interp"] then
     RunConsoleCommand("cl_interp", 0)
 	RunConsoleCommand("cl_updaterate", 100000)
 	RunConsoleCommand("cl_interp_ratio", 1)
+	else
+	RunConsoleCommand("cl_interp", 1)
+	RunConsoleCommand("cl_updaterate", 100000)
+	RunConsoleCommand("cl_interp_ratio", 1)
+	end
     if config["aim_facestab"] then
         ForceBackStap(ucmd)
 	end
@@ -5476,7 +5504,7 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
                                     end
 							    end
 							end
-                            if AimP && InFOV && AutofireWallCheck(v) && config["aim_autofire"] then
+                            if AimP && InFOV && isVisible(v) && config["aim_autofire"] then
 							    if config["killaura_delay"] then								    					    
 							        if !LocalPlayer():KeyDown(1) then
 							            DealySwing(ucmd)
@@ -5487,10 +5515,10 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 							        end
 								end
 							end
-							if AimP && InFOV && AutofireWallCheck(v) && config["autoslow"] then
+							if AimP && InFOV && isVisible(v) && config["autoslow"] then
 							ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 262144))
 							end
-							if AimP && InFOV && AutofireWallCheck(v) && config["autocrouch"] then
+							if AimP && InFOV && isVisible(v) && config["autocrouch"] then
 							ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 4))
 							end
                             if config["aim_autoreload"] then
@@ -5499,7 +5527,7 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 								end
 							end
 							if config["killaura_crits"] then
-							    if AimP && KillAuraP && InFOV && AutofireWallCheck(v) then
+							    if AimP && KillAuraP && InFOV && isVisible(v) then
 								    if LocalPlayer():GetActiveWeapon():GetClass() == "mc_weapon_sword_diamond" then
 									    if math.Round((LocalPlayer():GetPos() - v:GetPos()):Length()) <= 150 then
 										if !input.IsKeyDown(KEY_SPACE) then
@@ -5509,7 +5537,7 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 								    end
 							    end
 							end
-							if AimP && InFOV && AutofireWallCheck(v) && config["killaura_magnet"] && KillAuraP then
+							if AimP && InFOV && isVisible(v) && config["killaura_magnet"] && KillAuraP then
 							    if math.Round((LocalPlayer():GetPos() - v:GetPos()):Length()) <= 150 then
 							        if !LocalPlayer():KeyDown(8) then
 							            ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 8))
@@ -5591,6 +5619,13 @@ end
 --===================================
 --=================================== Misc
 --===================================
+--[[AddHook("Think", RandomString(), function()
+--local FName = _fhook_changename
+local randomplayer = player.GetAll()[math.random(#player.GetAll())]
+if config["misc_fnamechanger"]  then
+    _fhook_changename(randomplayer:Name() .. " ")
+end
+end)]]
 
 do
 
@@ -5695,6 +5730,8 @@ end)
 function FPS_FIX()
 	RunConsoleCommand( "cl_detailfade", "800" )
 end
+
+
 
 --RPName changer
 timer.Create( "RPNameChanger", config["misc_rpnamer_time"], 0, function() if config["misc_rpnamer"] then RunConsoleCommand("say", "/rpname " .. math.random(1000000,9999999)) end end)
