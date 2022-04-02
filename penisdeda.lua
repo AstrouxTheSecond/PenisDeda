@@ -2,7 +2,7 @@
 local PenisDedushki = {}
 PenisDedushki.Version = "V4"
 PenisDedushki.UpdateDate = "27.03.2022"
-PenisDedushki.Build = "3"
+PenisDedushki.Build = "12"
 --Tables
 local em = FindMetaTable"Entity"
 local wm = FindMetaTable"Weapon"
@@ -37,13 +37,8 @@ local surfDrawCircle = surface.DrawCircle
 local surfDrawTexturedRect = surface.DrawTexturedRect
 --Fonts
 surface.CreateFont("smallest_pixel", {size = 15,weight = 1000,antialias = true,shadow = true,font = "smallest_pixel-7",})
-surface.CreateFont("Arial_Menu", {size = 15,weight = 500,antialias = true,shadow = true,font = "Arial",})
-surface.CreateFont("Arial 12p", {size = 12,weight = 700,antialias = true,shadow = true,font = "Arial",})
-surface.CreateFont("Anarchaos Small", {size = 41,weight = 500,antialias = true,shadow = true,font = "Anarchaos",})
-surface.CreateFont("Anarchaos Button", {size = 25,weight = 500,antialias = true,shadow = true,font = "Anarchaos",})
-surface.CreateFont("Anarchaos Big", {size = 100,weight = 700,antialias = true,shadow = true,font = "Anarchaos",})
-
-
+surface.CreateFont("Anarchao$$$", {size = 70,weight = 1000,antialias = true,shadow = true,font = "Anarchaos",})
+--CFG Start
 local config = {}
 local teamFilterSelected = {}
 config.colors = {}
@@ -68,7 +63,6 @@ config["aim_master_toggle"] = false
 config["aim_onkey"] = false
 config["aim_norecoil"] = false
 config["aim_nospread"] = false
-config["aim_prediction"] = false
 config["aim_prediction_metod"] = 1
 config["aim_silent"] = false
 config["aim_psilent"] = false
@@ -99,6 +93,7 @@ config["aim_knifebot"] = false
 config["aim_animknife"] = false
 config["aim_act_disabler"] = false
 config["aim_interp"] = false
+config["aim_velocitypred"] = true
 
 config["movement_fix"] = 1
 
@@ -120,7 +115,6 @@ config["antihit_act"] = false
 config["antihit_act_type"] = 1
 config["antihit_lean"] = false
 config["antihit_lean_dir"] = 1
-
 config["aa_enable"] = false
 config["aa_pitch"] = 1
 config["aa_yaw"] = 1
@@ -129,7 +123,6 @@ config["aa_yaw_add"] = 1
 config["aa_cpitch"] = 1
 config["aa_cyaw"] = 1
 config["aa_jitter_range"] = 1
-
 config["fa_enable"] = false
 config["fa_pitch"] = 1
 config["fa_yaw"] = 1
@@ -138,16 +131,9 @@ config["fa_yaw_add"] = 1
 config["fa_cpitch"] = 1
 config["fa_cyaw"] = 1
 config["fa_jitter_range"] = 1
-
 config["aa_chams"] = false
 config["fa_chams"] = false
-
-
-
-
-
 config["antihit_act"] = false
-
 config["antihit_fd"] = false
 
 config["esp_self_predict_me"] = false
@@ -166,6 +152,7 @@ config["esp_self_hat_type"] = 1
 config["esp_self_customagent"] = false
 config["esp_self_customagent_agent"] = 1
 config["esp_self_fakelagchams"] = false
+
 
 config["esp_self_bullet_tracers"] = false
 
@@ -401,6 +388,8 @@ config.colors["esp_self_chams_wep"] = "255 11 11 150"
 config.colors["esp_player_money"] = "45 255 45 150"
 config.colors["esp_player_dormant_ind"] = "55 45 45 150"
 config.colors["esp_self_fakelagchams"] = "200 200 255 150"
+config.colors["esp_self_gun_chams"] = "55 255 45 255"
+config.colors["esp_self_hand_chams"] = "120 120 200 255"
 
 config.colors["esp_npc_box"] = "255 255 255 255"
 config.colors["esp_npc_halo"] = "255 255 255 255"
@@ -1713,7 +1702,10 @@ function HavocGUI()
 	frame:ShowCloseButton(false)
 	frame:SetDraggable(false)
 	function frame:Paint()
+	local xer = ("A P3nis D3dushki  "):sub(1, math.floor(CurTime() * 3) % #"A P3nis D3dushki $$$")
+	local color_grad = HSVToColor( ( CurTime() * 150 ) % 360, 1, 1 )
 	draw.RoundedBox( 0, 0, 0, 99999, 99999, Color(15,15,15,150) )
+	draw.SimpleText( xer, "Anarchao$$$", ScrW() / 2 - 250, ScrH() - 100, color_grad )
 	end
     	
 	local PANEL = vgui.Create( "DPanel", frame )
@@ -1759,7 +1751,7 @@ function HavocGUI()
     draw.SimpleText( "Aimbot:", "DermaDefault", 19, 2, color_white )
     end
 	local combat_accuracy = vgui.Create( "DPanel", AIM_SCROLL )
-    combat_accuracy:SetSize(200,180)
+    combat_accuracy:SetSize(200,240)
     combat_accuracy:SetPos(220,5)
     function combat_accuracy:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
@@ -1774,7 +1766,7 @@ function HavocGUI()
     end
 	local combat_triggerbot = vgui.Create( "DPanel", AIM_SCROLL )
     combat_triggerbot:SetSize(200,80)
-    combat_triggerbot:SetPos(220,190)
+    combat_triggerbot:SetPos(220,250)
     function combat_triggerbot:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
 	surfSetDrawColor( 0, 0, 0, 255 )
@@ -1786,7 +1778,6 @@ function HavocGUI()
     surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "Triggerbot:", "DermaDefault", 19, 2, color_white )
     end
-
 	local combat_filter = vgui.Create( "DPanel", AIM_SCROLL )
     combat_filter:SetSize(200,200)
     combat_filter:SetPos(430,5)
@@ -1816,7 +1807,7 @@ function HavocGUI()
     draw.SimpleText( "KillAura:", "DermaDefault", 19, 2, color_white )
     end
 	local combat_helpers = vgui.Create( "DPanel", AIM_SCROLL )
-    combat_helpers:SetSize(200,200)
+    combat_helpers:SetSize(200,250)
     combat_helpers:SetPos(850,5)
     function combat_helpers:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
@@ -2180,6 +2171,20 @@ function HavocGUI()
     surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "Player:", "DermaDefault", 19, 2, color_white )
     end
+	local misc_logs = vgui.Create( "DPanel", MISC_SCROLL )
+    misc_logs:SetSize(200,300)
+    misc_logs:SetPos(630,5)
+    function misc_logs:Paint(w, h)
+	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
+	surfSetDrawColor( 0, 0, 0, 255 )
+	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
+	surfSetDrawColor( 0, 0, 0, 255 )
+	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
+    surfSetDrawColor( 255, 255, 255, 255 ) 
+    surface.SetMaterial(Material("icon16/book_error.png"))
+    surfDrawTexturedRect( 2, 2, 15, 15 )
+    draw.SimpleText( "Event logger:", "DermaDefault", 19, 2, color_white )
+    end
 	
 	local CFG_SCROLL = vgui.Create( "DScrollPanel", SHEET )
     CFG_SCROLL:Dock( FILL )
@@ -2250,9 +2255,9 @@ function HavocGUI()
 	CreateCheckBox("Auto Slow", 10, 50, "autoslow", false, combat_accuracy)
 	CreateCheckBox("Auto Crouch", 10, 70, "autocrouch", false, combat_accuracy)
 	CreateCheckBoxExperemental("NoSpread", 10, 90, "aim_nospread", false, combat_accuracy)	
-	--CreateCheckBox("Velocity Prediction", 10, 150, "aim_prediction", false, combat_accuracy)	
 	CreateCheckBox("Bullet Time", 10, 110, "aim_bullettime", false, combat_accuracy)	
-	CreateDropdown("Movement Fix type", 10, 130, {"Static", "Static 2"}, "movement_fix", combat_accuracy)
+	CreateCheckBox("Velocity Prediction", 10, 130, "aim_velocitypred", false, combat_accuracy)	
+	CreateDropdown("Movement Fix type", 10, 150, {"Static", "Static 2"}, "movement_fix", combat_accuracy)
 	
 	CreateCheckBox("Ignore Friends", 10, 30, "aim_ignorefriends", false, combat_filter)
 	CreateCheckBox("Ignore BOTS", 10, 50, "aim_ignorebots", false, combat_filter)
@@ -2435,7 +2440,8 @@ function HavocGUI()
 	CreateSlider("Viewmodel Roll", 10, 490, "misc_vm_r", -90, 90, 0, visual_self_view)
 	CreateCheckBox("Thirdperson Wall Detect", 10, 530, "esp_other_thirdperson_walldetect", false, visual_self_view)
     CreateCheckBox("Swing Animation", 10, 550, "esp_other_swinganim", false, visual_self_view)
-	 
+	CreateCheckBox("Hand Chams", 10, 570, "esp_self_hand_chams", true, visual_self_view, 165)
+	CreateCheckBox("Gun Chams", 10, 590, "esp_self_gun_chams", true, visual_self_view, 165)
 
 	CreateCheckBox("Draw Aimbot FOV", 10, 30, "esp_other_drawfov", true, visual_self, 165)
 	CreateCheckBox("Bullet Tracer", 10, 50, "esp_self_bullet_tracers", true, visual_self, 165)
@@ -2526,10 +2532,6 @@ function HavocGUI()
 	CreateCheckBox("Circle Strafe", 10, 330, "misc_circlestrafer", false, misc_movement)
 	CreateKeybind(140, 330, "circlestrafer_key", misc_movement)
 	
-	
-	--CreateCheckBox("Sit Teleport", 10, 270, "misc_sitabuse", false, misc_movement)
-	--CreateKeybind(140, 270, "misc_wallpush", misc_movement)
-	
 	CreateCheckBox("Reveal TTT/Murder Info", 10, 30, "misc_ttt", false, misc_misc)
 	CreateCheckBox("Observer List", 10, 50, "misc_observerlist", false, misc_misc)
 	CreateCheckBox("Admin List", 10, 70, "misc_adminlist", false, misc_misc)
@@ -2539,7 +2541,6 @@ function HavocGUI()
 	CreateButton("Player List", "Open the player list menu.", CreatePlayerList, 10, 170, misc_misc)
 	CreateButton("Filter Teams", "The filter will be applied when the filter menu is closed. This filter applies to ESP and Aimbot.", CreateFilterPanel, 10, 195, misc_misc)
 	CreateCheckBox("Chat Spammer", 10, 215, "misc_chat_spam", false, misc_misc)	
-	CreateCheckBox("Event Logs", 10, 235, "misc_eventlog", false, misc_misc)	
 	CreateCheckBox("Kill Say", 10, 255, "misc_gaysay", false, misc_misc)	
 	CreateDropdown("KillSay Type", 10, 275, {"Русский", "D3D9C style", "Русский 2", "Arabian", "Omerican"}, "misc_gaysays", misc_misc)
 	CreateCheckBox("Flashlight Spammmer", 10, 315, "misc_flashlight", false, misc_misc)	
@@ -2555,6 +2556,11 @@ function HavocGUI()
     CreateSlider("RPName Delay", 10, 515, "misc_rpnamer_time", 1, 300, 0, misc_misc)
 	
 	CreateCheckBox("Name Stealer", 10, 30, "misc_fnamechanger", false, misc_name)
+	
+	CreateCheckBox("Event log", 10, 30, "misc_eventlog", false, misc_logs)
+	CreateCheckBox("Log Connection", 10, 50, "misc_eventlog_connects", false, misc_logs)	
+	CreateCheckBox("Log Disconnects", 10, 70, "misc_eventlog_dconects", false, misc_logs)
+	CreateCheckBox("Log Hurt", 10, 90, "misc_eventlog_hurt", false, misc_logs)
 	
 	CreateCheckBox("Fake Lags", 10, 30, "bsp_fake_lags", false, bsendpacket_tab)
 	CreateSlider("FakeLag Limit", 10, 50, "bsp_fake_lags_value", 1, 128, 0, bsendpacket_tab)
@@ -2585,48 +2591,7 @@ function HavocGUI()
 	CreateKeybind(10, 245, "panic_key", cfg_tab)
 
 	CreateButton("ESP Mode " .. GetRenderMode(), "If your ESP is not working on a server try changing this to unsafe. (THIS SHOULD ALWAYS BE PROTECTED WHEN POSSIBLE TO MAXIMIZE SCREENGRAB PROTECTION)", SwapRender, 10, 425, cfg_tab)
-	CreateDropdown("Menu Style", 10, 235, {"Normal", "Dropdown"}, "menu_type", cfg_tab)
-	
-	
-    --[[CreateCheckBox("Zeus Bot", 10, 70, "aim_zeusbot", false, aim2)
-	
-	CreateCheckBoxExperemental("Auto HealthKit (Sandbox)", 10, 110, "bot_healthkit", false, aim2)
-	CreateCheckBoxExperemental("Auto ArmorKit (Sandbox)", 10, 130, "bot_armorkit", false, aim2) 
-	CreateCheckBox("Kill Effect", 10, 230, "esp_other_killeffect", false, visother)
-	
-
-
-	
-
-	
-	
-
-	
-
-
-	CreateExpButton("VRMod money", "Picks up money on the floor(On the map)|Поднимает все деньги на карте", VRmodExploit ,0,0,exploits_tab,Color(0,255,255) )
-	CreateExpButton("VRMod weapons", "Picks up weapons on the floor(On the map)|Поднимает все пушки на карте", VRmodExploit2 ,0,30,exploits_tab,Color(0,255,255) )
-
-	
-
-    CreateLabel("Theme Colors", 10, 10, menu_tab)	
-    ColorPickerLabel("Panel Rect Color 1", 10, 30, "menu_rect1", true, menu_tab)	
-	ColorPickerLabel("Panel Rect Color 2", 10, 50, "menu_rect2", true, menu_tab)	
-	ColorPickerLabel("Panel Rect Color 3", 10, 70, "menu_rect3", true, menu_tab)	
-	ColorPickerLabel("Panel Rect Color 4", 10, 90, "menu_rect4", true, menu_tab)	
-	ColorPickerLabel("Outline", 10, 110, "menu_outline", true, menu_tab)	
-	ColorPickerLabel("Outline Inside", 10, 130, "menu_outline_hsv", true, menu_tab)	
-	ColorPickerLabel("Button Color", 10, 150, "menu_button_color", true, menu_tab)	
-	ColorPickerLabel("Button Text", 10, 170, "menu_button_text_color", true, menu_tab)	
-	ColorPickerLabel("Button Text Active", 10, 190, "menu_button_text_color_active", true, menu_tab)	
-	ColorPickerLabel("Sheet Color", 10, 210, "menu_sheet", true, menu_tab)	
-	ColorPickerLabel("Sheet Accent", 10, 230, "menu_sheet_accent", true, menu_tab)	
-	ColorPickerLabel("Sub Category Top", 10, 250, "menu_sub_category", true, menu_tab)
-	ColorPickerLabel("Sub Category", 10, 270, "menu_sub_category_bg", true, menu_tab)	
-	ColorPickerLabel("Scroll color", 10, 290, "menu_scroll_scroller", true, menu_tab)	
-
-    CreateCheckBox("Menu HSV Mode", 10, 310, "menu_hsv", false, menu_tab)]]
-     
+    
 	if teamFilterWasOpen then
 		CreateFilterPanel()
 		teamFilterWasOpen = false
@@ -2644,8 +2609,6 @@ function HavocGUI()
 		chamFrameWasOpen = false
 	end
 end
-
-
 
 -- ===================== GUI Logic
 
@@ -3299,26 +3262,17 @@ local cur_fps = tostring(math.floor(1 / RealFrameTime()))
 		    draw.SimpleText( LocalPlayer():GetEyeTrace().Entity, "smallest_pixel", (ScrW()/2) - 100, ScrH() / 2 + 65, color_white )
 		end
         if config["hud_watermark"] then
-		    surfSetDrawColor( 25, 25, 25, 200 ) 
-	        surface.SetMaterial(Material("gui/gradient")) 
-	        surfDrawTexturedRect( 0, 0, 512, 18 )
-            draw.SimpleText( "PenisDeda.NET V2|BETA|username: " .. LocalPlayer():Name() .. " |gm: " .. engine.ActiveGamemode(), "smallest_pixel", 0, 0, color_white )
+		    local w = surface.GetTextSize("PenisDeda.NET " .. PenisDedushki.Version .. "|username: " .. LocalPlayer():Name() .. " |gm: " .. engine.ActiveGamemode() .. " |latency:" .. LocalPlayer():Ping() .. " |tick:"..math.Round(1/engine.TickInterval()-1) )
+			w = w + 5
+			local rgbcol = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+		    draw.RoundedBox( 3, 5, 5, w, 25, Color(25,25,25))
+			draw.RoundedBox( 10, 7, 6, w-4, 3, Color(rgbcol.r,rgbcol.g,rgbcol.b))
+		    surfSetDrawColor( 255, 255, 255, 60 ) 
+	        surface.SetMaterial(Material("gui/center_gradient")) 
+	        surfDrawTexturedRect(7, 6, w-4, 3)
+            draw.SimpleText( "PenisDeda.NET " .. PenisDedushki.Version .. "|username: " .. LocalPlayer():Name() .. " |gm: " .. engine.ActiveGamemode() .. " |latency:" .. LocalPlayer():Ping() .. " |tick:"..math.Round(1/engine.TickInterval()-1) , "smallest_pixel", 8, 10, color_white )
         end
-        if config["hud_fps_indicator"] then
-		if config["hud_watermark"] then
-		surfSetDrawColor( 25, 25, 25, 200 ) 
-	    surface.SetMaterial(Material("gui/gradient")) 
-	    surfDrawTexturedRect( 0, 19, 512, 18 )
-		draw.SimpleText( "Frames:" .. cur_fps , "smallest_pixel", 0, 19, color_white )
-		draw.SimpleText( " |latency:" .. LocalPlayer():Ping() .. " |tick:"..math.Round(1/engine.TickInterval()-1), "smallest_pixel", 70, 19, color_white )
-		else
-		surfSetDrawColor( 25, 25, 25, 200 ) 
-	    surface.SetMaterial(Material("gui/gradient")) 
-	    surfDrawTexturedRect( 0, 0, 512, 18 )
-		draw.SimpleText( "Frames:" .. cur_fps , "smallest_pixel", 0, 0, color_white )
-		draw.SimpleText( " |latency:" .. LocalPlayer():Ping() .. " |tick:"..math.Round(1/engine.TickInterval()-1), "smallest_pixel", 70, 0, color_white )
-        end		
-		end
+
 		if config["hud_custom_hud"] then
 		
 		end
@@ -3752,7 +3706,38 @@ AddHook("PlayerTraceAttack", RandomString(), function (ent, dmg, dir, trace)
 	end
 	table.insert(hitmarkerTable, {vHitPos, 1})
 end)
--- ======================= KillStreak counter
+-- ======================= Hand/Gun chams
+AddHook("PreDrawPlayerHands", RandomString(), function()
+col = string.ToColor(config.colors["esp_self_hand_chams"])
+if config["esp_self_hand_chams"] then
+    render.SetColorModulation(col.r/255,col.g/255,col.b/255)
+    render.MaterialOverride(Material("models/wireframe"))
+    render.SetBlend(1)
+end	
+end)
+AddHook("PostDrawPlayerHands", RandomString(), function()
+if config["esp_self_hand_chams"] then
+    render.SetColorModulation(1, 1, 1)
+    render.MaterialOverride(Material(""))
+    render.SetBlend(1)
+end
+end)
+AddHook("PreDrawViewModel", RandomString(), function()
+col = string.ToColor(config.colors["esp_self_gun_chams"])
+if config["esp_self_gun_chams"] then
+    render.SetColorModulation(col.r/255,col.g/255,col.b/255)
+    render.MaterialOverride(Material("models/wireframe"))
+    render.SetBlend(1)
+end
+end)
+AddHook("PostDrawViewModel", RandomString(), function()
+if config["esp_self_gun_chams"] then
+    render.SetColorModulation(1, 1, 1)
+    render.MaterialOverride(Material(""))
+    render.SetBlend(1)
+end
+end)
+
 
 end
 
@@ -3766,11 +3751,13 @@ AddHook("player_connect", RandomString(), function(data)
     local ip = data.address	
     if config["misc_eventlog"] then
 	
+	if config["misc_eventlog_connects"] then
     if ip == nil then
         addEventlistMessage(name .. " | " .. steamid .. " connected!")
     else
         addEventlistMessage(name .. " | " .. steamid .. " connected|ip - " .. ip)
     end
+	end
 	
 	end
 end)
@@ -3780,7 +3767,9 @@ local name = data.name
 local steamid = data.networkid	
 local reason = data.reason
     if config["misc_eventlog"] then
+	if config["misc_eventlog_dconects"] then
         addEventlistMessage(name .. " | " .. steamid .. " disconnected|reason - " .. reason)
+		end
 	end
 end)
 
@@ -3798,11 +3787,13 @@ local hurter = nil
 		for _, ply in next, player.GetAll() do
             local health = ply:Health() - data.health
 		    if (userid == ply:UserID()) then
+			if config["misc_eventlog_hurt"] then
                 if hurter == nil then
                     addEventlistMessage("??? hurted " .. ply:Name() .. "|Dealed " .. health .. " dmg|using ??? !")
                 else
                     addEventlistMessage(hurter:Name() .. " hurted " .. ply:Name() .. "|Dealed " .. health .. " dmg|using " .. hurter:GetActiveWeapon():GetClass() .. " !")
                 end
+			end
             end
         end
     end
@@ -4692,30 +4683,28 @@ local function isVisible( v )
 		return true
 	end
 	--if !dop or !ply  or !pos then return true end
-	
 	local ply = LocalPlayer()	
 	local pos = v:LocalToWorld(v:OBBCenter())	
-	local dop = v:GetBonePosition(v:LookupBone("ValveBiped.Bip01_Head1")) + Vector(0,0,1)
-
 	if config["aim_hitbox"] == 1 then     
-	    pos = HitScan(v) 	
+	    pos = v:LocalToWorld(v:OBBCenter()) 
 	elseif config["aim_hitbox"] == 2 && v:LookupBone("ValveBiped.Bip01_Head1") != nil then
-	    pos = dop 
+	    pos = v:GetBonePosition(v:LookupBone("ValveBiped.Bip01_Head1")) + Vector(0,0,1) 
 	elseif config["aim_hitbox"] == 3 && v:LookupBone("ValveBiped.Bip01_Pelvis") != nil then 
-        pos = v:GetBonePosition(v:LookupBone("ValveBiped.Bip01_Pelvis")) 		
+        pos = v:GetBonePosition(v:LookupBone("ValveBiped.Bip01_Pelvis")) 
+    elseif config["aim_hitbox"] == 2 && v:LookupBone("ValveBiped.Bip01_Head1") == nil then
+	    pos = v:LocalToWorld(v:OBBCenter()) 
+	elseif config["aim_hitbox"] == 3 && v:LookupBone("ValveBiped.Bip01_Pelvis") == nil then 
+        pos = v:LocalToWorld(v:OBBCenter()) 	
 	else
         pos = v:LocalToWorld(v:OBBCenter()) 
-	end
-	
+	end	
 	local trace = { 
 		start = ply:GetShootPos(), 
 		endpos = pos, 
 		filter = { ply, v }, 
 		mask = MASK_SHOT
-	}
-	
-	local tr = util.TraceLine( trace )
-	
+	}	
+	local tr = util.TraceLine( trace )	
 	if (!tr.Hit) then
 		return true
     end
@@ -4821,7 +4810,7 @@ local function GetRoughDir(base, true_dir)
 	-- Loop through our rough directions and find which one is closest to our true direction
 	for i = 1, #minimum do
 		local rough_dir = base.y + minimum[i]
-		local delta = math.abs(math.NormalizeAngle(true_dir - rough_dir))
+		local delta = mabs(math.NormalizeAngle(true_dir - rough_dir))
 
 		-- Only the smallest delta wins out
 		if delta < best_delta then
@@ -4833,11 +4822,11 @@ local function GetRoughDir(base, true_dir)
 	return best_angle
 end
 local function CalcForward(ucmd)
-	if math.abs(ucmd:GetForwardMove()) < 1 then
-		if math.abs(ucmd:GetSideMove()) < 1 and math.abs(ucmd:GetMouseX()) < 1 and me:IsOnGround() then
+	if mabs(ucmd:GetForwardMove()) < 1 then
+		if mabs(ucmd:GetSideMove()) < 1 and mabs(ucmd:GetMouseX()) < 1 and me:IsOnGround() then
 			return 10000
 		else
-			local mx = math.abs(ucmd:GetMouseX()) * 2
+			local mx = mabs(ucmd:GetMouseX()) * 2
 			if mx == 0 then
 				mx = 1
 			elseif mx > 80 then
@@ -4854,8 +4843,8 @@ local function CalcForward(ucmd)
 	end
 end
 local function CalcSide(ucmd)
-	if !me:IsOnGround() and math.abs(ucmd:GetSideMove()) < 1 then
-		if math.abs(ucmd:GetMouseX()) > 1 then
+	if !me:IsOnGround() and mabs(ucmd:GetSideMove()) < 1 then
+		if mabs(ucmd:GetMouseX()) > 1 then
 			return ucmd:GetMouseX() * 12
 		else
 			return ucmd:CommandNumber() % 2 == 0 and 10000 or -10000
@@ -4908,15 +4897,15 @@ local function DirSrafe(ucmd)
 	if config["misc_autostrafe_type"] == 4 && autostrafe_transition then
 		-- Calculate the step by using our ideal strafe rotation
 		local ideal_step = speed_rotation + autostrafe_calc_dir
-		autostrafe_step = math.abs(math.NormalizeAngle(autostrafe_calc_dir - ideal_step))
+		autostrafe_step = mabs(math.NormalizeAngle(autostrafe_calc_dir - ideal_step))
 
 		-- Check when the calculated direction arrives close to the wish direction
-		if math.abs(math.NormalizeAngle(autostrafe_wish_dir - autostrafe_calc_dir)) > autostrafe_step then
+		if mabs(math.NormalizeAngle(autostrafe_wish_dir - autostrafe_calc_dir)) > autostrafe_step then
 			local add = math.NormalizeAngle(autostrafe_calc_dir + autostrafe_step)
 			local sub = math.NormalizeAngle(autostrafe_calc_dir - autostrafe_step)
 
 			-- Step in direction that gets us closer to our wish direction
-			if math.abs(math.NormalizeAngle(autostrafe_wish_dir - add)) >= math.abs(math.NormalizeAngle(autostrafe_wish_dir - sub)) then
+			if mabs(math.NormalizeAngle(autostrafe_wish_dir - add)) >= mabs(math.NormalizeAngle(autostrafe_wish_dir - sub)) then
 				autostrafe_calc_dir = autostrafe_calc_dir - autostrafe_step
 			else
 				autostrafe_calc_dir = autostrafe_calc_dir + autostrafe_step
@@ -5422,7 +5411,11 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 					if ValidateAimbot(v) and GetIgnorePlayers(v) then
 						if isVisible(v) || ( isVisible(v) && BulletTime() ) then	
 							local tarFrames, plyFrames = RealFrameTime() / ( 1 / frametime ), RealFrameTime() / ( 1 / frametime ) 
+							if config["aim_velocitypred"] then
 							pred = v:GetVelocity() * tarFrames - LocalPlayer():GetVelocity() * plyFrames
+							else
+							pred = Vector(0,0,0)
+							end
 							LOS, AimP, InFOV, KillAuraP = false, false, false, false
 							local CurAngle = ucmd:GetViewAngles()
 							local CurPos = LocalPlayer():GetShootPos()
@@ -5452,10 +5445,6 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 
 							end
 							
-							if config["aim_prediction"] then							    
-								AimSpot = VelocityPrediction(AimSpot, v)
-							end
-
 							local FinAngle = ( AimSpot - CurPos ):Angle()
 							FinAngle:Normalize()
 				
@@ -5488,7 +5477,7 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 							
 							local angDiff = GetAngleDiffrence(CurAngle, FinAngle)
 
-							angDiff = math.abs(math.NormalizeAngle(angDiff))
+							angDiff = mabs(math.NormalizeAngle(angDiff))
 
 							if angDiff < config["aim_fov"] then
 
