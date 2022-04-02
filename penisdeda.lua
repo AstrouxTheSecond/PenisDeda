@@ -1,8 +1,7 @@
 --Cheat Information
 local PenisDedushki = {}
-PenisDedushki.Version = "V4"
+PenisDedushki.Version = "V4.3"
 PenisDedushki.UpdateDate = "27.03.2022"
-PenisDedushki.Build = "3"
 --Tables
 local em = FindMetaTable"Entity"
 local wm = FindMetaTable"Weapon"
@@ -39,8 +38,9 @@ local surfDrawTexturedRect = surface.DrawTexturedRect
 surface.CreateFont("smallest_pixel", {size = 15,weight = 1000,antialias = true,shadow = true,font = "smallest_pixel-7",})
 surface.CreateFont("Arial_Menu", {size = 15,weight = 500,antialias = true,shadow = true,font = "Arial",})
 surface.CreateFont("Arial 12p", {size = 12,weight = 700,antialias = true,shadow = true,font = "Arial",})
-
-
+surface.CreateFont("Anarchaos Small", {size = 41,weight = 500,antialias = true,shadow = true,font = "Anarchaos",})
+surface.CreateFont("Anarchaos Button", {size = 25,weight = 500,antialias = true,shadow = true,font = "Anarchaos",})
+surface.CreateFont("Anarchaos Big", {size = 100,weight = 700,antialias = true,shadow = true,font = "Anarchaos",})
 
 
 local config = {}
@@ -66,7 +66,6 @@ config["aim_master_toggle"] = false
 config["aim_onkey"] = false
 config["aim_norecoil"] = false
 config["aim_nospread"] = false
-config["aim_nospread_type"] = 1
 config["aim_prediction"] = false
 config["aim_prediction_metod"] = 1
 config["aim_silent"] = false
@@ -107,16 +106,6 @@ config["killaura_on_key"] = false
 config["killaura_toggle"] = false
 config["killaura_delay"] = false
 config["killaura_disttype"] = 1
-
-config["gunmod_m9k"] = false
-config["gunmod_m9k_dmg"] = false
-config["gunmod_m9k_drecoil"] = false
-config["gunmod_m9k_penetretion"] = false
-
-config["gunmod_tfa"] = false
-config["gunmod_tfa_dmg"] = false
-config["gunmod_tfa_pen"] = false
-config["gunmod_tfa_sprd"] = false
 
 config["bot_healthkit"] = false
 config["bot_armorkit"] = false
@@ -298,7 +287,7 @@ config["hud_topline"] = false
 config["hud_topline_style"] = 1
 config["hud_velo"] = false
 
-config["esp_render_mode"] = false
+config["esp_render_mode"] = true
 
 config["misc_autobunnyhop"] = false
 config["misc_autostrafe"] = false
@@ -333,7 +322,13 @@ config["misc_vm_p"] = 0
 config["misc_vm_ya"] = 0
 config["misc_vm_r"] = 0
 config["misc_chat_spam"] = false
+
 config["misc_eventlog"] = false
+config["misc_eventlog_connects"] = false
+config["misc_eventlog_dconects"] = false
+config["misc_eventlog_hurt"] = false
+config["misc_eventlog_kills"] = false
+
 config["misc_gaysay"] = false
 config["misc_gaysays"] = 1
 config["misc_familyshared"] = false
@@ -349,13 +344,14 @@ config["misc_rpnamer"] = false
 config["misc_rpnamer_time"] = 35
 config["misc_circlestrafer"] = false
 
-
-
 config["config_name"] = nil
 config["name_font_size"] = 12
 config["name_font"] = 1
 config["flags_font_size"] = 12
 config["flag_font"] = 2
+
+
+config["menu_type"] = 1
 
 config["bsp_fake_lags"] = false
 config["bsp_fake_lags_value"] = 1
@@ -406,6 +402,8 @@ config.colors["esp_npc_halo"] = "255 255 255 255"
 config.colors["esp_npc_name"] = "255 255 255 255"
 config.colors["esp_npc_health"] = "120 255 0 255"
 config.colors["esp_npc_snaplines"] = "255 15 15 255"
+
+config.colors["menu_accent"] = "255 15 15 255"
 
 config.keybinds["aim_onkey_key"] = 0
 config.keybinds["misc_wallpush"] = 0
@@ -905,61 +903,11 @@ local function Unload()
 	cvars.RemoveChangeCallback("pd_setmat", "update_chams")
 	cvars.RemoveChangeCallback("pd_setxyzmat", "update_chams_xyz")
 	cvars.RemoveChangeCallback("pd_setoverlaymat", "update_chams_overlay")
+	--bsendpacket = true
 	print("Cheat was unloaded..")
 end
 
 
-
-do
-local function GunMod()
---TFA
-if config["gunmod_tfa"]  then
-if config["gunmod_tfa_dmg"]  then
-    RunConsoleCommand("sv_tfa_damage_multiplier", "100")
-end
-if config["gunmod_tfa_pen"]  then
-    RunConsoleCommand("sv_tfa_bullet_penetration_power_mul", "100")
-end
-if config["gunmod_tfa_sprd"]  then
-    RunConsoleCommand("sv_tfa_spread_multiplier", "0")
-end
-end
-if !config["gunmod_tfa"]  then
-if !config["gunmod_tfa_dmg"]  then
-    RunConsoleCommand("sv_tfa_damage_multiplier", "1")
-end
-if !config["gunmod_tfa_pen"]  then
-    RunConsoleCommand("sv_tfa_bullet_penetration_power_mul", "1")
-end
-if !config["gunmod_tfa_sprd"]  then
-    RunConsoleCommand("sv_tfa_spread_multiplier", "1")
-end
-end
---M9K
-if config["gunmod_m9k"]  then
-if config["gunmod_m9k_dmg"]  then
-    RunConsoleCommand("M9KDamageMultiplier", "1000")
-end
-if config["gunmod_m9k_penetretion"]  then
-    RunConsoleCommand("M9KDisablePenetration", "1")
-end
-if config["gunmod_m9k_drecoil"]  then
-    RunConsoleCommand("M9KDynamicRecoil", "0")
-end
-end
-if !config["gunmod_m9k"]  then
-if !config["gunmod_m9k_dmg"]  then
-    RunConsoleCommand("M9KDamageMultiplier", "1")
-end
-if !config["gunmod_m9k_penetretion"]  then
-    RunConsoleCommand("M9KDisablePenetration", "0")
-end
-if !config["gunmod_m9k_drecoil"]  then
-    RunConsoleCommand("M9KDynamicRecoil", "1")
-end
-end
-end
-end
 
 local function CheckObservers()
 
@@ -1748,8 +1696,10 @@ local function CreateMaterialList()
 end
 --========================GUI Menu============================================--
 function HavocGUI()
-
+    local accent = string.ToColor(config.colors["menu_accent"])
+	local color_accent = Color(accent.r,accent.g,accent.b,255)
 	files, dir = file.Find( "penisdeda/*.json", "DATA" )
+
 	frame = vgui.Create("DFrame")
 	frame:SetSize(ScrW(), ScrH())
 	frame:Center()
@@ -1760,7 +1710,7 @@ function HavocGUI()
 	function frame:Paint()
 	draw.RoundedBox( 0, 0, 0, 99999, 99999, Color(15,15,15,150) )
 	end
-
+    	
 	local PANEL = vgui.Create( "DPanel", frame )
 	PANEL:SetSize(ScrW(),ScrH())
 	PANEL:SetPos(0,0)
@@ -1804,7 +1754,7 @@ function HavocGUI()
     draw.SimpleText( "Aimbot:", "DermaDefault", 19, 2, color_white )
     end
 	local combat_accuracy = vgui.Create( "DPanel", AIM_SCROLL )
-    combat_accuracy:SetSize(200,300)
+    combat_accuracy:SetSize(200,180)
     combat_accuracy:SetPos(220,5)
     function combat_accuracy:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
@@ -1819,7 +1769,7 @@ function HavocGUI()
     end
 	local combat_triggerbot = vgui.Create( "DPanel", AIM_SCROLL )
     combat_triggerbot:SetSize(200,80)
-    combat_triggerbot:SetPos(220,310)
+    combat_triggerbot:SetPos(220,190)
     function combat_triggerbot:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
 	surfSetDrawColor( 0, 0, 0, 255 )
@@ -1831,20 +1781,7 @@ function HavocGUI()
     surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "Triggerbot:", "DermaDefault", 19, 2, color_white )
     end
-	local combat_gunmod = vgui.Create( "DPanel", AIM_SCROLL )
-    combat_gunmod:SetSize(200,350)
-    combat_gunmod:SetPos(220,400)
-    function combat_gunmod:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/fire.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "GunMod(Admin):", "DermaDefault", 19, 2, color_white )
-    end
+
 	local combat_filter = vgui.Create( "DPanel", AIM_SCROLL )
     combat_filter:SetSize(200,200)
     combat_filter:SetPos(430,5)
@@ -1860,7 +1797,7 @@ function HavocGUI()
     draw.SimpleText( "Filter:", "DermaDefault", 19, 2, color_white )
     end
 	local combat_killaura = vgui.Create( "DPanel", AIM_SCROLL )
-    combat_killaura:SetSize(200,200)
+    combat_killaura:SetSize(200,190)
     combat_killaura:SetPos(640,5)
     function combat_killaura:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
@@ -1874,8 +1811,8 @@ function HavocGUI()
     draw.SimpleText( "KillAura:", "DermaDefault", 19, 2, color_white )
     end
 	local combat_helpers = vgui.Create( "DPanel", AIM_SCROLL )
-    combat_helpers:SetSize(200,300)
-    combat_helpers:SetPos(855,5)
+    combat_helpers:SetSize(200,200)
+    combat_helpers:SetPos(850,5)
     function combat_helpers:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
 	surfSetDrawColor( 0, 0, 0, 255 )
@@ -2295,10 +2232,9 @@ function HavocGUI()
 	CreateCheckBox("Auto Slow", 10, 50, "autoslow", false, combat_accuracy)
 	CreateCheckBox("Auto Crouch", 10, 70, "autocrouch", false, combat_accuracy)
 	CreateCheckBoxExperemental("NoSpread", 10, 90, "aim_nospread", false, combat_accuracy)	
-	--CreateDropdown("NoSpread Type", 10, 110, {"MD5", "Module", "Module 2"}, "aim_nospread_type", combat_accuracy)
-	CreateCheckBox("Velocity Prediction", 10, 150, "aim_prediction", false, combat_accuracy)	
-	CreateCheckBox("Bullet Time", 10, 220, "aim_bullettime", false, combat_accuracy)	
-	CreateDropdown("Movement Fix type", 10, 240, {"Static", "Static 2"}, "movement_fix", combat_accuracy)
+	--CreateCheckBox("Velocity Prediction", 10, 150, "aim_prediction", false, combat_accuracy)	
+	CreateCheckBox("Bullet Time", 10, 110, "aim_bullettime", false, combat_accuracy)	
+	CreateDropdown("Movement Fix type", 10, 130, {"Static", "Static 2"}, "movement_fix", combat_accuracy)
 	
 	CreateCheckBox("Ignore Friends", 10, 30, "aim_ignorefriends", false, combat_filter)
 	CreateCheckBox("Ignore BOTS", 10, 50, "aim_ignorebots", false, combat_filter)
@@ -2320,16 +2256,6 @@ function HavocGUI()
 	CreateCheckBox("Enable Triggerbot", 10, 30, "trigger_master_toggle", false, combat_triggerbot)
 	CreateCheckBox("Triggerbot On Key", 10, 50, "trigger_onkey", false, combat_triggerbot)
 	CreateKeybind(150, 50, "trigger_onkey_key", combat_triggerbot)
-
-	CreateCheckBox("TFA Gun Mod", 10, 30, "gunmod_tfa", false, combat_gunmod)
-	CreateCheckBox("TFA Damage Modifaer", 10, 50, "gunmod_tfa_dmg", false, combat_gunmod)
-	CreateCheckBox("TFA Spread Modifaer", 10, 70, "gunmod_tfa_sprd", false, combat_gunmod)
-	CreateCheckBox("TFA Penetration Modifaer", 10, 90, "gunmod_tfa_pen", false, combat_gunmod)
-	CreateCheckBox("M9K Gun Mod", 10, 110, "gunmod_m9k", false, combat_gunmod)	
-	CreateCheckBox("M9K Damage Modifaer", 10, 130, "gunmod_m9k_dmg", false, combat_gunmod)
-	CreateCheckBox("M9K NoDRecoil", 10, 150, "gunmod_m9k_drecoil", false, combat_gunmod)
-	CreateCheckBox("M9K Penetration", 10, 170, "gunmod_m9k_penetretion", false, combat_gunmod)	
-	CreateButton("Update GunMod", "Updates gunmod.", GunMod, 10, 300, combat_gunmod)
 	
 	CreateCheckBox("Auto Click", 10, 30, "misc_autoclick", false, combat_helpers)
 	CreateCheckBox("Scroll Attack", 10, 50, "misc_scrollattack", false, combat_helpers)
@@ -2519,7 +2445,7 @@ function HavocGUI()
 	
 	CreateButton("Entity List", "Open Entity List.", CreateEntityList, 10, 30, world_ents)
 	CreateCheckBox("Storage ESP", 10, 50, "esp_ent_storage_esp", true, world_ents , 165)
-	CreateCheckBox("Crosshair Emtity", 10, 70, "esp_ent_crosshair", false, world_ents , 165)
+	CreateCheckBox("Crosshair Entity", 10, 70, "esp_ent_crosshair", false, world_ents , 165)
 	
 	CreateCheckBox("Watermark", 10, 30, "hud_watermark", false, visual_self_hud )
 	CreateCheckBox("FPS Counter", 10, 50, "hud_fps_indicator", false, visual_self_hud )
@@ -2638,7 +2564,7 @@ function HavocGUI()
 	CreateKeybind(10, 245, "panic_key", cfg_tab)
 
 	CreateButton("ESP Mode " .. GetRenderMode(), "If your ESP is not working on a server try changing this to unsafe. (THIS SHOULD ALWAYS BE PROTECTED WHEN POSSIBLE TO MAXIMIZE SCREENGRAB PROTECTION)", SwapRender, 10, 425, cfg_tab)
-	
+	CreateDropdown("Menu Style", 10, 235, {"Normal", "Dropdown"}, "menu_type", cfg_tab)
 	
 	
     --[[CreateCheckBox("Zeus Bot", 10, 70, "aim_zeusbot", false, aim2)
@@ -2679,7 +2605,7 @@ function HavocGUI()
 	ColorPickerLabel("Scroll color", 10, 290, "menu_scroll_scroller", true, menu_tab)	
 
     CreateCheckBox("Menu HSV Mode", 10, 310, "menu_hsv", false, menu_tab)]]
-
+     
 	if teamFilterWasOpen then
 		CreateFilterPanel()
 		teamFilterWasOpen = false
@@ -3100,18 +3026,22 @@ local function DoESP()
 						drawSimpleOutlinedText("Dormant", "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["di_x"], MaxY+config["di_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						end
 					end
-					if config["esp_player_money"] && v.DarkRPVars then
+					if config["esp_player_money"] then
+					    local Money = v:GetNetworkedInt("money")
+		                if v.DarkRPVars and v.DarkRPVars.money then
+			                Money = v.DarkRPVars.money
+		                end
 						surfSetFont("ESP_Font_Flag")
-                        local w, h = surfGetTextSize(tostring(v.DarkRPVars.money).. " $")
+                        local w, h = surfGetTextSize(tostring(Money).. " $")
 						local col = string.ToColor(config.colors["esp_player_money"])
 						if config["mn_pos"] == 1 then
-						drawSimpleOutlinedText(tostring(v.DarkRPVars.money).. " $", "ESP_Font_Flag", MinX-config["mn_x"], MinY+config["mn_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(tostring(Money).. " $", "ESP_Font_Flag", MinX-config["mn_x"], MinY+config["mn_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["mn_pos"] == 2 then
-						drawSimpleOutlinedText(tostring(v.DarkRPVars.money).. " $", "ESP_Font_Flag", MaxX+config["mn_x"], MinY+config["mn_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(tostring(Money).. " $", "ESP_Font_Flag", MaxX+config["mn_x"], MinY+config["mn_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["mn_pos"] == 3 then
-						drawSimpleOutlinedText(tostring(v.DarkRPVars.money).. " $", "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["mn_x"], MinY-config["mn_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(tostring(Money).. " $", "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["mn_x"], MinY-config["mn_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["mn_pos"] == 4 then  
-						drawSimpleOutlinedText(tostring(v.DarkRPVars.money) .. " $", "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["mn_x"], MaxY+config["mn_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						drawSimpleOutlinedText(tostring(Money) .. " $", "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["mn_x"], MaxY+config["mn_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						end
 					end
 					if config["esp_player_snaplines"] then
@@ -4632,6 +4562,7 @@ local pred, realAng
 
 local function FixMovement(cmd, fa)
 	if config["movement_fix"] == 1 then
+	
 	local vec = Vector(cmd:GetForwardMove(), cmd:GetSideMove(), 0)
 	local vel = math.sqrt(vec.x * vec.x + vec.y * vec.y)
 	local mang = vec:Angle()
@@ -4643,13 +4574,16 @@ local function FixMovement(cmd, fa)
 	yaw = ( ( yaw + 180 ) % 360 ) - 180
 	cmd:SetForwardMove( math.cos( math.rad( yaw ) ) * vel )
 	cmd:SetSideMove( math.sin( math.rad( yaw ) ) * vel )
+	
     elseif config["movement_fix"] == 2 then
+	
     vec = Vector( cmd:GetForwardMove(), cmd:GetSideMove(), cmd:GetUpMove() )
     vel = math.sqrt( vec.x * vec.x + vec.y * vec.y )
     mang = vec:Angle()
     yaw = math.rad( cmd:GetViewAngles().y - fa.y + mang.y )
     cmd:SetForwardMove( (math.cos(yaw) * vel) * 1 )
     cmd:SetSideMove( math.sin(yaw) * vel )
+	
     end
 end
 
@@ -4733,14 +4667,23 @@ local function Prediction(v, pos)
 end
 
 local function isVisible( v )
-
 	if !config["aim_ignoreinvis"] then
 		return true
 	end
-
-	local ply = LocalPlayer()
+    local ent = LocalPlayer():GetEyeTrace().Entity
+	local ply = LocalPlayer()	
+	local pos = v:LocalToWorld(v:OBBCenter())	
+	local dop = v:GetBonePosition(v:LookupBone("ValveBiped.Bip01_Head1")) + Vector(0, 0, 0)   
 	
-	local pos = v:LocalToWorld(v:OBBCenter())
+	if config["aim_hitbox"] == 1 then     
+	    pos = HitScan(v) 	
+	elseif config["aim_hitbox"] == 2 && v:LookupBone("ValveBiped.Bip01_Head1") != nil then
+	    pos = dop 
+	elseif config["aim_hitbox"] == 3 && v:LookupBone("ValveBiped.Bip01_Pelvis") != nil then 
+        pos = v:GetBonePosition(v:LookupBone("ValveBiped.Bip01_Pelvis")) 		
+	else
+        pos = v:LocalToWorld(v:OBBCenter()) 
+	end
 	
 	local trace = { 
 		start = ply:GetShootPos(), 
@@ -4748,11 +4691,12 @@ local function isVisible( v )
 		filter = { ply, v }, 
 		mask = MASK_SHOT
 	}
+	
 	local tr = util.TraceLine( trace )
 	
-	if( !tr.Hit ) then
+	if (!tr.Hit) then
 		return true
-	end
+    end
 	return false
 end
 
@@ -4838,35 +4782,6 @@ local function AntiAFK( ucmd )
     ucmd:SetForwardMove( math.random( -300, 300 ) )
 	ucmd:SetSideMove( math.random( -300, 300 ) )
 	end
-end
-
-local function AutofireWallCheck( v )
-	local ply = LocalPlayer()
-	
-	local pos = v:LocalToWorld(v:OBBCenter())
-	
-	if config["aim_hitbox"] == 1 then 
-	    pos = HitScan(v) 
-	elseif config["aim_hitbox"] == 2 && v:LookupBone("ValveBiped.Bip01_Head1") != nil then
-	    pos = v:GetBonePosition(v:LookupBone("ValveBiped.Bip01_Head1")) + Vector(0, 0, 1)   
-	elseif config["aim_hitbox"] == 3 && v:LookupBone("ValveBiped.Bip01_Pelvis") != nil then 
-        pos = v:GetBonePosition(v:LookupBone("ValveBiped.Bip01_Pelvis")) 	
-	else
-        pos = v:LocalToWorld(v:OBBCenter()) 
-	end
-	
-	local trace = { 
-		start = ply:GetShootPos(), 
-		endpos = pos, 
-		filter = { ply, v }, 
-		mask = MASK_SHOT
-	}
-	local tr = util.TraceLine( trace )
-	
-	if( !tr.Hit ) then
-		return true
-	end
-	return false
 end
 --local bor = bit.bor
 local me = LocalPlayer()
@@ -5097,6 +5012,38 @@ local function PredictSpread(ucmd, ang)
     ang.y, ang.x = math.NormalizeAngle(ang.y), math.NormalizeAngle(ang.x);
     return(ang);
 end
+local function AutofireWallCheck( v )
+    local ent = LocalPlayer():GetEyeTrace().Entity
+	local ply = LocalPlayer()	
+	local pos = v:LocalToWorld(v:OBBCenter())	
+	local dop = v:GetBonePosition(v:LookupBone("ValveBiped.Bip01_Head1")) + Vector(0, 0, 0)   
+	
+	if config["aim_hitbox"] == 1 then     
+	    pos = HitScan(v) 	
+	elseif config["aim_hitbox"] == 2 && v:LookupBone("ValveBiped.Bip01_Head1") != nil then
+	    pos = dop 
+	elseif config["aim_hitbox"] == 3 && v:LookupBone("ValveBiped.Bip01_Pelvis") != nil then 
+        pos = v:GetBonePosition(v:LookupBone("ValveBiped.Bip01_Pelvis")) 		
+	else
+        pos = v:LocalToWorld(v:OBBCenter()) 
+	end
+	
+	local trace = { 
+		start = ply:GetShootPos(), 
+		endpos = pos, 
+		filter = { ply, v }, 
+		mask = MASK_SHOT
+	}
+	
+	local tr = util.TraceLine( trace )
+	
+	if InFOV && AimP then
+	    if (!tr.Hit) then
+		    return true
+		end
+	    return false
+	end
+end
 --Facestab
 local function ForceBackStap( ucmd )
     --RMB
@@ -5134,7 +5081,6 @@ local function KnifeBotik( ucmd )
     end
 end
 local function AAS( cmd ) 
-if not ( me:GetMoveType() == MOVETYPE_NOCLIP or me:GetMoveType() == MOVETYPE_LADDER or me:WaterLevel() > 1 or (cmd:KeyDown(IN_ATTACK) or cmd:KeyDown(IN_ATTACK2)) or cmd:KeyDown(IN_USE) or (AimP && InFOV) or input.IsKeyDown(config.keybinds["aim_onkey_key"]) or input.IsMouseDown(config.keybinds["aim_onkey_key"]) ) then 
     if config["aa_enable"] then
 	if(!fakeangles) then fakeangles = cmd:GetViewAngles(); end
 	fakeangles = fakeangles + Angle(cmd:GetMouseY() * .023, cmd:GetMouseX() * -.023, 0);
@@ -5146,11 +5092,9 @@ if not ( me:GetMoveType() == MOVETYPE_NOCLIP or me:GetMoveType() == MOVETYPE_LAD
     end
 	end
 end
-end
 
---[[
+
 local function AAFM( cmd )
-if not ( me:GetMoveType() == MOVETYPE_NOCLIP or me:GetMoveType() == MOVETYPE_LADDER or me:WaterLevel() > 1 or (cmd:KeyDown(IN_ATTACK) or cmd:KeyDown(IN_ATTACK2)) or cmd:KeyDown(IN_USE) or (AimP && InFOV) or input.IsKeyDown(config.keybinds["aim_onkey_key"]) or input.IsMouseDown(config.keybinds["aim_onkey_key"]) ) then 
     if config["aa_enable"] then
     local move = Vector( cmd:GetForwardMove(), cmd:GetSideMove(), cmd:GetUpMove() )
     local speed = math.sqrt( move.x * move.x + move.y * move.y )
@@ -5159,7 +5103,6 @@ if not ( me:GetMoveType() == MOVETYPE_NOCLIP or me:GetMoveType() == MOVETYPE_LAD
     cmd:SetForwardMove( (math.cos(yaw) * speed) * 1 )
     cmd:SetSideMove( math.sin(yaw) * speed )
 	end
-end
 end
 
 AddHook("CreateMove", RandomString(), function(ucmd)
@@ -5171,10 +5114,15 @@ if config["aa_enable"] then
 	end
     AAS(ucmd)
     AAFM(ucmd)
+else
+bSendPacket = true
 end
 end) 
-]]
+
 AddHook("CreateMove", RandomString(), function(ucmd, world_click)
+    RunConsoleCommand("cl_interp", 0)
+	RunConsoleCommand("cl_updaterate", 100000)
+	RunConsoleCommand("cl_interp_ratio", 1)
     if config["aim_facestab"] then
         ForceBackStap(ucmd)
 	end
@@ -5213,7 +5161,7 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 		    end
 	    end
 	else
-	    bSendPacket = ucmd:CommandNumber() % 2 == 1 
+	    bSendPacket = (ucmd:CommandNumber() % 1) < 3
     end
     if config["antihit_fd"] then
         if input.IsKeyDown(config.keybinds["antihit_fd_key"]) then
@@ -5906,6 +5854,11 @@ for k, v in pairs(player.GetAll()) do
 		RunConsoleCommand( "say", "/hobo" )
 		end
 		end
+		
+		if me:GetActiveWeapon():GetClass() == "" then
+		MsgC(Color(255,120,120), "[WARNING] Automatically leaved server to avoid being arrested")
+		RunConsoleCommand("retry")
+		end
     end
 end
 end)
@@ -5973,7 +5926,7 @@ AddHook("CalcViewModelView", RandomString(), function(Weapon, ViewModel, OldPos,
     
 end)
 --================================Anti-Aim
---[[local real_switch = 0
+local real_switch = 0
 local real_plus = true
 local fake_switch = 0
 local fake_plus = true
@@ -6059,21 +6012,19 @@ function Antihit( cmd )
 		fakeyaw = mNormalizeAng(CurTime() * 360)
 		elseif config["fa_yaw"] == 8 then	
 		fakeyaw = config["fa_cyaw"]
-		end		
+		end	
 		
-		if not ( me:GetMoveType() == MOVETYPE_NOCLIP or me:GetMoveType() == MOVETYPE_LADDER or me:WaterLevel() > 1 or (cmd:KeyDown(IN_ATTACK) or cmd:KeyDown(IN_ATTACK2)) or cmd:KeyDown(IN_USE) or (AimP && InFOV) or input.IsKeyDown(config.keybinds["aim_onkey_key"]) or input.IsMouseDown(config.keybinds["aim_onkey_key"]) ) or frame then 
-		    if !bSendPacket then
-                cmd:SetViewAngles(Angle(pich,yaw,0))
-                AntiAimAngle = cmd:GetViewAngles()
-            elseif bSendPacket then
-                if config["fa_enable"] then
-           			cmd:SetViewAngles(Angle(fakepich,fakeyaw,0))
-                    AntiAimFakeAngle = cmd:GetViewAngles()
-                end
+        if !bSendPacket then
+            cmd:SetViewAngles(Angle(pich,yaw,0))
+            AntiAimAngle = cmd:GetViewAngles()
+        elseif bSendPacket then
+            if config["fa_enable"] then
+                cmd:SetViewAngles(Angle(fakepich,fakeyaw,0))
+                AntiAimFakeAngle = cmd:GetViewAngles()
             end
-		end
+        end
     end
-end]]
+end
 
 
 
@@ -6082,7 +6033,7 @@ eventListOpen()
 
 
 MsgC(Color(255, 25, 25), "\n████████████████████████████████████████\n████████████████░░██████████████████████\n███████████████▀░░░▀▀▀▀▀▀███████████████\n███████████▀▀░░░░░░░░░░░░░░▀▀███████████\n████████▀░░░░▄▄░░░▄░░▀███▄▄░░░░▀████████\n██████▀░░░▄███░░░██▄░░░██████▄░░░▀██████\n█████▀░░▄████▀░░▄████░░░███████▄░░▀█████\n████▀░░▄█████░░░██████░░░▀██████▄░░▀████\n████░░░█████▀░░████████▄░░▀████▀▀░░░░▀██\n████░░██████░░▄███████▀▀░░░░░░░░░░░░▄▄██\n████░░█████░░░▀▀▀░░░░░░░░▄░░░▄████░░████\n███▀░░░▀░░░░░░░░▄▄▄▄▄██████░░░▀██░░░████\n██▄░░░░░▄▄░░░███████████████▄░░▀▀░░▄████\n█████▄░░▀░░░█████████████████▄░░░░▄█████\n██████▄░░░░░█████████████████▀░░░░██████\n████████░░░░░▀▀██████████▀▀░░░░▄░░░▀████\n███████▀░░▄▄▄░░░░░░░░░░░░░░▄▄████▄░░▀███\n███████░░░█████▄▄▄▄▄▄▄▄▄▄█████████▄▄▄███\n██████▄▄▄███████████████████████████████\n████████████████████████████████████████\n")
-MsgC(Color(255, 235, 200), "PenisDeda" .. PenisDedushki.Version .. "loaded! \n")
+MsgC(Color(255, 25, 25), "PenisDeda" .. PenisDedushki.Version .. "loaded! \n")
 
 notification.AddLegacy("Loaded PenisDeda " .. PenisDedushki.Version .."  | " .. os.date("%I:%M %p"), NOTIFY_HINT, 5)
 
