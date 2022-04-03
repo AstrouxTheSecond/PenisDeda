@@ -1,8 +1,8 @@
 --Cheat Information
 local PenisDedushki = {}
-PenisDedushki.Version = "V4"
+PenisDedushki.Version = "V4.3.6"
 PenisDedushki.UpdateDate = "27.03.2022"
-PenisDedushki.Build = "12"
+PenisDedushki.Build = "17"
 --Tables
 local em = FindMetaTable"Entity"
 local wm = FindMetaTable"Weapon"
@@ -17,7 +17,7 @@ local IsValid = IsValid
 local TraceLine, TraceHull = util.TraceLine, util.TraceHull
 local mNormalizeAng = math.NormalizeAngle
 local band, bor, bnot = bit.band, bit.bor, bit.bnot
-local TICK_INTERVAL = engine.TickInterval()
+local TICK_INTERVAL, CURFPS = engine.TickInterval(), tostring(math.floor(1 / RealFrameTime()))
 --Math 
 local mabs, msin, mcos, mClamp, mrandom, mRand = math.abs, math.sin, math.cos, math.Clamp, math.random, math.Rand
 local mceil, mfloor, msqrt, mrad, mdeg = math.ceil, math.floor, math.sqrt, math.rad, math.deg
@@ -262,6 +262,14 @@ config["esp_other_swinganim"] = false
 config["esp_entity_box"] = false
 config["esp_entity_name"] = false
 
+config["map_enable"] = false
+config["map_zoom"] = 5
+config["map_size"] = 230
+config["map_x"] = 5
+config["map_y"] = 150
+config["map_names"] = false
+config["map_teams"] = false
+
 config["hud_watermark"] = true
 config["hud_fps_indicator"] = false
 config["hud_disable_hl2_hud"] = false
@@ -297,6 +305,8 @@ config["misc_ttt"] = false
 config["misc_antibot"] = false
 config["misc_observerlist"] = false
 config["misc_adminlist"] = false
+config["misc_adminlist_x"] = 20
+config["misc_adminlist_y"] = 20
 config["misc_rainbow"] = false	
 config["misc_rainbowply"] = false	
 config["misc_rainbow_speed"] = 20
@@ -397,7 +407,11 @@ config.colors["esp_npc_name"] = "255 255 255 255"
 config.colors["esp_npc_health"] = "120 255 0 255"
 config.colors["esp_npc_snaplines"] = "255 15 15 255"
 
+config.colors["esp_self_laser_sight"] = "255 15 15 255"
+
 config.colors["menu_accent"] = "255 15 15 255"
+config.colors["map_enable"] = "15 15 15 255"
+config.colors["map_names"] = "255 255 255 255"
 
 config.keybinds["aim_onkey_key"] = 0
 config.keybinds["misc_wallpush"] = 0
@@ -1345,28 +1359,6 @@ local function HSVColorButton(x, y, cfg, par)
 	end
 end
 
-local function HealthColorButton(x, y, cfg, par)
-
-	local hbox = vgui.Create("DCheckBox", par)
-	hbox:SetPos(x, y)
-	hbox:SetValue( config[cfg] )
-	function hbox:OnChange( bVal )
-		config[cfg] = bVal
-	end
-	hbox.Paint = function(self, w, h)
-	local mat = Material("icon16/heart.png")
-	if hbox:GetChecked() then
-        surfSetDrawColor( 255, 255, 255, 255 )
-	    surface.SetMaterial( mat )
-	    surfDrawTexturedRect( 0, 0, 15, 15 )
-	else
-        surfSetDrawColor( 111, 111, 111, 200 )
-	    surface.SetMaterial( mat )
-	    surfDrawTexturedRect( 0, 0, 15, 15 )
-	end
-	end
-end
-
 local function CreateExpButton(lbl, tooltip, fnc, x, y, par, col)
 	local expbutton = vgui.Create("DButton", par)
 	expbutton:SetSize(150, 30)
@@ -1738,7 +1730,7 @@ function HavocGUI()
 	end	
 	local combat_aimbot = vgui.Create( "DPanel", AIM_SCROLL )
     combat_aimbot:SetSize(200,330)
-    combat_aimbot:SetPos(10,5)
+    combat_aimbot:SetPos(5,5)
     function combat_aimbot:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
 	surfSetDrawColor( 0, 0, 0, 255 )
@@ -1752,7 +1744,7 @@ function HavocGUI()
     end
 	local combat_accuracy = vgui.Create( "DPanel", AIM_SCROLL )
     combat_accuracy:SetSize(200,240)
-    combat_accuracy:SetPos(220,5)
+    combat_accuracy:SetPos(210,5)
     function combat_accuracy:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
 	surfSetDrawColor( 0, 0, 0, 255 )
@@ -1906,12 +1898,13 @@ function HavocGUI()
 	draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
 	end
 	function VISUAL_SCROLLS.btnGrip:Paint(w, h)
-	draw.RoundedBox( 5, 0, 0, w, h, Color(255,15,15) )
-	draw.RoundedBox( 5, 2, 2, w-4, h-4, Color(15,15,15) )
+	surfSetDrawColor( 0, 0, 0, 255 )
+	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
+    draw.RoundedBox(0, 0, 0, w, h, Color(45, 45, 60, 150))
 	end
 	
 	local visual_player = vgui.Create( "DPanel", VISUAL_SCROLL )
-    visual_player:SetSize(790,600)
+    visual_player:SetSize(590,600)
     visual_player:SetPos(5,5)
     function visual_player:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
@@ -1932,8 +1925,8 @@ function HavocGUI()
 	draw.SimpleText( "-= Effects =-", "DermaDefault", 255, 235, color_white )
 	surface.DrawOutlinedRect( 200, 465, 190, 130, 1 )
 	draw.SimpleText( "-= Colored Models =-", "DermaDefault", 200, 450, color_white )
-	surface.DrawOutlinedRect( 590, 35, 190, 300, 1 )
-	draw.SimpleText( "-= Filter =-", "DermaDefault", 645, 20, color_white )
+	surface.DrawOutlinedRect( 395, 35, 190, 300, 1 )
+	draw.SimpleText( "-= Filter =-", "DermaDefault", 455, 20, color_white )
     end
 	local visual_player_settings = vgui.Create( "DPanel", VISUAL_SCROLL )
     visual_player_settings:SetSize(400,930)
@@ -1966,22 +1959,6 @@ function HavocGUI()
 	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
     draw.RoundedBox(0, 0, 0, w, h, Color(45, 45, 60, 150))
 	end
-
-	--[[local visual_npc = vgui.Create( "DPanel", SELF_SCROLL )
-    visual_npc:SetSize(200,150)
-    visual_npc:SetPos(420,5)
-    function visual_npc:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/monkey.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "NPCs:", "DermaDefault", 19, 2, color_white )
-    end
-	]]
 	local visual_self_view = vgui.Create( "DPanel", SELF_SCROLL )
     visual_self_view:SetSize(200,700)
     visual_self_view:SetPos(5,5)
@@ -2098,6 +2075,20 @@ function HavocGUI()
     surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "Entity:", "DermaDefault", 19, 2, color_white )
     end
+	local world_minimap = vgui.Create( "DPanel", WORLD_SCROLL )
+    world_minimap:SetSize(200,300)
+    world_minimap:SetPos(840,5)
+    function world_minimap:Paint(w, h)
+	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
+	surfSetDrawColor( 0, 0, 0, 255 )
+	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
+	surfSetDrawColor( 0, 0, 0, 255 )
+	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
+    surfSetDrawColor( 255, 255, 255, 255 ) 
+    surface.SetMaterial(Material("icon16/world.png"))
+    surfDrawTexturedRect( 2, 2, 15, 15 )
+    draw.SimpleText( "Mini Map:", "DermaDefault", 19, 2, color_white )
+    end
 	local MISC_SCROLL = vgui.Create( "DScrollPanel", SHEET )
     MISC_SCROLL:Dock( FILL )
     local MISC_SCROLLS = MISC_SCROLL:GetVBar()
@@ -2144,7 +2135,7 @@ function HavocGUI()
     draw.SimpleText( "bSendPacket:", "DermaDefault", 19, 2, color_white )
     end
 	local misc_misc = vgui.Create( "DPanel", MISC_SCROLL )
-    misc_misc:SetSize(200,1200)
+    misc_misc:SetSize(200,200)
     misc_misc:SetPos(210,5)
     function misc_misc:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
@@ -2158,7 +2149,7 @@ function HavocGUI()
     draw.SimpleText( "Misc:", "DermaDefault", 19, 2, color_white )
     end
     local misc_name = vgui.Create( "DPanel", MISC_SCROLL )
-    misc_name:SetSize(200,300)
+    misc_name:SetSize(200,250)
     misc_name:SetPos(420,5)
     function misc_name:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
@@ -2172,7 +2163,7 @@ function HavocGUI()
     draw.SimpleText( "Player:", "DermaDefault", 19, 2, color_white )
     end
 	local misc_logs = vgui.Create( "DPanel", MISC_SCROLL )
-    misc_logs:SetSize(200,300)
+    misc_logs:SetSize(200,130)
     misc_logs:SetPos(630,5)
     function misc_logs:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
@@ -2184,6 +2175,20 @@ function HavocGUI()
     surface.SetMaterial(Material("icon16/book_error.png"))
     surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "Event logger:", "DermaDefault", 19, 2, color_white )
+    end
+	local misc_mmgames = vgui.Create( "DPanel", MISC_SCROLL )
+    misc_mmgames:SetSize(200,200)
+    misc_mmgames:SetPos(840,5)
+    function misc_mmgames:Paint(w, h)
+	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
+	surfSetDrawColor( 0, 0, 0, 255 )
+	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
+	surfSetDrawColor( 0, 0, 0, 255 )
+	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
+    surfSetDrawColor( 255, 255, 255, 255 ) 
+    surface.SetMaterial(Material("icon16/controller.png"))
+    surfDrawTexturedRect( 2, 2, 15, 15 )
+    draw.SimpleText( "Gamemodes:", "DermaDefault", 19, 2, color_white )
     end
 	
 	local CFG_SCROLL = vgui.Create( "DScrollPanel", SHEET )
@@ -2236,8 +2241,6 @@ function HavocGUI()
 		end
 	end
     --=======FEATURES==============--
-	
-	
 	//Combat
 	CreateCheckBox("Enable Aimbot", 10, 30, "aim_master_toggle", false, combat_aimbot)
 	CreateCheckBox("Aimbot On Key", 10, 50, "aim_onkey", false, combat_aimbot)
@@ -2368,15 +2371,16 @@ function HavocGUI()
 	CreateCheckBox("Player Chams XYZ", 205, 510, "esp_player_chams_xyz", true, visual_player, 165)	
 	CreateButton("Chams Material", "Opens the cham material selector.", CreateMaterialList, 205, 530, visual_player)
 	CreateCheckBox("Draw Model", 205, 555, "esp_player_drawmodel", false, visual_player)
+	CreateCheckBox("Draw Attachment Model", 205, 575, "esp_player_drawmodelatt", false, visual_player)
 	//Performance & Filtering
-	CreateCheckBox("Ignore Teammates", 595, 40, "esp_player_teamfilter", false, visual_player)
-	CreateCheckBox("Ignore Bots", 595, 60, "esp_player_botfilter", false, visual_player)
-	CreateCheckBox("Ignore Non-visible", 595, 80, "esp_visibleonly", false, visual_player)	
-	CreateSlider("ESP Max Render Distance", 595, 100, "esp_player_render_distance", 500, 10000, 0, visual_player)
-	CreateCheckBox("Hide Dormant Players", 595, 140, "esp_player_dormant", false, visual_player)
-	CreateCheckBox("Highlight Friends Box", 595, 160, "esp_player_highlight_box", true, visual_player, 165)
-	CreateCheckBox("Highlight Friends Name", 595, 180, "esp_player_highlight_name", true, visual_player, 165)
-	CreateCheckBox("ESP Compensation", 595, 200, "esp_comp", false, visual_player)
+	CreateCheckBox("Ignore Teammates", 400, 40, "esp_player_teamfilter", false, visual_player)
+	CreateCheckBox("Ignore Bots", 400, 60, "esp_player_botfilter", false, visual_player)
+	CreateCheckBox("Ignore Non-visible", 400, 80, "esp_visibleonly", false, visual_player)	
+	CreateSlider("ESP Max Render Distance", 400, 100, "esp_player_render_distance", 500, 10000, 0, visual_player)
+	CreateCheckBox("Hide Dormant Players", 400, 140, "esp_player_dormant", false, visual_player)
+	CreateCheckBox("Highlight Friends Box", 400, 160, "esp_player_highlight_box", true, visual_player, 165)
+	CreateCheckBox("Highlight Friends Name", 400, 180, "esp_player_highlight_name", true, visual_player, 165)
+	CreateCheckBox("ESP Compensation", 400, 200, "esp_comp", false, visual_player)
 	--CreateButton("FPS Booster", "Run fps  boost commands.", FPS_FIX, 595, 245, visual_player)
 	//ESP Element Positions
 	CreateSlider("Name X", 10, 30, "name_x", -250, 250, 0, visual_player_settings)
@@ -2445,7 +2449,7 @@ function HavocGUI()
 
 	CreateCheckBox("Draw Aimbot FOV", 10, 30, "esp_other_drawfov", true, visual_self, 165)
 	CreateCheckBox("Bullet Tracer", 10, 50, "esp_self_bullet_tracers", true, visual_self, 165)
-	CreateCheckBox("Laser Sights", 10, 70, "esp_self_laser_sight", false, visual_self, 165)
+	CreateCheckBox("Laser Sights", 10, 70, "esp_self_laser_sight", true, visual_self, 165)
 	CreateCheckBox("DLight", 10, 90, "esp_self_dlight", true, visual_self, 165)
 	CreateCheckBox("DLight HSV", 10, 110, "esp_self_dlight_hsv", false, visual_self)
 	CreateCheckBox("Predict Fall", 10, 130, "esp_self_predict_me", false, visual_self)
@@ -2457,25 +2461,20 @@ function HavocGUI()
 	CreateDropdown("Agent", 10, 270, {"SAS", "Pirat", "Anarchist", "Pro"}, "esp_self_customagent_agent", visual_self)
 	CreateCheckBox("Fake Lag Chams", 10, 310, "esp_self_fakelagchams", true, visual_self, 165)	
 	
-	
-	
-	--CreateCheckBox("Self Chmas", 10, 210, "esp_self_chams", true, visual_self, 165)
-	--CreateCheckBox("Self Weapon Chmas", 10, 230, "esp_self_chams_wep", true, visual_self, 165)
-	
-	--CreateCheckBox("Box ESP", 10, 30, "esp_npc_box", true, visual_npc , 165)
-	--CreateCheckBox("Glow ESP", 10, 50, "esp_npc_halo", true, visual_npc , 165)
-	--CreateCheckBox("Class ESP", 10, 70, "esp_npc_name", true, visual_npc , 165)
-	--CreateCheckBox("Health ESP", 10, 90, "esp_npc_health", true, visual_npc , 165)
-	--CreateCheckBox("Snaplines", 10, 110, "esp_npc_snaplines", true, visual_npc , 165)	
-	
 	CreateButton("Entity List", "Open Entity List.", CreateEntityList, 10, 30, world_ents)
 	CreateCheckBox("Storage ESP", 10, 50, "esp_ent_storage_esp", true, world_ents , 165)
 	CreateCheckBox("Crosshair Entity", 10, 70, "esp_ent_crosshair", false, world_ents , 165)
 	
+	CreateCheckBox("Enable Minimap", 10, 30, "map_enable", true, world_minimap, 165)
+	CreateSlider("Radar FOV", 10, 50, "map_zoom", 1, 100, 0, world_minimap)
+	CreateSlider("Radar Size", 10, 90, "map_size", 0, 1000, 0, world_minimap)
+	CreateSlider("Radar X", 10, 130, "map_x", 0, ScrW(), 0, world_minimap)
+	CreateSlider("Radar Y", 10, 170, "map_y", 0, ScrH(), 0, world_minimap)
+	CreateCheckBox("Player Names", 10, 210, "map_names", true, world_minimap, 165)
+	CreateCheckBox("Player Team", 10, 230, "map_teams", false, world_minimap, 165) 	
+	
 	CreateCheckBox("Watermark", 10, 30, "hud_watermark", false, visual_self_hud )
-	CreateCheckBox("FPS Counter", 10, 50, "hud_fps_indicator", false, visual_self_hud )
 	CreateCheckBox("Disable HL2 HUD", 10, 70, "hud_disable_hl2_hud", false, visual_self_hud )
-	CreateCheckBox("Custom HUD", 10, 90, "hud_custom_hud", false, visual_self_hud )
 	CreateCheckBox("CrossHair", 10, 110, "hud_crosshair", false, visual_self_hud )
     CreateDropdown("CrossHair Style", 10, 130, {"Classic", "Зига", "Смачная Наиплотнейшая Зигота"}, "hud_crosshair_type", visual_self_hud)
 	CreateCheckBox("KeyStrokes", 10, 170, "hud_keystrokes", false, visual_self_hud )
@@ -2513,7 +2512,9 @@ function HavocGUI()
 	CreateSlider("MulR", 10, 250, "esp_other_cc_mulr", 0, 255, 0, world_cc)
 	CreateSlider("MulG", 10, 290, "esp_other_cc_mulg", 0, 255, 0, world_cc)
 	CreateSlider("MulB", 10, 330, "esp_other_cc_mulrb", 0, 255, 0, world_cc)	
-	--Misc
+	
+	--Movement
+	
 	CreateCheckBox("Auto Bunnyhop", 10, 30, "misc_autobunnyhop", false, misc_movement)
 	CreateCheckBox("Auto Strafe", 10, 50, "misc_autostrafe", false, misc_movement)
 	CreateDropdown("Strafe Type", 10, 70, {"Legit", "Rage", "Free Move", "Directional"}, "misc_autostrafe_type", misc_movement)
@@ -2531,37 +2532,37 @@ function HavocGUI()
 	CreateCheckBox("Anti-AFK", 10, 310, "misc_antiafk", false, misc_movement)
 	CreateCheckBox("Circle Strafe", 10, 330, "misc_circlestrafer", false, misc_movement)
 	CreateKeybind(140, 330, "circlestrafer_key", misc_movement)
-	
-	CreateCheckBox("Reveal TTT/Murder Info", 10, 30, "misc_ttt", false, misc_misc)
-	CreateCheckBox("Observer List", 10, 50, "misc_observerlist", false, misc_misc)
-	CreateCheckBox("Admin List", 10, 70, "misc_adminlist", false, misc_misc)
-	
-	CreateCheckBox("Rainbow Physgun", 10, 110, "misc_rainbow", false, misc_misc)
-	CreateSlider("Rainbow Speed", 10, 130, "misc_rainbow_speed", 1, 100, 0, misc_misc)
-	CreateButton("Player List", "Open the player list menu.", CreatePlayerList, 10, 170, misc_misc)
-	CreateButton("Filter Teams", "The filter will be applied when the filter menu is closed. This filter applies to ESP and Aimbot.", CreateFilterPanel, 10, 195, misc_misc)
-	CreateCheckBox("Chat Spammer", 10, 215, "misc_chat_spam", false, misc_misc)	
-	CreateCheckBox("Kill Say", 10, 255, "misc_gaysay", false, misc_misc)	
-	CreateDropdown("KillSay Type", 10, 275, {"Русский", "D3D9C style", "Русский 2", "Arabian", "Omerican"}, "misc_gaysays", misc_misc)
-	CreateCheckBox("Flashlight Spammmer", 10, 315, "misc_flashlight", false, misc_misc)	
-    CreateCheckBox("Arest Leave", 10, 335, "misc_antiarest", false, misc_misc)
-	CreateDropdown("Leave Method", 10, 355, {"Suicide", "Retry", "/Hobo (Job)"}, "misc_antiarest_metod", misc_misc)
-	CreateCheckBox("Обосраца", 10, 395, "misc_supkill", false, misc_misc)
-	CreateKeybind(140, 395, "misc_supkill_key", misc_misc)
-	CreateCheckBox("Anti-Bot", 10, 415, "misc_antibot", false, misc_misc)
-	CreateCheckBox("Rainbow Player", 10, 435, "misc_rainbowply", false, misc_misc)
-	CreateCheckBox("Use Spammer", 10, 455, "misc_use", false, misc_misc)
-    CreateCheckBox("Undo Spam", 10, 475, "misc_doundo", false, misc_misc)	
-    CreateCheckBox("RP Name changer", 10, 495, "misc_rpnamer", false, misc_misc)	
-    CreateSlider("RPName Delay", 10, 515, "misc_rpnamer_time", 1, 300, 0, misc_misc)
-	
+	--MiniGames
+	CreateCheckBox("TTT/Murder info", 10, 30, "misc_ttt", false, misc_mmgames)
+    CreateCheckBox("Arest Leave", 10, 50, "misc_antiarest", false, misc_mmgames)
+	CreateDropdown("Leave Method", 10, 70, {"Suicide", "Retry", "/Hobo (Job)"}, "misc_antiarest_metod", misc_mmgames)	
+    CreateCheckBox("RP Name changer", 10, 110, "misc_rpnamer", false, misc_mmgames)	
+    CreateSlider("RPName Delay", 10, 130, "misc_rpnamer_time", 1, 300, 0, misc_mmgames)	
+
+	--Player
 	CreateCheckBox("Name Stealer", 10, 30, "misc_fnamechanger", false, misc_name)
+	CreateCheckBox("Rainbow Physgun", 10, 50, "misc_rainbow", false, misc_name)
+	CreateCheckBox("Rainbow Player", 10, 70, "misc_rainbowply", false, misc_name)
+	CreateSlider("Rainbow Speed", 10, 90, "misc_rainbow_speed", 1, 100, 0, misc_name)
+	CreateCheckBox("Chat Spammer", 10, 130, "misc_chat_spam", false, misc_name)	
+	CreateCheckBox("Kill Say", 10, 150, "misc_gaysay", false, misc_name)	
+	CreateDropdown("KillSay Type", 10, 170, {"Русский", "D3D9C style", "Русский 2", "Arabian", "Omerican"}, "misc_gaysays", misc_name)	
 	
+	--Logs
 	CreateCheckBox("Event log", 10, 30, "misc_eventlog", false, misc_logs)
 	CreateCheckBox("Log Connection", 10, 50, "misc_eventlog_connects", false, misc_logs)	
 	CreateCheckBox("Log Disconnects", 10, 70, "misc_eventlog_dconects", false, misc_logs)
 	CreateCheckBox("Log Hurt", 10, 90, "misc_eventlog_hurt", false, misc_logs)
+
+	--Other
+	CreateCheckBox("Observer List", 10, 30, "misc_observerlist", false, misc_misc)
+	CreateCheckBox("Admin List", 10, 50, "misc_adminlist", false, misc_misc)
+	CreateCheckBox("Flashlight Spammmer", 10, 70, "misc_flashlight", false, misc_misc)	
+	CreateCheckBox("Use Spammer", 10, 90, "misc_use", false, misc_misc)	
+	CreateButton("Player List", "Open the player list menu.", CreatePlayerList, 10, 110, misc_misc)
+	CreateButton("Filter Teams", "The filter will be applied when the filter menu is closed. This filter applies to ESP and Aimbot.", CreateFilterPanel, 10, 135, misc_misc)
 	
+	--bsendpacket
 	CreateCheckBox("Fake Lags", 10, 30, "bsp_fake_lags", false, bsendpacket_tab)
 	CreateSlider("FakeLag Limit", 10, 50, "bsp_fake_lags_value", 1, 128, 0, bsendpacket_tab)
 	CreateDropdown("FakeLag Conditions", 10, 90, {"Always On", "In Move", "In Stand", "On Ground", "In Air", "On Attack", "Off Attack"}, "bsp_fake_lags_conditions", bsendpacket_tab)
@@ -2674,9 +2675,7 @@ AddHook("Think", RandomString(), function()
 		Unload()
 	end
 end)
-
 do
-
 --===================================
 --=================================== Visuals
 --===================================
@@ -2692,9 +2691,6 @@ function draw.Circle( x, y, radius, seg )
 	surface.DrawPoly( cir )
 end
 -- ======================= ESP
-
-
-
 local bones = {
 	{ S = "ValveBiped.Bip01_Head1", E = "ValveBiped.Bip01_Neck1" },
 	{ S = "ValveBiped.Bip01_Neck1", E = "ValveBiped.Bip01_Spine4" },
@@ -3044,6 +3040,12 @@ local function DoESP()
 		                    v:DrawModel()
 		                cam.End3D()
 	                end
+					if config["esp_player_drawmodelatt"] then
+					local vwep = v:GetActiveWeapon()
+	                    cam.Start3D()
+		                    vwep:DrawModel()
+		                cam.End3D()
+	                end
 					if config["esp_player_skeleton"] then
 						for _, b in pairs( bones ) do
 							if v:LookupBone(b.S) != nil && v:LookupBone(b.E) != nil then
@@ -3119,15 +3121,123 @@ local function DoESP()
 			end
 		end
 		if config["misc_adminlist"] then
+		local rgbcol = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
 			for k, v in ipairs(onlineStaff) do
 				if IsValid(v) then
 					local a
-					if v:IsSuperAdmin() then a = "Superadmin" elseif v:IsAdmin() then a = "Admin" else a = v:GetUserGroup() end
-					surfSetFont("ESP_Font_Main")
+					if v:IsSuperAdmin() then a =  " (" .. v:GetUserGroup() .. ") " elseif v:IsAdmin() then a = "(" .. v:GetUserGroup() .. ")" else a = v:GetUserGroup() end
+		            draw.RoundedBox( 3, 3, 35, 200, 25, Color(25,25,25))
+			        draw.RoundedBox( 10, 5, 36, 200-4, 3, Color(rgbcol.r,rgbcol.g,rgbcol.b))
+					
+		            surfSetDrawColor( 255, 255, 255, 60 ) 
+	                surface.SetMaterial(Material("gui/center_gradient")) 
+	                surfDrawTexturedRect(7, 36, 200-4, 3)
+					
+                    draw.SimpleText( "Admins Online", "smallest_pixel", 60, 40, color_white )
+					
+					surfSetFont("smallest_pixel")
 					local nameWidth, nameHeight = surfGetTextSize(v:Name().." ("..a..")")
-					draw.SimpleText(v:Name().." ("..a..")", "ESP_Font_Main", 2, 0 + (15 * ( k - 1 ) ), Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+					surfSetDrawColor( 11, 11, 11, 200 ) 
+	                surface.SetMaterial(Material("gui/gradient")) 
+	                surfDrawTexturedRect(5, 63 + (15 * ( k - 1 ) ), nameWidth + 50, nameHeight)
+					draw.SimpleText(v:Name()..a, "smallest_pixel", 6, 63 + (15 * ( k - 1 ) ), Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
 				end
 			end
+		end
+		if config["esp_ent_crosshair"] then
+		    draw.SimpleText( LocalPlayer():GetEyeTrace().Entity, "smallest_pixel", (ScrW()/2) - 100, ScrH() / 2 + 65, color_white )
+		end
+        if config["hud_watermark"] then
+		    surface.SetFont("smallest_pixel")
+		    local textwi = surface.GetTextSize("PenisDeda.NET " .. PenisDedushki.Version .. "|username: " .. LocalPlayer():Name() .. " |gm: " .. engine.ActiveGamemode() .. " |latency:" .. LocalPlayer():Ping() .. " |tick:"..math.Round(1/engine.TickInterval()-1) )
+			local textwid = textwi + 5
+			local rgbcol = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+			--if frame then textwid = 470 else textwid = textwi + 5 end --static size
+		    draw.RoundedBox( 3, 5, 5, textwid, 25, Color(25,25,25))
+			draw.RoundedBox( 10, 7, 6, textwid-4, 3, Color(rgbcol.r,rgbcol.g,rgbcol.b))
+		    surfSetDrawColor( 255, 255, 255, 60 ) 
+	        surface.SetMaterial(Material("gui/center_gradient")) 
+	        surfDrawTexturedRect(7, 6, textwid-4, 3)
+            draw.SimpleText( "PenisDeda.NET " .. PenisDedushki.Version .. "|username: " .. LocalPlayer():Name() .. " |gm: " .. engine.ActiveGamemode() .. " |latency:" .. LocalPlayer():Ping() .. " |tick:"..math.Round(1/engine.TickInterval()-1) , "smallest_pixel", 8, 10, color_white )
+        end
+		if config["hud_topline"] then
+		local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+		    if config["hud_topline_style"] == 1 then
+			surfSetDrawColor(0,0,0,255)
+            surfDrawRect(0, 0, ScrW(), 4)
+			surfSetDrawColor(hsv.r,hsv.g,hsv.b,255)
+            surfDrawRect(1, 1, ScrW(), 2)
+			elseif config["hud_topline_style"] == 2 then
+			surfSetDrawColor(hsv.r,hsv.g,hsv.b,255)
+            surfDrawRect(0, 0, ScrW(), 4)
+			elseif config["hud_topline_style"] == 3 then
+			surfSetDrawColor(hsv.r,hsv.g,hsv.b,200)
+            surfDrawRect(0, 0, ScrW(), 4)
+	        surface.SetMaterial(Material("gui/gradient_down"))
+	        surfDrawTexturedRect( 0, 4, ScrW(), 15 )
+			end
+		end
+
+		if config["hud_crosshair"] then
+		if config["hud_crosshair_type"] == 1 then
+		surfSetDrawColor(0,0,0,255)
+        surfDrawRect(ScrW() / 2 - 2, ScrH() / 2 - 2, 4, 4)
+		surfSetDrawColor(0,255,0,255)
+        surfDrawRect((ScrW() / 2) - 1, (ScrH() / 2) - 1, 2, 2)
+		elseif config["hud_crosshair_type"] == 2 then
+		draw.SimpleText( "卐", "Trebuchet24", ScrW() / 2, ScrH() / 2, color_white, TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER )
+		end
+		end
+		if config["hud_keystrokes"] then
+		if config["hud_keystrokes_style"] == 1 then
+		AddKeyRectangle("W", IN_FORWARD, 35,550)
+        AddKeyRectangle("A", IN_MOVELEFT, 0,550+35)
+        AddKeyRectangle("D", IN_MOVERIGHT, 70,550+35)
+        AddKeyRectangle("S", IN_BACK, 35,550+35)
+		elseif config["hud_keystrokes_style"] == 2 then
+		AddKeyRectangle("W", IN_FORWARD, 35,550)
+        AddKeyRectangle("A", IN_MOVELEFT, 0,550+35)
+        AddKeyRectangle("D", IN_MOVERIGHT, 70,550+35)
+        AddKeyRectangle("S", IN_BACK, 35,550+35)
+		AddKeySquare("SPACE",IN_JUMP,0,550+70)
+		elseif config["hud_keystrokes_style"] == 3 then
+		AddKeyRectangle("W", IN_FORWARD, 35,550)
+        AddKeyRectangle("A", IN_MOVELEFT, 0,550+35)
+        AddKeyRectangle("D", IN_MOVERIGHT, 70,550+35)
+        AddKeyRectangle("S", IN_BACK, 35,550+35)
+        AddKeyRectangleMouse("LMB", IN_ATTACK, 0,550+70)
+		AddKeyRectangleMouse("RMB", IN_ATTACK2, 52,550+70)
+		elseif config["hud_keystrokes_style"] == 4 then
+		AddKeyRectangle("W", IN_FORWARD, 35,550)
+        AddKeyRectangle("A", IN_MOVELEFT, 0,550+35)
+        AddKeyRectangle("D", IN_MOVERIGHT, 70,550+35)
+        AddKeyRectangle("S", IN_BACK, 35,550+35)
+        AddKeyRectangleMouse("LMB", IN_ATTACK, 0,550+70)
+		AddKeyRectangleMouse("RMB", IN_ATTACK2, 52,550+70)	
+		AddKeySquare("SPACE",IN_JUMP,0,550+105)		
+		end
+		end
+		if config["aim_master_toggle"] && config["esp_other_drawfov"] then
+		local X1 = math.tan( math.rad( config["aim_fov"] ) / 1.25 )
+		local X2 = math.tan( math.rad( LocalPlayer():GetFOV() / 2 ) )
+		local r = X1 / X2
+		local pxR = r * ( ScrW() / 2 )
+		surfDrawCircle(ScrW() / 2, ScrH() / 2, pxR, string.ToColor(config.colors["esp_other_drawfov"]))
+	    end
+		if config["esp_other_drawfov_fill"] && config["aim_master_toggle"] then
+		local X1 = math.tan( math.rad( config["aim_fov"] ) / 1.25 )
+		local X2 = math.tan( math.rad( LocalPlayer():GetFOV() / 2 ) )
+		local r = X1 / X2
+		local pxR = r * ( ScrW() / 2 )
+		local col = string.ToColor(config.colors["esp_other_drawfov"])
+		surfSetDrawColor(col.r,col.g,col.b,col.a/2.5)
+	    surface.SetMaterial(Material("vgui/white"))
+		draw.Circle(ScrW() / 2, ScrH() / 2,pxR,30)
+	    end
+		if config["esp_self_velocity_crosshair"] then
+		surfSetDrawColor(string.ToColor(config.colors["esp_self_velocity_crosshair"]))
+	    surface.SetMaterial(Material("vgui/white"))
+		draw.Circle(ScrW() / 2, ScrH() / 2,LocalPlayer():GetVelocity():Length() / 4,180)
 		end
 		for k, v in ipairs( ents.FindByClass( "npc_*" ) ) do
 		local MaxX, MaxY, MinX, MinY, V1, V2, V3, V4, V5, V6, V7, V8, isVis = GetENTPos( v )
@@ -3151,8 +3261,133 @@ local function DoESP()
 		surfDrawLine( ScrW() / 2 - 1, ScrH() , MaxX - ( MaxX - MinX ) / 2 - 1, MaxY )
 		end
 	    end
+		--Simple radar
+		if config["map_enable"] then
+		local size = config["map_size"]
+        local fov = config["map_zoom"]
+		fov = fov * 5
+        local x = config["map_x"]
+        local y = config["map_y"]
+		local col = string.ToColor(config.colors["map_enable"])
+		local nametag_col = string.ToColor(config.colors["map_names"])
+		local rgbcol = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+		--local dist = math.Round((m:GetPos() - v:GetPos()):Length())
+        draw.RoundedBox( 3, x, y, size, size, Color(20, 20, 20, col.a))
+		draw.RoundedBox( 3, x - 2, y - 2, size + 4, size + 4, Color(col.r, col.g, col.b,col.a))
+		for key, ply in pairs(player.GetAll()) do
+
+        local teamcol, teamcol2 = nametag_col
+
+        if ply != me and ply:Alive() and ply:GetPos():Distance(LocalPlayer():GetPos()) < config["esp_player_render_distance"] then
+
+            local lx = me:GetPos().x - ply:GetPos().x
+
+            local ly = me:GetPos().y - ply:GetPos().y
+
+            local ang = EyeAngles().y
+
+            local cos = math.cos(math.rad(-ang))
+
+            local sin = math.sin(math.rad(-ang))
+
+            local px = (ly * cos) + (lx * sin)
+
+            local py = (lx * cos) - (ly * sin)
+
+            px = px / fov
+
+            py = py / fov
+
+            px = math.Clamp(px, -(size * 0.50), size * 0.50)
+
+            py = math.Clamp(py, -(size * 0.50), size * 0.50)
+
+            local name = player.GetAll()[key]:Nick()
+			local team = team.GetName(player.GetAll()[key]:Team())
+			--local teamcol3 = string.ToColor(team.GetColor(player.GetAll()[key]:Team()))
+            if config["map_names"] then
+            draw.SimpleText(name, "default", x + size - (size * 0.50) + px - 13, y + size - (size * 0.50) + py - 7, nametag_col, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+            end
+			if config["map_teams"] then
+			draw.SimpleText(team, "default", x + size - (size * 0.50) + px - 13, y + size - (size * 0.50) + py - 15, teamcol2, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+            end
+            surface.SetDrawColor(teamcol)
+
+            surface.DrawRect(x + size - (size * 0.50) + px, y + size - (size * 0.50) + py, 3, 3)
+            end
+        end	
+		draw.RoundedBox( 3, x - 2, y - 27,size + 4, 25, Color(35,35,35))
+		draw.RoundedBox( 10, x, y - 26, size, 3, Color(rgbcol.r,rgbcol.g,rgbcol.b))
+		surfSetDrawColor( 255, 255, 255, 60 ) 
+	    surface.SetMaterial(Material("gui/center_gradient")) 
+	    surfDrawTexturedRect( x, y - 26, size, 3)
+		surface.SetFont("smallest_pixel")
+		local xmax = surface.GetTextSize("Mini Map")    
+        draw.SimpleText( "Mini Map", "smallest_pixel", x + (size / 2 ) - (xmax / 2), y - 20, color_white )		
+		draw.RoundedBox( 3, (x -2)+ (size/2), (y-2) + (size/2), 4, 4, Color(rgbcol.r,rgbcol.g,rgbcol.b) ) --me
+		end	
+		local wep, viewmodel, muzzle, trace, startpos, endpos
+		local blockedWeps = {
+	"weapon_physgun",
+	"pocket",
+	"keys",
+	"gmod_tool",
+}
+        
+		if config["esp_self_laser_sight"] then 
+		local lasercol = string.ToColor(config.colors["esp_self_laser_sight"])
+		wep = LocalPlayer():GetActiveWeapon()
+	    viewmodel = LocalPlayer():GetViewModel()
+	    trace = LocalPlayer():GetEyeTrace().HitPos
+
+	if viewmodel && IsValid( wep ) && IsValid( viewmodel ) then
+		
+		-- ignore blocked weps
+		if !table.HasValue( blockedWeps, wep:GetClass() ) then
+			
+			muzzle = viewmodel:LookupAttachment( "muzzle" )
+			
+			-- failsafe
+			if muzzle == 0 then
+				
+				muzzle = viewmodel:LookupAttachment( "1" )
+				
+			end
+			
+			if viewmodel:GetAttachment( muzzle ) then
+				
+				cam.Start3D()
+					
+					-- Set laser start/end pos
+					startpos = viewmodel:GetAttachment( muzzle ).Pos					
+					endpos = trace
+					
+					-- Draw the beam
+					render.SetMaterial( Material( "trails/laser" ) )
+					
+					render.DrawBeam( startpos, endpos, 3, 0, 0, Color(lasercol.r, lasercol.g, lasercol.b)   )
+					
+					-- End of laser dot thing. Credits to sethhack for being the first to do this.
+					render.SetMaterial( Material( "Sprites/light_glow02_add_noz" ) )
+					
+					render.DrawQuadEasy( 
+						endpos, 
+						( EyePos() - trace ):GetNormal(),
+						20, 20,
+						color_white,
+						0
+					)
+					
+				cam.End3D()
+			
+			end
+			
+		end
+		
 	end
-end
+		end
+	end
+end 
 --Swap Render
 function SwapRender(init)
 	
@@ -3246,147 +3481,6 @@ local size = 53
         draw.SimpleText(""..text.."", "KeyStroke", x+11, y+7, color_white)
     end
 end
-
---hack hud
-function HackHUD()
-local cur_fps = tostring(math.floor(1 / RealFrameTime()))
-    if !ss then
-	    if config["hud_velo"] then
-		    local velo = math.Round(LocalPlayer():GetVelocity():Length())		    
-			surfSetDrawColor( -velo / 50, velo*3, 0, 200 ) 
-	        surface.SetMaterial(Material("gui/center_gradient")) 
-	        surfDrawTexturedRect( ((ScrW()/2) - 250), (ScrH()-100), 512, 18 )
-			draw.SimpleText( velo, "TargetID", (ScrW()/2), ScrH() - 100, Color(255 ,255,255) )
-		end
-	    if config["esp_ent_crosshair"] then
-		    draw.SimpleText( LocalPlayer():GetEyeTrace().Entity, "smallest_pixel", (ScrW()/2) - 100, ScrH() / 2 + 65, color_white )
-		end
-        if config["hud_watermark"] then
-		    local w = surface.GetTextSize("PenisDeda.NET " .. PenisDedushki.Version .. "|username: " .. LocalPlayer():Name() .. " |gm: " .. engine.ActiveGamemode() .. " |latency:" .. LocalPlayer():Ping() .. " |tick:"..math.Round(1/engine.TickInterval()-1) )
-			w = w + 5
-			local rgbcol = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
-		    draw.RoundedBox( 3, 5, 5, w, 25, Color(25,25,25))
-			draw.RoundedBox( 10, 7, 6, w-4, 3, Color(rgbcol.r,rgbcol.g,rgbcol.b))
-		    surfSetDrawColor( 255, 255, 255, 60 ) 
-	        surface.SetMaterial(Material("gui/center_gradient")) 
-	        surfDrawTexturedRect(7, 6, w-4, 3)
-            draw.SimpleText( "PenisDeda.NET " .. PenisDedushki.Version .. "|username: " .. LocalPlayer():Name() .. " |gm: " .. engine.ActiveGamemode() .. " |latency:" .. LocalPlayer():Ping() .. " |tick:"..math.Round(1/engine.TickInterval()-1) , "smallest_pixel", 8, 10, color_white )
-        end
-
-		if config["hud_custom_hud"] then
-		
-		end
-		if config["hud_topline"] then
-		local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
-		    if config["hud_topline_style"] == 1 then
-			surfSetDrawColor(0,0,0,255)
-            surfDrawRect(0, 0, ScrW(), 4)
-			surfSetDrawColor(hsv.r,hsv.g,hsv.b,255)
-            surfDrawRect(1, 1, ScrW(), 2)
-			elseif config["hud_topline_style"] == 2 then
-			surfSetDrawColor(hsv.r,hsv.g,hsv.b,255)
-            surfDrawRect(0, 0, ScrW(), 4)
-			elseif config["hud_topline_style"] == 3 then
-			surfSetDrawColor(hsv.r,hsv.g,hsv.b,200)
-            surfDrawRect(0, 0, ScrW(), 4)
-	        surface.SetMaterial(Material("gui/gradient_down"))
-	        surfDrawTexturedRect( 0, 4, ScrW(), 15 )
-			end
-		end
-		if config["hud_arraylist"] then
-		draw.SimpleText( "AimBot", "Impact", ScrW() - 65, 5, Color(255,255,255), TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP ) 
-		draw.SimpleText( "Trigger", "Impact", ScrW() - 65, 30, color_white, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP )
-		draw.SimpleText( "Thirdperson", "Impact", ScrW() - 65, 55, color_white, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP )
-		draw.SimpleText( "Free Cam", "Impact", ScrW() - 65, 80, color_white, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP )
-		--Aimbot
-        if config["aim_master_toggle"] && !config["aim_onkey"] || (input.IsMouseDown(config.keybinds["aim_onkey_key"])  || input.IsKeyDown(config.keybinds["aim_onkey_key"]) ) then
-		draw.SimpleText( "[On]", "Impact", ScrW() - 5, 5, Color(0,255,0), TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP )
-		else
-		draw.SimpleText( "[Off]", "Impact", ScrW() - 5, 5, Color(255,0,0), TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP )
-		end
-		--Trigger
-		if (input.IsMouseDown(config.keybinds["trigger_onkey_key"])  || input.IsKeyDown(config.keybinds["trigger_onkey_key"]) ) then
-		draw.SimpleText( "[On]", "Impact", ScrW() - 5, 30, Color(0,255,0), TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP )
-		else
-		draw.SimpleText( "[Off]", "Impact", ScrW() - 5, 30, Color(255,0,0), TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP )
-		end
-		--3rdPerson
-		if intp then
-		draw.SimpleText( "[On]", "Impact", ScrW() - 5, 55, Color(0,255,0), TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP )
-		else
-		draw.SimpleText( "[Off]", "Impact", ScrW() - 5, 55, Color(255,0,0), TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP )
-		end
-		--Noclip
-		if NoclipOn then
-		draw.SimpleText( "[On]", "Impact", ScrW() - 5, 80, Color(0,255,0), TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP )
-		else
-		draw.SimpleText( "[Off]", "Impact", ScrW() - 5, 80, Color(255,0,0), TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP )
-		end
-		end
-		if config["hud_crosshair"] then
-		if config["hud_crosshair_type"] == 1 then
-		surfSetDrawColor(0,0,0,255)
-        surfDrawRect(ScrW() / 2 - 2, ScrH() / 2 - 2, 4, 4)
-		surfSetDrawColor(0,255,0,255)
-        surfDrawRect((ScrW() / 2) - 1, (ScrH() / 2) - 1, 2, 2)
-		elseif config["hud_crosshair_type"] == 2 then
-		draw.SimpleText( "卐", "Trebuchet24", ScrW() / 2, ScrH() / 2, color_white, TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER )
-		end
-		end
-		if config["hud_keystrokes"] then
-		if config["hud_keystrokes_style"] == 1 then
-		AddKeyRectangle("W", IN_FORWARD, 35,550)
-        AddKeyRectangle("A", IN_MOVELEFT, 0,550+35)
-        AddKeyRectangle("D", IN_MOVERIGHT, 70,550+35)
-        AddKeyRectangle("S", IN_BACK, 35,550+35)
-		elseif config["hud_keystrokes_style"] == 2 then
-		AddKeyRectangle("W", IN_FORWARD, 35,550)
-        AddKeyRectangle("A", IN_MOVELEFT, 0,550+35)
-        AddKeyRectangle("D", IN_MOVERIGHT, 70,550+35)
-        AddKeyRectangle("S", IN_BACK, 35,550+35)
-		AddKeySquare("SPACE",IN_JUMP,0,550+70)
-		elseif config["hud_keystrokes_style"] == 3 then
-		AddKeyRectangle("W", IN_FORWARD, 35,550)
-        AddKeyRectangle("A", IN_MOVELEFT, 0,550+35)
-        AddKeyRectangle("D", IN_MOVERIGHT, 70,550+35)
-        AddKeyRectangle("S", IN_BACK, 35,550+35)
-        AddKeyRectangleMouse("LMB", IN_ATTACK, 0,550+70)
-		AddKeyRectangleMouse("RMB", IN_ATTACK2, 52,550+70)
-		elseif config["hud_keystrokes_style"] == 4 then
-		AddKeyRectangle("W", IN_FORWARD, 35,550)
-        AddKeyRectangle("A", IN_MOVELEFT, 0,550+35)
-        AddKeyRectangle("D", IN_MOVERIGHT, 70,550+35)
-        AddKeyRectangle("S", IN_BACK, 35,550+35)
-        AddKeyRectangleMouse("LMB", IN_ATTACK, 0,550+70)
-		AddKeyRectangleMouse("RMB", IN_ATTACK2, 52,550+70)	
-		AddKeySquare("SPACE",IN_JUMP,0,550+105)		
-		end
-		end
-		if config["aim_master_toggle"] && config["esp_other_drawfov"] then
-		local X1 = math.tan( math.rad( config["aim_fov"] ) / 1.25 )
-		local X2 = math.tan( math.rad( LocalPlayer():GetFOV() / 2 ) )
-		local r = X1 / X2
-		local pxR = r * ( ScrW() / 2 )
-		surfDrawCircle(ScrW() / 2, ScrH() / 2, pxR, string.ToColor(config.colors["esp_other_drawfov"]))
-	    end
-		if config["esp_other_drawfov_fill"] && config["aim_master_toggle"] then
-		local X1 = math.tan( math.rad( config["aim_fov"] ) / 1.25 )
-		local X2 = math.tan( math.rad( LocalPlayer():GetFOV() / 2 ) )
-		local r = X1 / X2
-		local pxR = r * ( ScrW() / 2 )
-		local col = string.ToColor(config.colors["esp_other_drawfov"])
-		surfSetDrawColor(col.r,col.g,col.b,col.a/2.5)
-	    surface.SetMaterial(Material("vgui/white"))
-		draw.Circle(ScrW() / 2, ScrH() / 2,pxR,30)
-	    end
-		if config["esp_self_velocity_crosshair"] then
-		surfSetDrawColor(string.ToColor(config.colors["esp_self_velocity_crosshair"]))
-	    surface.SetMaterial(Material("vgui/white"))
-		draw.Circle(ScrW() / 2, ScrH() / 2,LocalPlayer():GetVelocity():Length() / 4,180)
-		end
-		
-    end
-end
 --3D2D Хуйни
 AddHook("PostDrawOpaqueRenderables", RandomString(), function()
 if config["hud_aimbotstatus"] then
@@ -3413,10 +3507,6 @@ local pos = LocalPlayer():GetBonePosition(LocalPlayer():LookupBone("ValveBiped.B
 else end
 end
 end )
-
-AddHook("HUDPaint", RandomString(), HackHUD)
---Hats
-
 end
 
 do
