@@ -1,8 +1,8 @@
 --Cheat Information
 local PenisDedushki = {}
-PenisDedushki.Version = "V4.3.6.3"
+PenisDedushki.Version = "V4.3.6.6"
 PenisDedushki.UpdateDate = "04.04.2022"
-PenisDedushki.Build = "18"
+PenisDedushki.Build = "21"
 --Tables
 local em = FindMetaTable"Entity"
 local wm = FindMetaTable"Weapon"
@@ -263,7 +263,7 @@ config["esp_entity_box"] = false
 config["esp_entity_name"] = false
 
 config["map_enable"] = false
-config["map_zoom"] = 5
+config["map_zoom"] = 35
 config["map_size"] = 230
 config["map_x"] = 5
 config["map_y"] = 150
@@ -328,6 +328,11 @@ config["misc_eventlog_connects"] = false
 config["misc_eventlog_dconects"] = false
 config["misc_eventlog_hurt"] = false
 config["misc_eventlog_kills"] = false
+
+config["misc_infolist"] = false
+config["misc_infolist_x"] = 5
+config["misc_infolist_y"] = 250
+
 
 config["misc_gaysay"] = false
 config["misc_gaysays"] = 1
@@ -2135,7 +2140,7 @@ function HavocGUI()
     draw.SimpleText( "bSendPacket:", "DermaDefault", 19, 2, color_white )
     end
 	local misc_misc = vgui.Create( "DPanel", MISC_SCROLL )
-    misc_misc:SetSize(200,200)
+    misc_misc:SetSize(200,300)
     misc_misc:SetPos(210,5)
     function misc_misc:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
@@ -2150,7 +2155,7 @@ function HavocGUI()
     end
 	local misc_alist = vgui.Create( "DPanel", MISC_SCROLL )
     misc_alist:SetSize(200,200)
-    misc_alist:SetPos(210,210)
+    misc_alist:SetPos(210,310)
     function misc_alist:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
 	surfSetDrawColor( 0, 0, 0, 255 )
@@ -2480,7 +2485,7 @@ function HavocGUI()
 	CreateCheckBox("Crosshair Entity", 10, 70, "esp_ent_crosshair", false, world_ents , 165)
 	
 	CreateCheckBox("Enable Minimap", 10, 30, "map_enable", true, world_minimap, 165)
-	CreateSlider("Radar FOV", 10, 50, "map_zoom", 1, 100, 0, world_minimap)
+	CreateSlider("Radar FOV", 10, 50, "map_zoom", 5, 100, 0, world_minimap)
 	CreateSlider("Radar Size", 10, 90, "map_size", 0, 1000, 0, world_minimap)
 	CreateSlider("Radar X", 10, 130, "map_x", 0, ScrW(), 0, world_minimap)
 	CreateSlider("Radar Y", 10, 170, "map_y", 0, ScrH(), 0, world_minimap)
@@ -2574,7 +2579,10 @@ function HavocGUI()
 	CreateCheckBox("Use Spammer", 10, 70, "misc_use", false, misc_misc)	
 	CreateButton("Player List", "Open the player list menu.", CreatePlayerList, 10, 90, misc_misc)
 	CreateButton("Filter Teams", "The filter will be applied when the filter menu is closed. This filter applies to ESP and Aimbot.", CreateFilterPanel, 10, 115, misc_misc)
-    --Admin list
+    CreateCheckBox("Info List", 10, 145, "misc_infolist", false, misc_misc)
+	CreateSlider("Info List X", 10, 165, "misc_infolist_x", 0, ScrW(), 0, misc_misc)
+	CreateSlider("Info List Y", 10, 205, "misc_infolist_y", 0, ScrH(), 0, misc_misc)
+	--Admin list
 	CreateCheckBox("Admin List", 10, 30, "misc_adminlist", false, misc_alist)
 	CreateSlider("Admin List X", 10, 50, "misc_adminlist_x", 0, ScrW(), 0, misc_alist)
 	CreateSlider("Admin List Y", 10, 90, "misc_adminlist_y", 0, ScrH(), 0, misc_alist)
@@ -3163,6 +3171,31 @@ local function DoESP()
 				end
 			end
 		end
+		if config["misc_infolist"] then
+		local rgbcol = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+		    local killo,detho,velo,fpso,health,ap = me:Frags(),me:Deaths(),me:GetVelocity():Length(),CURFPS,me:Health(),me:Armor()
+			local x,y = config["misc_infolist_x"], config["misc_infolist_y"]
+			surfSetFont("smallest_pixel")
+			local w = surfGetTextSize("Info Online")
+		    draw.RoundedBox( 3, x, y, 200, 25, Color(25,25,25))
+			draw.RoundedBox( 10, x+2, y+1, 196, 3, Color(rgbcol.r,rgbcol.g,rgbcol.b))
+            draw.RoundedBox( 3, x, y+26, 200, 130, Color(25,25,25,100))
+			
+		    surfSetDrawColor( 255, 255, 255, 60 ) 
+	        surface.SetMaterial(Material("gui/center_gradient")) 
+	        surfDrawTexturedRect(x+4, y+1, 200-4, 3)
+
+            draw.SimpleText( "Info Online", "smallest_pixel", x+(200/2) - w/2, y+5, color_white )
+
+			draw.SimpleText("Frags: " .. killo, "smallest_pixel", x+3, y+28, Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+			draw.SimpleText("Deaths: " ..detho, "smallest_pixel", x+3, y+28+20, Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+			draw.SimpleText("Velocity: " .. math.Round(velo), "smallest_pixel", x+3, y+28+20+20, Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+			draw.SimpleText("FPS: " ..fpso, "smallest_pixel", x+3, y+28+20+20+20, Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+			
+			draw.SimpleText("Health: " .. health, "smallest_pixel", x+3, y+28+20+20+20+20, Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+			draw.SimpleText("Armor: " ..ap, "smallest_pixel", x+3, y+28+20+20+20+20+20, Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+			
+		end
 		if config["esp_ent_crosshair"] then
 		    draw.SimpleText( LocalPlayer():GetEyeTrace().Entity, "smallest_pixel", (ScrW()/2) - 100, ScrH() / 2 + 65, color_white )
 		end
@@ -3284,7 +3317,6 @@ local function DoESP()
 		if config["map_enable"] then
 		local size = config["map_size"]
         local fov = config["map_zoom"]
-		fov = fov * 5
         local x = config["map_x"]
         local y = config["map_y"]
 		local col = string.ToColor(config.colors["map_enable"])
