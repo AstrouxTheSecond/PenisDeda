@@ -1,8 +1,8 @@
 --Cheat Information
 local PenisDedushki = {}
-PenisDedushki.Version = "V4.3.6"
-PenisDedushki.UpdateDate = "27.03.2022"
-PenisDedushki.Build = "17"
+PenisDedushki.Version = "V4.3.6.3"
+PenisDedushki.UpdateDate = "04.04.2022"
+PenisDedushki.Build = "18"
 --Tables
 local em = FindMetaTable"Entity"
 local wm = FindMetaTable"Weapon"
@@ -305,8 +305,8 @@ config["misc_ttt"] = false
 config["misc_antibot"] = false
 config["misc_observerlist"] = false
 config["misc_adminlist"] = false
-config["misc_adminlist_x"] = 20
-config["misc_adminlist_y"] = 20
+config["misc_adminlist_x"] = 3
+config["misc_adminlist_y"] = 35
 config["misc_rainbow"] = false	
 config["misc_rainbowply"] = false	
 config["misc_rainbow_speed"] = 20
@@ -2148,6 +2148,20 @@ function HavocGUI()
     surfDrawTexturedRect( 2, 2, 15, 15 )
     draw.SimpleText( "Misc:", "DermaDefault", 19, 2, color_white )
     end
+	local misc_alist = vgui.Create( "DPanel", MISC_SCROLL )
+    misc_alist:SetSize(200,200)
+    misc_alist:SetPos(210,210)
+    function misc_alist:Paint(w, h)
+	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
+	surfSetDrawColor( 0, 0, 0, 255 )
+	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
+	surfSetDrawColor( 0, 0, 0, 255 )
+	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
+    surfSetDrawColor( 255, 255, 255, 255 ) 
+    surface.SetMaterial(Material("icon16/award_star_silver_2.png"))
+    surfDrawTexturedRect( 2, 2, 15, 15 )
+    draw.SimpleText( "Admins:", "DermaDefault", 19, 2, color_white )
+    end
     local misc_name = vgui.Create( "DPanel", MISC_SCROLL )
     misc_name:SetSize(200,250)
     misc_name:SetPos(420,5)
@@ -2556,12 +2570,14 @@ function HavocGUI()
 
 	--Other
 	CreateCheckBox("Observer List", 10, 30, "misc_observerlist", false, misc_misc)
-	CreateCheckBox("Admin List", 10, 50, "misc_adminlist", false, misc_misc)
-	CreateCheckBox("Flashlight Spammmer", 10, 70, "misc_flashlight", false, misc_misc)	
-	CreateCheckBox("Use Spammer", 10, 90, "misc_use", false, misc_misc)	
-	CreateButton("Player List", "Open the player list menu.", CreatePlayerList, 10, 110, misc_misc)
-	CreateButton("Filter Teams", "The filter will be applied when the filter menu is closed. This filter applies to ESP and Aimbot.", CreateFilterPanel, 10, 135, misc_misc)
-	
+	CreateCheckBox("Flashlight Spammmer", 10, 50, "misc_flashlight", false, misc_misc)	
+	CreateCheckBox("Use Spammer", 10, 70, "misc_use", false, misc_misc)	
+	CreateButton("Player List", "Open the player list menu.", CreatePlayerList, 10, 90, misc_misc)
+	CreateButton("Filter Teams", "The filter will be applied when the filter menu is closed. This filter applies to ESP and Aimbot.", CreateFilterPanel, 10, 115, misc_misc)
+    --Admin list
+	CreateCheckBox("Admin List", 10, 30, "misc_adminlist", false, misc_alist)
+	CreateSlider("Admin List X", 10, 50, "misc_adminlist_x", 0, ScrW(), 0, misc_alist)
+	CreateSlider("Admin List Y", 10, 90, "misc_adminlist_y", 0, ScrH(), 0, misc_alist)
 	--bsendpacket
 	CreateCheckBox("Fake Lags", 10, 30, "bsp_fake_lags", false, bsendpacket_tab)
 	CreateSlider("FakeLag Limit", 10, 50, "bsp_fake_lags_value", 1, 128, 0, bsendpacket_tab)
@@ -3125,22 +3141,25 @@ local function DoESP()
 			for k, v in ipairs(onlineStaff) do
 				if IsValid(v) then
 					local a
+					local x,y = config["misc_adminlist_x"], config["misc_adminlist_y"]
+					surfSetFont("smallest_pixel")
+					local w = surfGetTextSize("Admins Online")
 					if v:IsSuperAdmin() then a =  " (" .. v:GetUserGroup() .. ") " elseif v:IsAdmin() then a = "(" .. v:GetUserGroup() .. ")" else a = v:GetUserGroup() end
-		            draw.RoundedBox( 3, 3, 35, 200, 25, Color(25,25,25))
-			        draw.RoundedBox( 10, 5, 36, 200-4, 3, Color(rgbcol.r,rgbcol.g,rgbcol.b))
+		            draw.RoundedBox( 3, x, y, 200, 25, Color(25,25,25))
+			        draw.RoundedBox( 10, x+2, y+1, 196, 3, Color(rgbcol.r,rgbcol.g,rgbcol.b))
 					
 		            surfSetDrawColor( 255, 255, 255, 60 ) 
 	                surface.SetMaterial(Material("gui/center_gradient")) 
-	                surfDrawTexturedRect(7, 36, 200-4, 3)
+	                surfDrawTexturedRect(x+4, y+1, 200-4, 3)
 					
-                    draw.SimpleText( "Admins Online", "smallest_pixel", 60, 40, color_white )
+                    draw.SimpleText( "Admins Online", "smallest_pixel", x+(200/2) - w/2, y+5, color_white )
 					
 					surfSetFont("smallest_pixel")
 					local nameWidth, nameHeight = surfGetTextSize(v:Name().." ("..a..")")
 					surfSetDrawColor( 11, 11, 11, 200 ) 
 	                surface.SetMaterial(Material("gui/gradient")) 
-	                surfDrawTexturedRect(5, 63 + (15 * ( k - 1 ) ), nameWidth + 50, nameHeight)
-					draw.SimpleText(v:Name()..a, "smallest_pixel", 6, 63 + (15 * ( k - 1 ) ), Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+	                surfDrawTexturedRect(x+2, y+28 + (15 * ( k - 1 ) ), nameWidth + 50, nameHeight)
+					draw.SimpleText(v:Name()..a, "smallest_pixel", x+3, y+28 + (15 * ( k - 1 ) ), Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
 				end
 			end
 		end
@@ -3328,19 +3347,18 @@ local function DoESP()
 		end	
 		local wep, viewmodel, muzzle, trace, startpos, endpos
 		local blockedWeps = {
-	"weapon_physgun",
-	"pocket",
-	"keys",
-	"gmod_tool",
-}
-        
+	    "weapon_physgun",
+	    "pocket",
+	    "keys",
+	    "gmod_tool",
+        }
 		if config["esp_self_laser_sight"] then 
 		local lasercol = string.ToColor(config.colors["esp_self_laser_sight"])
 		wep = LocalPlayer():GetActiveWeapon()
 	    viewmodel = LocalPlayer():GetViewModel()
 	    trace = LocalPlayer():GetEyeTrace().HitPos
 
-	if viewmodel && IsValid( wep ) && IsValid( viewmodel ) then
+	    if viewmodel && IsValid( wep ) && IsValid( viewmodel ) then
 		
 		-- ignore blocked weps
 		if !table.HasValue( blockedWeps, wep:GetClass() ) then
@@ -3384,8 +3402,10 @@ local function DoESP()
 			
 		end
 		
-	end
+	    end
 		end
+		
+		
 	end
 end 
 --Swap Render
