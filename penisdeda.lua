@@ -17,7 +17,7 @@ local IsValid = IsValid
 local TraceLine, TraceHull = util.TraceLine, util.TraceHull
 local mNormalizeAng = math.NormalizeAngle
 local band, bor, bnot = bit.band, bit.bor, bit.bnot
-local TICK_INTERVAL, CURFPS = engine.TickInterval(), tostring(math.floor(1 / RealFrameTime()))
+local TICK_INTERVAL = engine.TickInterval()
 --Math 
 local mabs, msin, mcos, mClamp, mrandom, mRand = math.abs, math.sin, math.cos, math.Clamp, math.random, math.Rand
 local mceil, mfloor, msqrt, mrad, mdeg = math.ceil, math.floor, math.sqrt, math.rad, math.deg
@@ -94,6 +94,7 @@ config["aim_animknife"] = false
 config["aim_act_disabler"] = false
 config["aim_interp"] = false
 config["aim_velocitypred"] = true
+config["aim_idealtick"] = false
 
 config["movement_fix"] = 1
 
@@ -1038,15 +1039,15 @@ local function CreateCheckBox(lbl, x, y, cfg, col, par, cpx)
 	
 	checkBox.Paint = function(self, w, h)
 	if checkBox:GetChecked() then
-	for i = 0, 5 do
-    surfSetDrawColor(Color(128,255,128,200))
-    surfDrawRect(1, 2, 13, 13)
-	end
+	    for i = 0, 5 do
+            surfSetDrawColor(Color(128,255,128,200))
+            surfDrawRect(1, 2, 13, 13)
+	    end
 	else
-    for i = 0, 5 do
-    surfSetDrawColor(Color(200,128,128,45))
-    surfDrawRect(1, 2, 13, 13)
-	end
+        for i = 0, 5 do
+            surfSetDrawColor(Color(200,128,128,45))
+            surfDrawRect(1, 2, 13, 13)
+	    end
 	end
 	surfSetDrawColor(Color(25,25,25,128)) 
 	surface.SetMaterial( Material("gui/gradient_up") )
@@ -1066,20 +1067,27 @@ local function CreateCheckBox(lbl, x, y, cfg, col, par, cpx)
 		surfSetDrawColor( 0, 0, 0, 255 )
 	    surface.DrawOutlinedRect( 2, 2, w-4, h-4, 1 )
 		end
+		
 		function colorPicker:DoClick()
 			if IsValid(colorWindow) then
 				colorWindow:Remove()
 			end
+			--Color Picker Window
+			
 			colorPicker:SetColor(string.ToColor(config.colors[cfg]))
 			colorWindow = vgui.Create("DFrame")
 			colorWindow:SetSize(300, 225)
-			colorWindow:SetTitle(lbl.." - Color Picker")
-			colorWindow.Paint = function(self, w, h)
-			draw.RoundedBox(0, 0, 0, w, 30, Color(15,15,15,255))
-			draw.RoundedBox(0, 0, 30, w, 195, Color(35,35,35,255))
-			surfSetDrawColor( 255, 255, 255, 255 )
-	        surface.DrawOutlinedRect( 1, 1, w-1, h-1, 1 )
-			end
+			colorWindow:SetTitle(" ")
+			colorWindow:ShowCloseButton(false)			
+			colorWindow.Paint = function(self, w, h) local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 ) draw.RoundedBox(3, 0, 0, w, h, Color(0,0,0,255)) draw.RoundedBox(3, 1, 1, w-2, h-2, Color(30,30,30,255))	draw.RoundedBox(3, 3, 3, w-6, 3, Color(hsv.r,hsv.g,hsv.b,255)) draw.SimpleText( lbl .. " - Color", "BudgetLabel", 5, 8, color_white ) draw.RoundedBox(3, 1, 26, w-2, 198, Color(45,45,45,255)) end
+			
+			local colorWindowCloser = vgui.Create( "DButton", colorWindow ) 
+            colorWindowCloser:SetText( "" )					
+            colorWindowCloser:SetPos( 250, 8 )					
+            colorWindowCloser:SetSize( 40, 15 )					
+            colorWindowCloser.DoClick = function() colorWindow:Close() end
+            colorWindowCloser.Paint = function(w,h) draw.RoundedBox(0,0,0,0,0,Color(0,0,0,0)) draw.SimpleText("Close", "BudgetLabel", 0, 0, Color(255,100,100) ) end
+			
 			local frameX, frameY = frame:GetPos()
 			if frameX + 350 > ScrW() then
 				colorWindow:Center()
@@ -1087,11 +1095,11 @@ local function CreateCheckBox(lbl, x, y, cfg, col, par, cpx)
 				colorWindow:SetPos(frameX + 350, frameY)
 			end
 			colorWindow:MakePopup()
-
+            --Window end
 			local colorSelector = vgui.Create("DColorMixer", colorWindow)
 			colorSelector:Dock(FILL)
 			colorSelector:DockPadding(5, 5, 5, 5)
-			colorSelector:SetPalette(false)
+			colorSelector:SetPalette(true)
 			colorSelector:SetColor(string.ToColor(config.colors[cfg]))
 			function colorSelector:ValueChanged(val)
 				local r = tostring(val.r)
@@ -1102,54 +1110,13 @@ local function CreateCheckBox(lbl, x, y, cfg, col, par, cpx)
 				config.colors[cfg] = col
 			colorPicker:SetColor(string.ToColor(config.colors[cfg]))
 			end
+		end	
+		--[[
+		function colorPicker:DoRightClick()
+		    hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+			colorPicker:SetColor(hsv.r,hsv.g,hsv.b)
 		end
-	end
-end
-
-local function ColorPickerLabel(lbl, x, y, cfg, col, par)
-
-	local collabel = vgui.Create("DLabel", par)
-	collabel:SetText(lbl)
-	collabel:SetPos(x, y)
-	collabel:SetFont("smallest_pixel")
-	local w, h = collabel:GetTextSize()
-	collabel:SetSize(w, h)
-	
-	if col then
-		local cx, cy = collabel:GetPos()
-		local colorPicker = vgui.Create("DImageButton", par)
-		colorPicker:SetImage("icon16/color_wheel.png")
-		colorPicker:SetSize(16, 16)
-		colorPicker:SetPos(cx + collabel:GetWide() + 5, y - 1)
-		function colorPicker:DoClick()
-			if IsValid(colorWindow) then
-				colorWindow:Remove()
-			end
-			colorWindow = vgui.Create("DFrame")
-			colorWindow:SetSize(300, 225)
-			colorWindow:SetTitle(lbl.." - Color Picker")
-			local frameX, frameY = frame:GetPos()
-			if frameX + 350 > ScrW() then
-				colorWindow:Center()
-			else
-				colorWindow:SetPos(frameX + 350, frameY)
-			end
-			colorWindow:MakePopup()
-
-			local colorSelector = vgui.Create("DColorMixer", colorWindow)
-			colorSelector:Dock(FILL)
-			colorSelector:DockPadding(5, 5, 5, 5)
-			colorSelector:SetPalette(false)
-			colorSelector:SetColor(string.ToColor(config.colors[cfg]))
-			function colorSelector:ValueChanged(val)
-				local r = tostring(val.r)
-				local g = tostring(val.g)
-				local b = tostring(val.b)
-				local a = tostring(val.a)
-				local col = r.." "..g.." "..b.." "..a
-				config.colors[cfg] = col
-			end
-		end
+		]]
 	end
 end
 
@@ -2312,6 +2279,7 @@ function HavocGUI()
 	CreateCheckBox("Knife Animation", 10, 150, "aim_animknife", false, combat_helpers)
 	CreateCheckBox("Act Disabler", 10, 170, "aim_act_disabler", false, combat_helpers)
 	CreateCheckBox("Interp Disabler", 10, 190, "aim_interp", false, combat_helpers)
+	CreateCheckBox("Ideal Tick", 10, 210, "aim_idealtick", false, combat_helpers)
 	--Anti-Aim
 	CreateCheckBox("Enable Anti-Aim", 10, 30, "aa_enable", false, antiaim_global)
 	CreateDropdown("Pitch", 10, 50, {"None", "Zero", "Down", "Up", "Fake Down", "Fake Up", "Random", "Custom"}, "aa_pitch", antiaim_global)
@@ -3149,7 +3117,7 @@ local function DoESP()
 			for k, v in ipairs(onlineStaff) do
 				if IsValid(v) then
 					local a
-					local x,y = config["misc_adminlist_x"], config["misc_adminlist_y"]
+					local x,y = math.Round(config["misc_adminlist_x"]), math.Round(config["misc_adminlist_y"])
 					surfSetFont("smallest_pixel")
 					local w = surfGetTextSize("Admins Online")
 					if v:IsSuperAdmin() then a =  " (" .. v:GetUserGroup() .. ") " elseif v:IsAdmin() then a = "(" .. v:GetUserGroup() .. ")" else a = v:GetUserGroup() end
@@ -3173,10 +3141,10 @@ local function DoESP()
 		end
 		if config["misc_infolist"] then
 		local rgbcol = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
-		    local killo,detho,velo,fpso,health,ap = me:Frags(),me:Deaths(),me:GetVelocity():Length(),CURFPS,me:Health(),me:Armor()
-			local x,y = config["misc_infolist_x"], config["misc_infolist_y"]
+		    local killo,detho,velo,fpso,health,ap = LocalPlayer():Frags(),LocalPlayer():Deaths(),me:GetVelocity():Length(),tostring(math.floor(1 / RealFrameTime())),me:Health(),me:Armor()
+			local x,y = math.Round(config["misc_infolist_x"]), math.Round(config["misc_infolist_y"])
 			surfSetFont("smallest_pixel")
-			local w = surfGetTextSize("Info Online")
+			local w = surfGetTextSize("Info Panel")
 		    draw.RoundedBox( 3, x, y, 200, 25, Color(25,25,25))
 			draw.RoundedBox( 10, x+2, y+1, 196, 3, Color(rgbcol.r,rgbcol.g,rgbcol.b))
             draw.RoundedBox( 3, x, y+26, 200, 130, Color(25,25,25,100))
@@ -3185,7 +3153,7 @@ local function DoESP()
 	        surface.SetMaterial(Material("gui/center_gradient")) 
 	        surfDrawTexturedRect(x+4, y+1, 200-4, 3)
 
-            draw.SimpleText( "Info Online", "smallest_pixel", x+(200/2) - w/2, y+5, color_white )
+            draw.SimpleText( "Info Panel", "smallest_pixel", x+(200/2) - w/2, y+5, color_white )
 
 			draw.SimpleText("Frags: " .. killo, "smallest_pixel", x+3, y+28, Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
 			draw.SimpleText("Deaths: " ..detho, "smallest_pixel", x+3, y+28+20, Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
@@ -3315,10 +3283,10 @@ local function DoESP()
 	    end
 		--Simple radar
 		if config["map_enable"] then
-		local size = config["map_size"]
-        local fov = config["map_zoom"]
-        local x = config["map_x"]
-        local y = config["map_y"]
+		local size = math.Round(config["map_size"])
+        local fov = math.Round(config["map_zoom"])
+        local x = math.Round(config["map_x"])
+        local y = math.Round(config["map_y"])
 		local col = string.ToColor(config.colors["map_enable"])
 		local nametag_col = string.ToColor(config.colors["map_names"])
 		local rgbcol = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
@@ -5276,12 +5244,20 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
     if config["aim_interp"] then
     RunConsoleCommand("cl_interp", 0)
 	RunConsoleCommand("cl_updaterate", 100000)
-	RunConsoleCommand("cl_interp_ratio", 1)
-	else
+	RunConsoleCommand("cl_interp_ratio", 0)
+    else
 	RunConsoleCommand("cl_interp", 1)
 	RunConsoleCommand("cl_updaterate", 100000)
 	RunConsoleCommand("cl_interp_ratio", 1)
-	end
+    end
+    --[[if config["aim_idealtick"] then
+    local tickrate = tostring(math.Round(1 / engine.TickInterval()))
+	RunConsoleCommand("cl_cmdrate", tickrate)
+	RunConsoleCommand("cl_updaterate", tickrate)
+    else
+	RunConsoleCommand("cl_cmdrate", 100000)
+	RunConsoleCommand("cl_updaterate", tickrate)
+    end]]
     if config["aim_facestab"] then
         ForceBackStap(ucmd)
 	end
@@ -5320,7 +5296,7 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 		    end
 	    end
 	else
-	    bSendPacket = (ucmd:CommandNumber() % 1) < 3
+	    bSendPacket = true
     end
     if config["antihit_fd"] then
         if input.IsKeyDown(config.keybinds["antihit_fd_key"]) then
@@ -6193,16 +6169,10 @@ function Antihit( cmd )
         end
     end
 end
-
-
-
 eventListOpen()
 --==================== PostInject
-
-
 MsgC(Color(255, 25, 25), "\n████████████████████████████████████████\n████████████████░░██████████████████████\n███████████████▀░░░▀▀▀▀▀▀███████████████\n███████████▀▀░░░░░░░░░░░░░░▀▀███████████\n████████▀░░░░▄▄░░░▄░░▀███▄▄░░░░▀████████\n██████▀░░░▄███░░░██▄░░░██████▄░░░▀██████\n█████▀░░▄████▀░░▄████░░░███████▄░░▀█████\n████▀░░▄█████░░░██████░░░▀██████▄░░▀████\n████░░░█████▀░░████████▄░░▀████▀▀░░░░▀██\n████░░██████░░▄███████▀▀░░░░░░░░░░░░▄▄██\n████░░█████░░░▀▀▀░░░░░░░░▄░░░▄████░░████\n███▀░░░▀░░░░░░░░▄▄▄▄▄██████░░░▀██░░░████\n██▄░░░░░▄▄░░░███████████████▄░░▀▀░░▄████\n█████▄░░▀░░░█████████████████▄░░░░▄█████\n██████▄░░░░░█████████████████▀░░░░██████\n████████░░░░░▀▀██████████▀▀░░░░▄░░░▀████\n███████▀░░▄▄▄░░░░░░░░░░░░░░▄▄████▄░░▀███\n███████░░░█████▄▄▄▄▄▄▄▄▄▄█████████▄▄▄███\n██████▄▄▄███████████████████████████████\n████████████████████████████████████████\n")
 MsgC(Color(255, 25, 25), "PenisDeda" .. PenisDedushki.Version .. "loaded! \n")
-
 notification.AddLegacy("Loaded PenisDeda " .. PenisDedushki.Version .."  | " .. os.date("%I:%M %p"), NOTIFY_HINT, 5)
 
 for k, v in ipairs(files) do
