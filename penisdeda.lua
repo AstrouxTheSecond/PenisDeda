@@ -1,8 +1,8 @@
 --Cheat Information
 local PenisDedushki = {}
-PenisDedushki.Version = "V4.3.6.6"
-PenisDedushki.UpdateDate = "04.04.2022"
-PenisDedushki.Build = "21"
+PenisDedushki.Version = "V4.4"
+PenisDedushki.UpdateDate = "05.04.2022"
+PenisDedushki.Build = "Beta v2"
 --Tables
 local em = FindMetaTable"Entity"
 local wm = FindMetaTable"Weapon"
@@ -334,6 +334,9 @@ config["misc_infolist"] = false
 config["misc_infolist_x"] = 5
 config["misc_infolist_y"] = 250
 
+config["misc_speclist"] = false
+config["misc_speclist_x"] = 5
+config["misc_speclist_y"] = 400
 
 config["misc_gaysay"] = false
 config["misc_gaysays"] = 1
@@ -925,7 +928,7 @@ end
 
 local function CheckObservers()
 
-	if !config["misc_observerlist"] then return end
+	if !config["misc_speclist"] then return end
 
 	observingPlayers = {}
 	observingPlayers.watcher = {}
@@ -1712,11 +1715,11 @@ function HavocGUI()
     surfSetDrawColor( 255, 255, 255, 255 ) 
     surface.SetMaterial(Material("icon16/gun.png"))
     surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "Aimbot:", "DermaDefault", 19, 2, color_white )
+    draw.SimpleText( "Aimbot:", "DermaDefault", 19, 2, color_white )	
     end
 	local combat_accuracy = vgui.Create( "DPanel", AIM_SCROLL )
     combat_accuracy:SetSize(200,240)
-    combat_accuracy:SetPos(210,5)
+    combat_accuracy:SetPos(220,5)
     function combat_accuracy:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
 	surfSetDrawColor( 0, 0, 0, 255 )
@@ -2107,7 +2110,7 @@ function HavocGUI()
     draw.SimpleText( "bSendPacket:", "DermaDefault", 19, 2, color_white )
     end
 	local misc_misc = vgui.Create( "DPanel", MISC_SCROLL )
-    misc_misc:SetSize(200,300)
+    misc_misc:SetSize(200,500)
     misc_misc:SetPos(210,5)
     function misc_misc:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
@@ -2122,7 +2125,7 @@ function HavocGUI()
     end
 	local misc_alist = vgui.Create( "DPanel", MISC_SCROLL )
     misc_alist:SetSize(200,200)
-    misc_alist:SetPos(210,310)
+    misc_alist:SetPos(210,510)
     function misc_alist:Paint(w, h)
 	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
 	surfSetDrawColor( 0, 0, 0, 255 )
@@ -2542,7 +2545,7 @@ function HavocGUI()
 	CreateCheckBox("Log Hurt", 10, 90, "misc_eventlog_hurt", false, misc_logs)
 
 	--Other
-	CreateCheckBox("Observer List", 10, 30, "misc_observerlist", false, misc_misc)
+	--CreateCheckBox("Observer List", 10, 30, "misc_observerlist", false, misc_misc)
 	CreateCheckBox("Flashlight Spammmer", 10, 50, "misc_flashlight", false, misc_misc)	
 	CreateCheckBox("Use Spammer", 10, 70, "misc_use", false, misc_misc)	
 	CreateButton("Player List", "Open the player list menu.", CreatePlayerList, 10, 90, misc_misc)
@@ -2550,6 +2553,9 @@ function HavocGUI()
     CreateCheckBox("Info List", 10, 145, "misc_infolist", false, misc_misc)
 	CreateSlider("Info List X", 10, 165, "misc_infolist_x", 0, ScrW(), 0, misc_misc)
 	CreateSlider("Info List Y", 10, 205, "misc_infolist_y", 0, ScrH(), 0, misc_misc)
+	CreateCheckBox("Spectator List", 10, 245, "misc_speclist", false, misc_misc)
+	CreateSlider("Spectator List X", 10, 265, "misc_speclist_x", 0, ScrW(), 0, misc_misc)
+	CreateSlider("Spectator List Y", 10, 305, "misc_speclist_y", 0, ScrH(), 0, misc_misc)
 	--Admin list
 	CreateCheckBox("Admin List", 10, 30, "misc_adminlist", false, misc_alist)
 	CreateSlider("Admin List X", 10, 50, "misc_adminlist_x", 0, ScrW(), 0, misc_alist)
@@ -2988,6 +2994,7 @@ local function DoESP()
 						surfSetFont("ESP_Font_Flag")
                         local w, h = surfGetTextSize("Dormant")
 						local col = string.ToColor(config.colors["esp_player_dormant_ind"])
+						if v:Dormant() then
 						if config["di_pos"] == 1 then
 						drawSimpleOutlinedText("Dormant", "ESP_Font_Flag", MinX-config["di_x"], MinY+config["di_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["di_pos"] == 2 then
@@ -2996,6 +3003,7 @@ local function DoESP()
 						drawSimpleOutlinedText("Dormant", "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["di_x"], MinY-config["di_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["di_pos"] == 4 then  
 						drawSimpleOutlinedText("Dormant", "ESP_Font_Flag", MaxX-(MaxX-MinX)/2-w/2+config["di_x"], MaxY+config["di_y"], col, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
+						end
 						end
 					end
 					if config["esp_player_money"] then
@@ -3096,22 +3104,6 @@ local function DoESP()
 				end
 			end
 		end
-		if config["misc_observerlist"] then
-			for k, v in ipairs(observingPlayers.watcher) do
-				if IsValid(v) then
-					surfSetFont("ESP_Font_Main")
-					local nameWidth, nameHeight = surfGetTextSize("Observer: "..v:Name())
-					draw.SimpleText("Observer: "..v:Name(), "ESP_Font_Main", ScrW() - nameWidth - 2, 0 + (15 * ( k - 1 ) ), Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-				end
-			end
-			for k, v in ipairs(observingPlayers.spec) do
-				if IsValid(v) then
-	 				surfSetFont("ESP_Font_Main")
-					local nameWidth, nameHeight = surfGetTextSize("Spectator: "..v:Name())
-					draw.SimpleText("Spectator: "..v:Name(), "ESP_Font_Main", ScrW() - nameWidth - 2, -15 + (15 * #observingPlayers.watcher) + (15 * k - 1), Color(255, 0, 0), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-				end
-			end
-		end
 		if config["misc_adminlist"] then
 		local rgbcol = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
 			for k, v in ipairs(onlineStaff) do
@@ -3140,7 +3132,7 @@ local function DoESP()
 			end
 		end
 		if config["misc_infolist"] then
-		local rgbcol = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+		    local rgbcol = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
 		    local killo,detho,velo,fpso,health,ap = LocalPlayer():Frags(),LocalPlayer():Deaths(),me:GetVelocity():Length(),tostring(math.floor(1 / RealFrameTime())),me:Health(),me:Armor()
 			local x,y = math.Round(config["misc_infolist_x"]), math.Round(config["misc_infolist_y"])
 			surfSetFont("smallest_pixel")
@@ -3163,6 +3155,28 @@ local function DoESP()
 			draw.SimpleText("Health: " .. health, "smallest_pixel", x+3, y+28+20+20+20+20, Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
 			draw.SimpleText("Armor: " ..ap, "smallest_pixel", x+3, y+28+20+20+20+20+20, Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
 			
+		end
+		if config["misc_speclist"] then
+		    local rgbcol = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+			local x,y = math.Round(config["misc_speclist_x"]), math.Round(config["misc_speclist_y"])
+			surfSetFont("smallest_pixel")
+			local w = surfGetTextSize("Spectators")
+		    draw.RoundedBox( 3, x, y, 250, 25, Color(25,25,25))
+			draw.RoundedBox( 10, x+2, y+1, 246, 3, Color(rgbcol.r,rgbcol.g,rgbcol.b))		
+		    surfSetDrawColor( 255, 255, 255, 60 ) 
+	        surface.SetMaterial(Material("gui/center_gradient")) 
+	        surfDrawTexturedRect(x+4, y+1, 246, 3)
+            draw.SimpleText( "Spectators", "smallest_pixel", x+(250/2) - w/2, y+5, color_white )
+			for k, v in ipairs(observingPlayers.spec) do		
+				if IsValid(v) then
+					surfSetFont("smallest_pixel")
+					local nameWidth, nameHeight = surfGetTextSize("Spectator: "..v:Name())
+					surfSetDrawColor( 11, 11, 11, 200 ) 
+	                surface.SetMaterial(Material("gui/gradient")) 
+	                surfDrawTexturedRect(x+2, y+15 + (15 * k - 1), nameWidth + 50, nameHeight)
+				    draw.SimpleText("Spectator: "..v:Name(), "smallest_pixel", x + 3, y + 15 --[[+ (15 * #observingPlayers.watcher)]] + (15 * k - 1), color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+			    end
+			end
 		end
 		if config["esp_ent_crosshair"] then
 		    draw.SimpleText( LocalPlayer():GetEyeTrace().Entity, "smallest_pixel", (ScrW()/2) - 100, ScrH() / 2 + 65, color_white )
@@ -5519,6 +5533,7 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 	end
 	end
 	--Aimbot
+	--EnginePrediction()
 	if config["aim_master_toggle"] then
 		if !config["aim_onkey"] || ( config.keybinds["aim_onkey_key"] != 0 && ( ( config.keybinds["aim_onkey_key"] >= 107 && config.keybinds["aim_onkey_key"] <= 113 ) && input.IsMouseDown(config.keybinds["aim_onkey_key"]) ) || input.IsKeyDown(config.keybinds["aim_onkey_key"]) ) && !frame then
 			if !LocalPlayer():Alive() then return end
