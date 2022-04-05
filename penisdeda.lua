@@ -1,6 +1,6 @@
 --Cheat Information
 local PenisDedushki = {}
-PenisDedushki.Version = "V3.4"
+PenisDedushki.Version = "V4.4"
 PenisDedushki.UpdateDate = "05.04.2022"
 PenisDedushki.Build = "Beta v2"
 --Tables
