@@ -1,6 +1,6 @@
 --Cheat Information
 local PenisDedushki = {}
-PenisDedushki.Version = "V4.4"
+PenisDedushki.Version = "V4.5"
 PenisDedushki.UpdateDate = "05.04.2022"
 PenisDedushki.Build = "Beta v2"
 --Tables
@@ -62,6 +62,7 @@ require("bsendpacket")
 config["aim_master_toggle"] = false
 config["aim_onkey"] = false
 config["aim_norecoil"] = false
+config["aim_norecoil_true"] = false
 config["aim_nospread"] = false
 config["aim_prediction_metod"] = 1
 config["aim_silent"] = false
@@ -2244,6 +2245,7 @@ function HavocGUI()
 	CreateCheckBox("Aimbot Smoothing", 10, 260, "aim_smoothing", false, combat_aimbot)
 	CreateSlider("Smoothing Scale", 2, 280, "aim_smoothing_value", 0, 2, 2, combat_aimbot)	
 	CreateCheckBox("No-Recoil", 10, 30, "aim_norecoil", false, combat_accuracy)
+	CreateCheckBox("RCS", 100, 30, "aim_norecoil_true", false, combat_accuracy)
 	CreateCheckBox("Auto Slow", 10, 50, "autoslow", false, combat_accuracy)
 	CreateCheckBox("Auto Crouch", 10, 70, "autocrouch", false, combat_accuracy)
 	CreateCheckBoxExperemental("NoSpread", 10, 90, "aim_nospread", false, combat_accuracy)	
@@ -3337,12 +3339,12 @@ local function DoESP()
 
             local name = player.GetAll()[key]:Nick()
 			local team = team.GetName(player.GetAll()[key]:Team())
-			--local teamcol3 = string.ToColor(team.GetColor(player.GetAll()[key]:Team()))
+			--local teamcol3 = string.ToColor( team.GetColor(player.GetAll()[key]:Team() ) )
             if config["map_names"] then
             draw.SimpleText(name, "default", x + size - (size * 0.50) + px - 13, y + size - (size * 0.50) + py - 7, nametag_col, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
             end
 			if config["map_teams"] then
-			draw.SimpleText(team, "default", x + size - (size * 0.50) + px - 13, y + size - (size * 0.50) + py - 15, teamcol2, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			draw.SimpleText(team, "default", x + size - (size * 0.50) + px - 13, y + size - (size * 0.50) + py - 15, nametag_col, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
             end
             surface.SetDrawColor(teamcol)
 
@@ -4645,6 +4647,8 @@ AddHook("CalcView", RandomString(), function(ply, pos, ang, fov, origin )
 	end
 end)
 
+
+
 local function scopeAiming()
 	local wep = LocalPlayer():GetActiveWeapon()
 	return IsValid(wep) && input.IsMouseDown(MOUSE_RIGHT) 
@@ -5140,12 +5144,82 @@ function em.FireBullets(p, data)
     return(ofb(p, data));
 end
  
-local function PredictSpread(ucmd, ang)
-    local w = LocalPlayer():GetActiveWeapon();
-    if (!w || !w:IsValid() || !cones[w:GetClass()]) then return ang; end
-    local ang = (dickwrap.Predict(ucmd, ang:Forward(), cones[w:GetClass()])):Angle();
-    ang.y, ang.x = math.NormalizeAngle(ang.y), math.NormalizeAngle(ang.x);
-    return(ang);
+local function NoRecoil(ang)
+	local w = me:GetActiveWeapon()
+	local c = w:GetClass()
+
+	if c:StartWith("m9k_") then
+		return ang
+	else
+		ang = ang - me:GetViewPunchAngles()
+	end
+
+	return ang
+end
+ 
+local function PredictSpread(cmd, ang)
+    local w = LocalPlayer():GetActiveWeapon()
+	local class = w:GetClass()
+    if class:StartWith("swb_") then
+		local function CalculateSpread()
+			local vel = me:GetVelocity():Length()
+			local dir = ang:Forward()
+			
+			if !me.LastView then
+				me.LastView = dir
+				me.ViewAff = 0
+			else
+				me.ViewAff = Lerp(0.25, me.ViewAff, (dir - me.LastView):Length() * 0.5)
+				--  me.LastView = dir
+			end
+			
+			if w.dt.State == SWB_AIMING then
+				w.BaseCone = w.AimSpread
+				
+				if w.Owner.Expertise then
+					w.BaseCone = w.BaseCone * (1 - w.Owner.Expertise["steadyaim"].val * 0.0015)
+				end
+			else
+				w.BaseCone = w.HipSpread
+				
+				if w.Owner.Expertise then
+					w.BaseCone = w.BaseCone * (1 - w.Owner.Expertise["wepprof"].val * 0.0015)
+				end
+			end
+			
+			if me:Crouching() then
+				w.BaseCone = w.BaseCone * (w.dt.State == SWB_AIMING and 0.9 or 0.75)
+			end
+			w.AddSpread = 0
+			w.AddSpreadSpeed = 0
+			w.CurCone = mClamp(w.BaseCone + w.AddSpread + (vel / 10000 * w.VelocitySensitivity) * (w.dt.State == SWB_AIMING and w.AimMobilitySpreadMod or 1) + me.ViewAff, 0, 0.09 + w.MaxSpreadInc)
+			
+			if CurTime() > servertime then
+				w.AddSpread = mClamp(w.AddSpread - 0.005 * w.AddSpreadSpeed, 0, w.MaxSpreadInc)
+				w.AddSpreadSpeed = mClamp(w.AddSpreadSpeed + 0.05, 0, 1)
+			end
+		end
+		
+		CalculateSpread()
+		
+		local cone = w.CurCone
+		if !cone then return ang end
+
+		if me:Crouching() then
+			cone = cone * 0.85
+		end
+
+		math.randomseed(cmd:CommandNumber())
+		ang = ang - Angle(mRand(-cone, cone), mRand(-cone, cone), 0) * 25	
+		
+	else	
+	
+    if (!w || !w:IsValid() || !cones[w:GetClass()]) then return ang end
+    local ang = (dickwrap.Predict(cmd, ang:Forward(), cones[w:GetClass()])):Angle()
+    ang.y, ang.x = math.NormalizeAngle(ang.y), math.NormalizeAngle(ang.x)
+    end
+	
+    return(ang)
 end
 --[[local function AutofireWallCheck( v ) -- Мусорная функция
     local ent = LocalPlayer():GetEyeTrace().Entity
@@ -5581,6 +5655,9 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 							local FinAngle = ( AimSpot - CurPos ):Angle()
 							FinAngle:Normalize()
 				
+				            if config["aim_norecoil_true"] then
+                                FinAngle = NoRecoil(FinAngle)
+							end	
 							if config["aim_target"] == 1 && !config["killaura_toggle"] then
 
 								if math.sqrt((AimSpot:ToScreen().x - centerx) * (AimSpot:ToScreen().x - centerx) + (AimSpot:ToScreen().y - centery) * (AimSpot:ToScreen().y - centery)) < playerCenter then newPlayerCenter = math.sqrt((AimSpot:ToScreen().x - centerx) * (AimSpot:ToScreen().x - centerx) + (AimSpot:ToScreen().y - centery) * (AimSpot:ToScreen().y - centery)) AimP = true end
@@ -5672,13 +5749,11 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 							end
 							
 							local sprdang 
-							
 							if config["aim_nospread"] then
 						    sprdang = PredictSpread(ucmd, Angle())
 							else
 							sprdang = Angle()
-							end
-							
+							end						
 							if AimP && InFOV then
 								if config["aim_smoothing"] && (IsValid(LocalPlayer():GetActiveWeapon()) && LocalPlayer():GetActiveWeapon():GetClass() != "weapon_crossbow" ) then
 									playerCenter = newPlayerCenter
