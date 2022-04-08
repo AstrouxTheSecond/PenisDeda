@@ -1,6 +1,6 @@
 --Cheat Information
 local PenisDedushki = {}
-PenisDedushki.Version = "V4.5"
+PenisDedushki.Version = "V4.7"
 PenisDedushki.UpdateDate = "05.04.2022"
 PenisDedushki.Build = "Beta v2"
 --Tables
@@ -37,7 +37,7 @@ local surfDrawCircle = surface.DrawCircle
 local surfDrawTexturedRect = surface.DrawTexturedRect
 --Fonts
 surface.CreateFont("smallest_pixel", {size = 15,weight = 1000,antialias = true,shadow = true,font = "smallest_pixel-7",})
-surface.CreateFont("Anarchao$$$", {size = 70,weight = 1000,antialias = true,shadow = true,font = "Anarchaos",})
+surface.CreateFont("Fatality", {size = 30,weight = 400,antialias = true,shadow = true,font = "Fatality's Edge",})
 --CFG Start
 local config = {}
 local teamFilterSelected = {}
@@ -57,7 +57,7 @@ require("dickwrap")
 require("enginepred")
 require("context")
 require("bsendpacket")
---require("fhook")
+--require("")
 //PenisDeduration
 config["aim_master_toggle"] = false
 config["aim_onkey"] = false
@@ -65,7 +65,7 @@ config["aim_norecoil"] = false
 config["aim_norecoil_true"] = false
 config["aim_nospread"] = false
 config["aim_prediction_metod"] = 1
-config["aim_silent"] = false
+config["aim_silent"] = 1
 config["aim_psilent"] = false
 config["aim_target"] = 1
 config["aim_hitbox"] = 1
@@ -87,7 +87,8 @@ config["slowwalk_speed"] = 35
 config["autocrouch"] = false
 config["aim_zeusbot"] = false
 config["aim_jump_check"] = false
-config["aim_nadecheck"] = false
+config["aim_nodraw"] = false
+config["aim_godded"] = false
 config["aim_bullettime"] = false
 config["aim_facestab"] = false
 config["aim_knifebot"] = false
@@ -285,7 +286,7 @@ config["hud_killstreak"] = false
 config["hud_arraylist"] = false
 config["hud_topline"] = false
 config["hud_topline_style"] = 1
-config["hud_velo"] = false
+config["hud_bsp"] = false
 
 config["esp_render_mode"] = true
 
@@ -368,6 +369,7 @@ config["menu_type"] = 1
 config["bsp_fake_lags"] = false
 config["bsp_fake_lags_value"] = 1
 config["bsp_fake_lags_conditions"] = 1
+config["bsp_evadebullets"] = false
 
 config.colors["esp_player_box"] = "255 255 255 255"
 config.colors["esp_player_name"] = "255 255 255 255"
@@ -751,6 +753,8 @@ local function ValidateAimbot(ply)
 	if ply:Team() == TEAM_SPECTATOR then return false end
 	if ply:IsDormant() then return false end
 	if config["aim_jump_check"] && !LocalPlayer():IsOnGround() then return false end 
+	if config["aim_godded"] && ply:HasGodMode() then return false end 
+	if config["aim_nodraw"] && ply:GetNoDraw() then return false end 
 	if !GetIgnorePlayers(ply) then return false end
 	if config["aim_ignorebots"] then if ply:IsBot() then return false end end
 	if ply:GetPos():Distance(LocalPlayer():GetPos()) > config["esp_player_render_distance"] then return false end
@@ -804,6 +808,7 @@ local function CloseFrame()
 	RememberCursorPosition()
 	frame:Remove()
 	frame = false
+    topframe:Remove()
 end
 local function SaveConfig()
 	if cfgDropdown:GetSelected() == nil then return end	
@@ -889,6 +894,7 @@ end
 local function Unload()
 	if frame then
 		frame:Remove()
+		topframe:Remove()
 	end
 	if teamFilter then
 		teamFilter:Remove()
@@ -915,6 +921,9 @@ local function Unload()
 	timer.Remove(cStaff)
 	for k, v in pairs(player.GetAll()) do
 		v:SetRenderMode(0)
+	end
+	if textInput:IsEditing() then
+	editingText = false
 	end
 	DisableWorldModulation()
 	DisablePropModulation()
@@ -1203,10 +1212,11 @@ local function CreateLabel(lbl, x, y, par)
 
 	local label = vgui.Create("DLabel", par)
 	label:SetText(lbl)
+	label:SetFont("smallest_pixel")
 	local w, h = label:GetTextSize()
 	label:SetSize(w, h)
 	label:SetPos(x, y)
-	label:SetFont("smallest_pixel")
+
 
 end
 
@@ -1300,16 +1310,19 @@ local function CreateButton(lbl, tooltip, fnc, x, y, par)
 	local button = vgui.Create("DButton", par)
 	button:SetSize(150, 20)
 	button:SetPos(x, y)
-	button:SetText(lbl)
+	button:SetText("")
 	button:SetTooltip(tooltip)
 	function button:DoClick()
 		surface.PlaySound( "buttons/button15.wav" )
 		fnc()
 	end
 	button.Paint = function(self,w,h)
+	    surface.SetFont("smallest_pixel")
+		local textw = surfGetTextSize(lbl)
 		draw.RoundedBox(0, 0, 0, w, h, Color(45,45,60,150))
 		surfSetDrawColor( 0, 0, 0, 255 )
 	    surface.DrawOutlinedRect( 0, 0, w, h, 1 )
+		draw.SimpleText(lbl, "smallest_pixel", 150/2-textw/2, 3, color_white )
 	end
 end
 
@@ -1656,38 +1669,63 @@ local function CreateMaterialList()
 
 	end
 end
+function Wrad(x,y,w,h)
+	surface.SetDrawColor( 255, 255, 255, 60 ) 
+	surface.SetMaterial(Material("gui/center_gradient")) 
+    surface.DrawTexturedRect(x, y, w, h)
+end
 --========================GUI Menu============================================--
 function HavocGUI()
-    local accent = string.ToColor(config.colors["menu_accent"])
-	local color_accent = Color(accent.r,accent.g,accent.b,255)
 	files, dir = file.Find( "penisdeda/*.json", "DATA" )
-
+ 
+    
+	topframe = vgui.Create("DFrame")
+	topframe:SetSize(ScrW(), 25)
+	topframe:SetPos(0, 0)
+	topframe:SetTitle("")
+	topframe:MakePopup()
+	topframe:ShowCloseButton(false)
+	topframe:SetDraggable(false)
+	topframe:SetIcon("icon16/emoticon_happy.png")
+	topframe.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+    draw.RoundedBox( 3, 0, 0, w, h, Color(0,0,0,255) )
+	draw.RoundedBox( 3, 1, 1, w-2, h-2, Color(35,35,40,255) )
+	draw.RoundedBox( 3, 0, 0, w, 4, Color(0,0,0,255) )
+	draw.RoundedBox( 3, 1, 1, w-2, 2, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(25,1,w-50,2)
+	end
+	
+ 
 	frame = vgui.Create("DFrame")
-	frame:SetSize(ScrW(), ScrH())
-	frame:Center()
+	frame:SetSize(780, 650)
+	if frameX == nil or frameY == nil then frame:Center() else frame:SetPos(frameX, frameY) end
 	frame:SetTitle("")
 	frame:MakePopup()
 	frame:ShowCloseButton(false)
-	frame:SetDraggable(false)
-	function frame:Paint()
-	local xer = ("A P3nis D3dushki  "):sub(1, math.floor(CurTime() * 3) % #"A P3nis D3dushki $$$")
-	local color_grad = HSVToColor( ( CurTime() * 150 ) % 360, 1, 1 )
-	draw.RoundedBox( 0, 0, 0, 99999, 99999, Color(15,15,15,150) )
-	draw.SimpleText( xer, "Anarchao$$$", ScrW() / 2 - 250, ScrH() - 100, color_grad )
+	frame.Paint = function(self,w,h)
+	surface.SetFont("Fatality")
+	local wt = surfGetTextSize("PenisDeda - Azbuka Sexa V4 - Beta")
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.RoundedBox( 3, 0, 0, w, h, Color(0,0,0,255) )
+    draw.RoundedBox( 3, 1, 1, w-2, h-2, Color(35,35,40,255) )
+	draw.RoundedBox( 3, 0, 0, w, 6, Color(0,0,0,255) )
+	draw.RoundedBox( 3, 1, 1, w-2, 4, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(25,1,675,4)
+	draw.RoundedBox( 3, 3, 8, w-6, 30, Color(0,0,0,255) )
+	draw.RoundedBox( 3, 4, 9, w-8, 28, Color(45,45,50,255) )	
+	draw.RoundedBox( 3, 3, 42, w-6, h-46, Color(0,0,0,255) )
+	draw.RoundedBox( 3, 4, 43, w-8, h-48, Color(45,45,50,255) )
+	draw.SimpleText("PenisDeda - Azbuka Sexa V4 - Beta", "Fatality", 780/2-wt/2, 7,Color(hsv.r,hsv.g,hsv.b))
 	end
     	
-	local PANEL = vgui.Create( "DPanel", frame )
-	PANEL:SetSize(ScrW(),ScrH())
-	PANEL:SetPos(0,0)
-	function PANEL:Paint() end
-	
-	local SHEET = vgui.Create( "DPropertySheet", PANEL )
-    SHEET:Dock(FILL)
-	SHEET.Paint = function( self, w, h ) 
-	for k, v in pairs(SHEET.Items) do if v.Tab then v.Tab.Paint = function(self,w,h) draw.RoundedBoxEx( 3, 0, 0, w, 20, Color(45,45,60,225), false, false, true, true ) end end end
-    end
-	
-	local AIM_SCROLL = vgui.Create( "DScrollPanel", SHEET )
+	local sheet = vgui.Create( "DPropertySheet", frame )
+    sheet:SetPos(4,44)
+    sheet:SetSize(792,602)
+	sheet.Paint = function( self, w, h ) for k, v in pairs(sheet.Items) do if v.Tab then v.Tab.Paint = function(self,w,h) draw.RoundedBox( 3, 0, 0, w, h, Color(0,0,0,255) ) draw.RoundedBox( 3, 1, 1, w-2, h-2, Color(45,45,50,255) ) end end end end
+
+    --======================= Combat ==========================--
+	local AIM_SCROLL = vgui.Create( "DScrollPanel", sheet )
     AIM_SCROLL:Dock( FILL )
     local AIM_SCROLLS = AIM_SCROLL:GetVBar()
 	function AIM_SCROLLS:Paint(w, h)
@@ -1700,168 +1738,82 @@ function HavocGUI()
 	draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
 	end
 	function AIM_SCROLLS.btnGrip:Paint(w, h)
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-    draw.RoundedBox(0, 0, 0, w, h, Color(45, 45, 60, 150))
-	end	
-	local combat_aimbot = vgui.Create( "DPanel", AIM_SCROLL )
-    combat_aimbot:SetSize(200,330)
-    combat_aimbot:SetPos(5,5)
-    function combat_aimbot:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/gun.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "Aimbot:", "DermaDefault", 19, 2, color_white )	
-    end
-	local combat_accuracy = vgui.Create( "DPanel", AIM_SCROLL )
-    combat_accuracy:SetSize(200,240)
-    combat_accuracy:SetPos(220,5)
-    function combat_accuracy:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/wand.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "Accuracy:", "DermaDefault", 19, 2, color_white )
-    end
-	local combat_triggerbot = vgui.Create( "DPanel", AIM_SCROLL )
-    combat_triggerbot:SetSize(200,80)
-    combat_triggerbot:SetPos(220,250)
-    function combat_triggerbot:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/cursor.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "Triggerbot:", "DermaDefault", 19, 2, color_white )
-    end
-	local combat_filter = vgui.Create( "DPanel", AIM_SCROLL )
-    combat_filter:SetSize(200,200)
-    combat_filter:SetPos(430,5)
-    function combat_filter:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/wrench.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "Filter:", "DermaDefault", 19, 2, color_white )
-    end
-	local combat_killaura = vgui.Create( "DPanel", AIM_SCROLL )
-    combat_killaura:SetSize(200,190)
-    combat_killaura:SetPos(640,5)
-    function combat_killaura:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/emoticon_evilgrin.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "KillAura:", "DermaDefault", 19, 2, color_white )
-    end
-	local combat_helpers = vgui.Create( "DPanel", AIM_SCROLL )
-    combat_helpers:SetSize(200,250)
-    combat_helpers:SetPos(850,5)
-    function combat_helpers:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/keyboard_mute.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "Helpers:", "DermaDefault", 19, 2, color_white )
-    end
-	local AA_SCROLL = vgui.Create( "DScrollPanel", SHEET )
-    AA_SCROLL:Dock( FILL )
-    local AA_SCROLLS = AA_SCROLL:GetVBar()
-	function AA_SCROLLS:Paint(w, h)
-    draw.RoundedBox(0, 0, 0, w, h, Color(15, 15, 15, 200))
+    draw.RoundedBox( 3, 0, 0, w, h, Color(0,0,0,255) )
+	draw.RoundedBox( 3, 1, 1, w-2, h-2, Color(45,45,50,255) )
 	end
-	function AA_SCROLLS.btnUp:Paint(w, h)
-    draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
+    
+	local co_main = vgui.Create( "DPanel", AIM_SCROLL)
+    co_main:SetPos( 3, 3 ) 
+    co_main:SetSize( 250, 400 )
+	co_main.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Main:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
 	end
-	function AA_SCROLLS.btnDown:Paint(w, h)
-	draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
+	local co_accuracy = vgui.Create( "DPanel", AIM_SCROLL)
+    co_accuracy:SetPos( 260, 3 ) 
+    co_accuracy:SetSize( 250, 200 )
+	co_accuracy.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Accuracy:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
 	end
-	function AA_SCROLLS.btnGrip:Paint(w, h)
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-    draw.RoundedBox(0, 0, 0, w, h, Color(45, 45, 60, 150))
-	end	
-	local antiaim_global = vgui.Create( "DPanel", AA_SCROLL )
-    antiaim_global:SetSize(200,400)
-    antiaim_global:SetPos(5,5)
-    function antiaim_global:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/arrow_rotate_clockwise.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "Anti-Aim:", "DermaDefault", 19, 2, color_white )
-    end
-	local antiaim_fakes = vgui.Create( "DPanel", AA_SCROLL )
-    antiaim_fakes:SetSize(200,400)
-    antiaim_fakes:SetPos(210,5)
-    function antiaim_fakes:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/emoticon_happy.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "Fake Angle:", "DermaDefault", 19, 2, color_white )
-    end
-	local antiaim_misc = vgui.Create( "DPanel", AA_SCROLL )
-    antiaim_misc:SetSize(200,400)
-    antiaim_misc:SetPos(420,5)
-    function antiaim_misc:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/arrow_rotate_clockwise.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "Misc:", "DermaDefault", 19, 2, color_white )
-    end
-	local antiaim_visual = vgui.Create( "DPanel", AA_SCROLL )
-    antiaim_visual:SetSize(200,400)
-    antiaim_visual:SetPos(630,5)
-    function antiaim_visual	:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/eye.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "Visualisation:", "DermaDefault", 19, 2, color_white )
-    end
-	local VISUAL_SCROLL = vgui.Create( "DScrollPanel", SHEET )
+    local co_helpers = vgui.Create( "DPanel", AIM_SCROLL)
+    co_helpers:SetPos( 517, 3 ) 
+    co_helpers:SetSize( 250, 200 )
+	co_helpers.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Helpers:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end
+    local co_filtering = vgui.Create( "DPanel", AIM_SCROLL)
+    co_filtering:SetPos( 260, 205 ) 
+    co_filtering:SetSize( 250, 210 )
+	co_filtering.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Filter:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end
+    local co_trigger = vgui.Create( "DPanel", AIM_SCROLL)
+    co_trigger:SetPos( 517, 205 ) 
+    co_trigger:SetSize( 250, 80 )
+	co_trigger.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Triggerbot:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end
+    local co_bt = vgui.Create( "DPanel", AIM_SCROLL)
+    co_bt:SetPos( 517, 285 ) 
+    co_bt:SetSize( 250, 114 )
+	co_bt.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Backtrack:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end
+    local co_aa = vgui.Create( "DPanel", AIM_SCROLL)
+    co_aa:SetPos( 517, 400 ) 
+    co_aa:SetSize( 250, 100 )
+	co_aa.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Anti-Aim:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end
+	--======================= Player ==========================--
+	local VISUAL_SCROLL = vgui.Create( "DScrollPanel", sheet )
     VISUAL_SCROLL:Dock( FILL )
     local VISUAL_SCROLLS = VISUAL_SCROLL:GetVBar()
 	function VISUAL_SCROLLS:Paint(w, h)
@@ -1874,51 +1826,108 @@ function HavocGUI()
 	draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
 	end
 	function VISUAL_SCROLLS.btnGrip:Paint(w, h)
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-    draw.RoundedBox(0, 0, 0, w, h, Color(45, 45, 60, 150))
+    draw.RoundedBox( 3, 0, 0, w, h, Color(0,0,0,255) )
+	draw.RoundedBox( 3, 1, 1, w-2, h-2, Color(45,45,50,255) )
+	end    
+	local pl_main = vgui.Create( "DPanel", VISUAL_SCROLL)
+    pl_main:SetPos( 3, 3 ) 
+    pl_main:SetSize( 250, 490 )
+	pl_main.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Main:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
 	end
-	
-	local visual_player = vgui.Create( "DPanel", VISUAL_SCROLL )
-    visual_player:SetSize(590,600)
-    visual_player:SetPos(5,5)
-    function visual_player:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/add.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "Player ESP:", "DermaDefault", 19, 2, color_white )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 5, 35, 190, 560, 1 )
-	draw.SimpleText( "-= Main Elements =-", "DermaDefault", 50, 20, color_white )
-	surface.DrawOutlinedRect( 200, 35, 190, 200, 1 )
-	draw.SimpleText( "-= Render Elements =-", "DermaDefault", 240, 20, color_white )
-	surface.DrawOutlinedRect( 200, 250, 190, 200, 1 )
-	draw.SimpleText( "-= Effects =-", "DermaDefault", 255, 235, color_white )
-	surface.DrawOutlinedRect( 200, 465, 190, 130, 1 )
-	draw.SimpleText( "-= Colored Models =-", "DermaDefault", 200, 450, color_white )
-	surface.DrawOutlinedRect( 395, 35, 190, 300, 1 )
-	draw.SimpleText( "-= Filter =-", "DermaDefault", 455, 20, color_white )
-    end
-	local visual_player_settings = vgui.Create( "DPanel", VISUAL_SCROLL )
-    visual_player_settings:SetSize(400,930)
-    visual_player_settings:SetPos(5,610)
-    function visual_player_settings:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/bullet_wrench.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "ESP Settings:", "DermaDefault", 19, 2, color_white )
-    end
-	local SELF_SCROLL = vgui.Create( "DScrollPanel", SHEET )
+	local pl_effect = vgui.Create( "DPanel", VISUAL_SCROLL)
+    pl_effect:SetPos( 260, 3 ) 
+    pl_effect:SetSize( 250, 220 )
+	pl_effect.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Effects:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end
+    local pl_render = vgui.Create( "DPanel", VISUAL_SCROLL)
+    pl_render:SetPos( 517, 3 ) 
+    pl_render:SetSize( 250, 110 )
+	pl_render.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Render:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end
+    local pl_chams = vgui.Create( "DPanel", VISUAL_SCROLL)
+    pl_chams:SetPos( 260, 225 ) 
+    pl_chams:SetSize( 250, 150 )
+	pl_chams.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Colored Models:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end
+    local pl_performance = vgui.Create( "DPanel", VISUAL_SCROLL)
+    pl_performance:SetPos( 517, 115 ) 
+    pl_performance:SetSize( 250, 200 )
+	pl_performance.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Performance:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end
+	--======================= ESPS ==========================--
+	local ESPS_SCROLL = vgui.Create( "DScrollPanel", sheet )
+    ESPS_SCROLL:Dock( FILL )
+    local ESPS_SCROLLS = ESPS_SCROLL:GetVBar()
+	function ESPS_SCROLLS:Paint(w, h)
+    draw.RoundedBox(0, 0, 0, w, h, Color(15, 15, 15, 200))
+	end
+	function ESPS_SCROLLS.btnUp:Paint(w, h)
+    draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
+	end
+	function ESPS_SCROLLS.btnDown:Paint(w, h)
+	draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
+	end
+	function ESPS_SCROLLS.btnGrip:Paint(w, h)
+    draw.RoundedBox( 3, 0, 0, w, h, Color(0,0,0,255) )
+	draw.RoundedBox( 3, 1, 1, w-2, h-2, Color(45,45,50,255) )
+	end
+	local esps_poss = vgui.Create( "DPanel", ESPS_SCROLL)
+    esps_poss:SetPos( 3, 3 ) 
+    esps_poss:SetSize( 250, 800 )
+	esps_poss.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "ESP Element Positions:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end    
+	local esps_aligns = vgui.Create( "DPanel", ESPS_SCROLL)
+    esps_aligns:SetPos( 260, 3 ) 
+    esps_aligns:SetSize( 250, 600 )
+	esps_aligns.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "ESP Text Align:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end
+	local esps_fonts = vgui.Create( "DPanel", ESPS_SCROLL)
+    esps_fonts:SetPos( 517, 3 ) 
+    esps_fonts:SetSize( 250, 200 )
+	esps_fonts.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "ESP Fonts:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end
+	--======================= Self ==========================--
+	local SELF_SCROLL = vgui.Create( "DScrollPanel", sheet )
     SELF_SCROLL:Dock( FILL )
     local SELF_SCROLLS = SELF_SCROLL:GetVBar()
 	function SELF_SCROLLS:Paint(w, h)
@@ -1931,54 +1940,41 @@ function HavocGUI()
 	draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
 	end
 	function SELF_SCROLLS.btnGrip:Paint(w, h)
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-    draw.RoundedBox(0, 0, 0, w, h, Color(45, 45, 60, 150))
+    draw.RoundedBox( 3, 0, 0, w, h, Color(0,0,0,255) )
+	draw.RoundedBox( 3, 1, 1, w-2, h-2, Color(45,45,50,255) )
 	end
-	local visual_self_view = vgui.Create( "DPanel", SELF_SCROLL )
-    visual_self_view:SetSize(200,700)
-    visual_self_view:SetPos(5,5)
-    function visual_self_view:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/zoom.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "View:", "DermaDefault", 19, 2, color_white )
-    end
-	local visual_self = vgui.Create( "DPanel", SELF_SCROLL )
-    visual_self:SetSize(200,650)
-    visual_self:SetPos(210,5)
-    function visual_self:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/user_edit.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "Self:", "DermaDefault", 19, 2, color_white )
-    end
-
-	local visual_self_hud = vgui.Create( "DPanel", SELF_SCROLL )
-    visual_self_hud:SetSize(200,550)
-    visual_self_hud:SetPos(415,5)
-    function visual_self_hud:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/vcard_add.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "HUD:", "DermaDefault", 19, 2, color_white )
-    end
-	local WORLD_SCROLL = vgui.Create( "DScrollPanel", SHEET )
+	local self_view = vgui.Create( "DPanel", SELF_SCROLL)
+    self_view:SetPos( 3, 3 ) 
+    self_view:SetSize( 250, 620 )
+	self_view.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "View:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end    
+	local self_other = vgui.Create( "DPanel", SELF_SCROLL)
+    self_other:SetPos( 260, 3 ) 
+    self_other:SetSize( 250, 350 )
+	self_other.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Other:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end  
+	local self_hud = vgui.Create( "DPanel", SELF_SCROLL)
+    self_hud:SetPos( 517, 3 ) 
+    self_hud:SetSize( 250, 370 )
+	self_hud.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "HUD:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end   	
+	--======================= World =========================--
+	local WORLD_SCROLL = vgui.Create( "DScrollPanel", sheet )
     WORLD_SCROLL:Dock( FILL )
     local WORLD_SCROLLS = WORLD_SCROLL:GetVBar()
 	function WORLD_SCROLLS:Paint(w, h)
@@ -1991,81 +1987,51 @@ function HavocGUI()
 	draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
 	end
 	function WORLD_SCROLLS.btnGrip:Paint(w, h)
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-    draw.RoundedBox(0, 0, 0, w, h, Color(45, 45, 60, 150))
+    draw.RoundedBox( 3, 0, 0, w, h, Color(0,0,0,255) )
+	draw.RoundedBox( 3, 1, 1, w-2, h-2, Color(45,45,50,255) )
 	end
-	local world_effects = vgui.Create( "DPanel", WORLD_SCROLL )
-    world_effects:SetSize(200,450)
-    world_effects:SetPos(5,5)
-    function world_effects:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/weather_cloudy.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "Effects:", "DermaDefault", 19, 2, color_white )
-    end
-	local world_colors = vgui.Create( "DPanel", WORLD_SCROLL )
-    world_colors:SetSize(200,100)
-    world_colors:SetPos(210,5)
-    function world_colors:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/color_wheel.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "Colors:", "DermaDefault", 19, 2, color_white )
-    end
-	local world_cc = vgui.Create( "DPanel", WORLD_SCROLL )
-    world_cc:SetSize(200,400)
-    world_cc:SetPos(420,5)
-    function world_cc:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/film_edit.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "Color Correction:", "DermaDefault", 19, 2, color_white )
-    end
-	local world_ents = vgui.Create( "DPanel", WORLD_SCROLL )
-    world_ents:SetSize(200,500)
-    world_ents:SetPos(630,5)
-    function world_ents:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/bricks.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "Entity:", "DermaDefault", 19, 2, color_white )
-    end
-	local world_minimap = vgui.Create( "DPanel", WORLD_SCROLL )
-    world_minimap:SetSize(200,300)
-    world_minimap:SetPos(840,5)
-    function world_minimap:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/world.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "Mini Map:", "DermaDefault", 19, 2, color_white )
-    end
-	local MISC_SCROLL = vgui.Create( "DScrollPanel", SHEET )
+	local wrld_ents = vgui.Create( "DPanel", WORLD_SCROLL)
+    wrld_ents:SetPos( 3, 3 ) 
+    wrld_ents:SetSize( 250, 100 )
+	wrld_ents.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Entity ESP:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end    
+	local wrld_minimap = vgui.Create( "DPanel", WORLD_SCROLL)
+    wrld_minimap:SetPos( 260, 3 ) 
+    wrld_minimap:SetSize( 250, 500 )
+	wrld_minimap.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Mini Map:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end
+	local wrld_effects = vgui.Create( "DPanel", WORLD_SCROLL)
+    wrld_effects:SetPos( 517, 3 ) 
+    wrld_effects:SetSize( 250, 500 )
+	wrld_effects.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Effects:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end	
+	local wrld_cc = vgui.Create( "DPanel", WORLD_SCROLL)
+    wrld_cc:SetPos( 3, 103 ) 
+    wrld_cc:SetSize( 250, 370 )
+	wrld_cc.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Color Correction:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end    
+	--======================= Misc ==========================--
+	local MISC_SCROLL = vgui.Create( "DScrollPanel", sheet )
     MISC_SCROLL:Dock( FILL )
     local MISC_SCROLLS = MISC_SCROLL:GetVBar()
 	function MISC_SCROLLS:Paint(w, h)
@@ -2078,110 +2044,71 @@ function HavocGUI()
 	draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
 	end
 	function MISC_SCROLLS.btnGrip:Paint(w, h)
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-    draw.RoundedBox(0, 0, 0, w, h, Color(45, 45, 60, 150))
+    draw.RoundedBox( 3, 0, 0, w, h, Color(0,0,0,255) )
+	draw.RoundedBox( 3, 1, 1, w-2, h-2, Color(45,45,50,255) )
 	end
-	local misc_movement = vgui.Create( "DPanel", MISC_SCROLL )
-    misc_movement:SetSize(200,500)
-    misc_movement:SetPos(5,5)
-    function misc_movement:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/arrow_branch.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "Movement:", "DermaDefault", 19, 2, color_white )
-    end
-	local bsendpacket_tab = vgui.Create( "DPanel", MISC_SCROLL )
-    bsendpacket_tab:SetSize(200,250)
-    bsendpacket_tab:SetPos(5,510)
-    function bsendpacket_tab:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/bullet_error.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "bSendPacket:", "DermaDefault", 19, 2, color_white )
-    end
-	local misc_misc = vgui.Create( "DPanel", MISC_SCROLL )
-    misc_misc:SetSize(200,500)
-    misc_misc:SetPos(210,5)
-    function misc_misc:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/page_white_text.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "Misc:", "DermaDefault", 19, 2, color_white )
-    end
-	local misc_alist = vgui.Create( "DPanel", MISC_SCROLL )
-    misc_alist:SetSize(200,200)
-    misc_alist:SetPos(210,510)
-    function misc_alist:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/award_star_silver_2.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "Admins:", "DermaDefault", 19, 2, color_white )
-    end
-    local misc_name = vgui.Create( "DPanel", MISC_SCROLL )
-    misc_name:SetSize(200,250)
-    misc_name:SetPos(420,5)
-    function misc_name:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/emoticon_waii.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "Player:", "DermaDefault", 19, 2, color_white )
-    end
-	local misc_logs = vgui.Create( "DPanel", MISC_SCROLL )
-    misc_logs:SetSize(200,130)
-    misc_logs:SetPos(630,5)
-    function misc_logs:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/book_error.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "Event logger:", "DermaDefault", 19, 2, color_white )
-    end
-	local misc_mmgames = vgui.Create( "DPanel", MISC_SCROLL )
-    misc_mmgames:SetSize(200,200)
-    misc_mmgames:SetPos(840,5)
-    function misc_mmgames:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/controller.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "Gamemodes:", "DermaDefault", 19, 2, color_white )
-    end
-	
-	local CFG_SCROLL = vgui.Create( "DScrollPanel", SHEET )
+	local misc_movement = vgui.Create( "DPanel", MISC_SCROLL)
+    misc_movement:SetPos( 3, 3 ) 
+    misc_movement:SetSize( 250, 300 )
+	misc_movement.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Movement:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end  
+	local misc_mmgames = vgui.Create( "DPanel", MISC_SCROLL)
+    misc_mmgames:SetPos( 260, 3 ) 
+    misc_mmgames:SetSize( 250, 200 )
+	misc_mmgames.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Gamemodes:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end
+	local misc_player = vgui.Create( "DPanel", MISC_SCROLL)
+    misc_player:SetPos( 517, 3 ) 
+    misc_player:SetSize( 250, 250 )
+	misc_player.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Player:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end
+	local misc_logs = vgui.Create( "DPanel", MISC_SCROLL)
+    misc_logs:SetPos( 3, 307 ) 
+    misc_logs:SetSize( 250, 250 )
+	misc_logs.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Event logs:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end 
+	local misc_panels = vgui.Create( "DPanel", MISC_SCROLL)
+    misc_panels:SetPos( 260, 207 ) 
+    misc_panels:SetSize( 250, 350 )
+	misc_panels.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Panels:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end 		
+	local misc_packets = vgui.Create( "DPanel", MISC_SCROLL)
+    misc_packets:SetPos( 517, 257 ) 
+    misc_packets:SetSize( 250, 200 )
+	misc_packets.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "bSendPacket:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end
+	--====================== Config =========================--
+	local CFG_SCROLL = vgui.Create( "DScrollPanel", sheet )
     CFG_SCROLL:Dock( FILL )
     local CFG_SCROLLS = CFG_SCROLL:GetVBar()
 	function CFG_SCROLLS:Paint(w, h)
@@ -2194,382 +2121,308 @@ function HavocGUI()
 	draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
 	end
 	function CFG_SCROLLS.btnGrip:Paint(w, h)
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-    draw.RoundedBox(0, 0, 0, w, h, Color(45, 45, 60, 150))
+    draw.RoundedBox( 3, 0, 0, w, h, Color(0,0,0,255) )
+	draw.RoundedBox( 3, 1, 1, w-2, h-2, Color(45,45,50,255) )
 	end
-	local cfg_tab = vgui.Create( "DPanel", CFG_SCROLL )
-    cfg_tab:SetSize(500,500)
-    cfg_tab:SetPos(5,5)
-    function cfg_tab:Paint(w, h)
-	draw.RoundedBox( 0, 0, 0, w, h, Color(55,55,60,225))
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-	surfSetDrawColor( 0, 0, 0, 255 )
-	surface.DrawOutlinedRect( 3, 20, w-6, h-23, 1 )
-    surfSetDrawColor( 255, 255, 255, 255 ) 
-    surface.SetMaterial(Material("icon16/page_white_put.png"))
-    surfDrawTexturedRect( 2, 2, 15, 15 )
-    draw.SimpleText( "Config:", "DermaDefault", 19, 2, color_white )
-    end
+	local cfg_tab = vgui.Create( "DPanel", CFG_SCROLL)
+    cfg_tab:SetPos( 3, 3 ) 
+    cfg_tab:SetSize( 250, 500 )
+	cfg_tab.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Config:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end  
 	
-	
-    SHEET:AddSheet( "Combat", AIM_SCROLL, "icon16/gun.png", false, false, nil)
-	SHEET:AddSheet( "Anti-hit", AA_SCROLL, "icon16/arrow_refresh.png", false, false, nil)
-	SHEET:AddSheet( "Player", VISUAL_SCROLL, "icon16/group.png", false, false, nil)
-	SHEET:AddSheet( "Self", SELF_SCROLL, "icon16/eye.png", false, false, nil)
-	SHEET:AddSheet( "World", WORLD_SCROLL, "icon16/world.png", false, false, nil)
-	SHEET:AddSheet( "Misc", MISC_SCROLL, "icon16/page_white_stack.png", false, false, nil)
-	--SHEET:AddSheet( "LUA Run", LUA_TAB, "icon16/control_fastforward_blue.png", false, false, nil)
-	SHEET:AddSheet( "Config", CFG_SCROLL, "icon16/disk.png", false, false, nil)
-
-	--======Other==================--
-    SHEET:SwitchToName(activeTab)
-	for k, v in pairs(SHEET:GetItems()) do
+    sheet:AddSheet( "Combat", AIM_SCROLL, "icon16/gun.png", false, false, nil)
+	sheet:AddSheet( "Player", VISUAL_SCROLL, "icon16/group.png", false, false, nil)
+	sheet:AddSheet( "ESP Settings", ESPS_SCROLL, "icon16/style_edit.png", false, false, nil)
+	sheet:AddSheet( "Self", SELF_SCROLL, "icon16/eye.png", false, false, nil)
+	sheet:AddSheet( "World", WORLD_SCROLL, "icon16/world.png", false, false, nil)
+	sheet:AddSheet( "Misc", MISC_SCROLL, "icon16/page_white_stack.png", false, false, nil)
+	sheet:AddSheet( "Config", CFG_SCROLL, "icon16/disk.png", false, false, nil)
+	--=========== sheet ===========--
+    sheet:SwitchToName(activeTab)
+	for k, v in pairs(sheet:GetItems()) do
 		function v.Tab:OnDepressed()
 			activeTab = v.Name
 		end
 	end
     --=======FEATURES==============--
-	//Combat
-	CreateCheckBox("Enable Aimbot", 10, 30, "aim_master_toggle", false, combat_aimbot)
-	CreateCheckBox("Aimbot On Key", 10, 50, "aim_onkey", false, combat_aimbot)
-	CreateKeybind(140, 50, "aim_onkey_key", combat_aimbot)
-	CreateCheckBox("Silent Aim", 10, 70, "aim_silent", false, combat_aimbot)
-    CreateCheckBoxExperemental("pSilent", 90, 70, "aim_psilent", false, combat_aimbot)	
-	CreateDropdown("Target Selection", 10, 90, {"Crosshair", "Closest Distance", "Lowest Health"}, "aim_target", combat_aimbot)
-	CreateDropdown("Hitbox Selection", 10, 130, {"Hitscan", "Head", "Body"}, "aim_hitbox", combat_aimbot)	
-	CreateCheckBoxExperemental("Automatic Fire", 10, 180, "aim_autofire", false, combat_aimbot)
-	CreateCheckBoxExperemental("Automatic Reload", 10, 200, "aim_autoreload", false, combat_aimbot)
-    CreateSlider("Aimbot FOV", 2, 220, "aim_fov", 0, 180, 0, combat_aimbot)
-	CreateCheckBox("Aimbot Smoothing", 10, 260, "aim_smoothing", false, combat_aimbot)
-	CreateSlider("Smoothing Scale", 2, 280, "aim_smoothing_value", 0, 2, 2, combat_aimbot)	
-	CreateCheckBox("No-Recoil", 10, 30, "aim_norecoil", false, combat_accuracy)
-	CreateCheckBox("RCS", 100, 30, "aim_norecoil_true", false, combat_accuracy)
-	CreateCheckBox("Auto Slow", 10, 50, "autoslow", false, combat_accuracy)
-	CreateCheckBox("Auto Crouch", 10, 70, "autocrouch", false, combat_accuracy)
-	CreateCheckBoxExperemental("NoSpread", 10, 90, "aim_nospread", false, combat_accuracy)	
-	CreateCheckBox("Bullet Time", 10, 110, "aim_bullettime", false, combat_accuracy)	
-	CreateCheckBox("Velocity Prediction", 10, 130, "aim_velocitypred", false, combat_accuracy)	
-	CreateDropdown("Movement Fix type", 10, 150, {"Static", "Static 2"}, "movement_fix", combat_accuracy)
+   	CreateCheckBox("Enable Aimbot", 5, 25, "aim_master_toggle", false, co_main)
+	CreateCheckBox("Aimbot On Key", 5, 45, "aim_onkey", false, co_main)
+	CreateKeybind(140, 45, "aim_onkey_key", co_main)
+	CreateDropdown("Silent Aim", 5, 65, {"None", "Clientside", "Serverside"}, "aim_silent", co_main)
+	CreateDropdown("Target Selection", 5, 105, {"Crosshair", "Closest Distance", "Lowest Health"}, "aim_target", co_main)
+	CreateDropdown("Hitbox Selection", 5, 145, {"Hitscan", "Head", "Body"}, "aim_hitbox", co_main)	
+    CreateSlider("Aimbot FOV", 2, 185, "aim_fov", 0, 180, 0, co_main)	
+	CreateCheckBox("Aimbot Smoothing", 5, 225, "aim_smoothing", false, co_main)
+	CreateSlider("Smoothing Scale", 2, 245, "aim_smoothing_value", 0, 2, 2, co_main) 
 	
-	CreateCheckBox("Ignore Friends", 10, 30, "aim_ignorefriends", false, combat_filter)
-	CreateCheckBox("Ignore BOTS", 10, 50, "aim_ignorebots", false, combat_filter)
-	CreateCheckBox("Ignore Staff", 10, 70, "aim_ignoreadmins", false, combat_filter)
-	CreateCheckBox("Ignore Noclipping", 10, 90, "aim_ignorenoclip", false, combat_filter)
-	CreateCheckBox("Ignore Same Team", 10, 110, "aim_ignoreteam", false, combat_filter)
-	CreateCheckBox("Ignore Non-Visible", 10, 130, "aim_ignoreinvis", false, combat_filter)
-	CreateCheckBox("Jump Check", 10, 150, "aim_jump_check", false, combat_filter)
-	CreateCheckBox("Bad Weapons Check", 10, 170, "aim_nadecheck", false, combat_filter)
+	CreateCheckBox("Remove Visual Recoil", 5, 25, "aim_norecoil", false, co_accuracy)
+	CreateCheckBox("Remove Recoil", 5, 45, "aim_norecoil_true", false, co_accuracy)
+	CreateCheckBoxExperemental("Predict Spread", 5, 65, "aim_nospread", false, co_accuracy)	
+	CreateCheckBox("Auto Slow", 5, 85, "autoslow", false, co_accuracy)
+	CreateCheckBox("Auto Crouch", 5, 105, "autocrouch", false, co_accuracy)
+	CreateCheckBox("Bullet Time", 5, 125, "aim_bullettime", false, co_accuracy)	
+	CreateCheckBox("Velocity Prediction", 5, 145, "aim_velocitypred", false, co_accuracy)		
+    CreateCheckBox("Interp Disabler", 5, 165, "aim_interp", false, co_accuracy)
 	
-	CreateCheckBox("Enable KillAura", 10, 30, "killaura_toggle", false, combat_killaura) 
-	CreateCheckBox("On Key", 10, 50, "killaura_on_key", false, combat_killaura)
-	CreateKeybind(140, 50, "killaura_key", combat_killaura)
-	CreateCheckBox("Enable Magnet", 10, 70, "killaura_magnet", false, combat_killaura) 
-	CreateCheckBox("Enable Delay", 10, 90, "killaura_delay", false, combat_killaura) 
-	CreateCheckBox("Auto Jump", 10, 110, "killaura_crits", false, combat_killaura)  
-	CreateDropdown("KillAura Distance", 10, 130, {"Unsafe far", "Safe close", "Medium"}, "killaura_disttype", combat_killaura)
+	CreateCheckBoxExperemental("Automatic Fire", 5, 25, "aim_autofire", false, co_helpers)
+	CreateCheckBoxExperemental("Automatic Reload", 5, 45, "aim_autoreload", false, co_helpers)
+	CreateCheckBox("Auto Click", 5, 65, "misc_autoclick", false, co_helpers)
+	CreateCheckBox("M9K Sprint disabler", 5, 85, "misc_m9kstopper", false, co_helpers)
+	CreateCheckBox("Force Backstab", 5, 105, "aim_facestab", false, co_helpers)
+	CreateCheckBox("Knife BOT", 5, 125, "aim_knifebot", false, co_helpers)
+	CreateCheckBox("Act Disabler", 5, 145, "aim_act_disabler", false, co_helpers)	
 	
-	CreateCheckBox("Enable Triggerbot", 10, 30, "trigger_master_toggle", false, combat_triggerbot)
-	CreateCheckBox("Triggerbot On Key", 10, 50, "trigger_onkey", false, combat_triggerbot)
-	CreateKeybind(150, 50, "trigger_onkey_key", combat_triggerbot)
+	CreateCheckBox("Ignore Friends", 5, 25, "aim_ignorefriends", false, co_filtering)
+	CreateCheckBox("Ignore BOTS", 5, 45, "aim_ignorebots", false, co_filtering)
+	CreateCheckBox("Ignore Staff", 5, 65, "aim_ignoreadmins", false, co_filtering)
+	CreateCheckBox("Ignore Noclipping", 5, 85, "aim_ignorenoclip", false, co_filtering)
+	CreateCheckBox("Ignore Same Team", 5, 105, "aim_ignoreteam", false, co_filtering)
+	CreateCheckBox("Ignore Non-Visible", 5, 125, "aim_ignoreinvis", false, co_filtering)
+	CreateCheckBox("Jump Check", 5, 145, "aim_jump_check", false, co_filtering)
+	CreateCheckBox("Ignore No-Draw", 5, 165, "aim_nodraw", false, co_filtering)
+	CreateCheckBox("Ignore God", 5, 185, "aim_godded", false, co_filtering)
 	
-	CreateCheckBox("Auto Click", 10, 30, "misc_autoclick", false, combat_helpers)
-	CreateCheckBox("Scroll Attack", 10, 50, "misc_scrollattack", false, combat_helpers)
-	CreateCheckBox("Fast Switch", 10, 70, "misc_fastswitch", false, combat_helpers)
-	CreateCheckBox("M9K Sprint disabler", 10, 90, "misc_m9kstopper", false, combat_helpers)
+	CreateCheckBox("Enable Triggerbot", 5, 30, "trigger_master_toggle", false, co_trigger)
+	CreateCheckBox("Triggerbot On Key", 5, 50, "trigger_onkey", false, co_trigger)
+	CreateKeybind(150, 50, "trigger_onkey_key", co_trigger)	
 	
-	CreateCheckBox("Force Backstab", 10, 110, "aim_facestab", false, combat_helpers)
-	CreateCheckBox("Knife BOT", 10, 130, "aim_knifebot", false, combat_helpers)
-	CreateCheckBox("Knife Animation", 10, 150, "aim_animknife", false, combat_helpers)
-	CreateCheckBox("Act Disabler", 10, 170, "aim_act_disabler", false, combat_helpers)
-	CreateCheckBox("Interp Disabler", 10, 190, "aim_interp", false, combat_helpers)
-	CreateCheckBox("Ideal Tick", 10, 210, "aim_idealtick", false, combat_helpers)
-	--Anti-Aim
-	CreateCheckBox("Enable Anti-Aim", 10, 30, "aa_enable", false, antiaim_global)
-	CreateDropdown("Pitch", 10, 50, {"None", "Zero", "Down", "Up", "Fake Down", "Fake Up", "Random", "Custom"}, "aa_pitch", antiaim_global)
-	CreateDropdown("Yaw", 10, 90, {"None", "Backward", "Forward", "Left", "Right", "Jitter", "Spin", "Custom"}, "aa_yaw", antiaim_global)
-	CreateDropdown("LBY", 10, 130, {"None", "LBY Normal", "LBY Breaker"}, "aa_lby", antiaim_global)
-	CreateSlider("Yaw Add", 2, 170, "aa_yaw_add", 0, 180, 0, antiaim_global)
-	CreateSlider("Custom Yaw", 2, 210, "aa_cyaw", 0, 180, 0, antiaim_global)
-	CreateSlider("Custom Pitch", 2, 250, "aa_cpitch", 0, 180, 0, antiaim_global)
-	CreateSlider("Jitter Range", 2, 290, "aa_jitter_range", 0, 180, 0, antiaim_global)
+	CreateCheckBox("Enable backtracking", 5, 25, "backtrack_enable", false, co_bt)
+	CreateSlider("Backtrack Amount", 2, 45, "backtrack_amount", 0, 200, 0, co_bt)	
 	
-	--Fake-Angles
-	CreateCheckBox("Enable Fake Angles", 10, 30, "fa_enable", false, antiaim_fakes)
-	CreateDropdown("Fake Pitch", 10, 50, {"None", "Zero", "Down", "Up", "Fake Down", "Fake Up", "Random", "Custom"}, "fa_pitch", antiaim_fakes)
-	CreateDropdown("Fake Yaw", 10, 90, {"None", "Backward", "Forward", "Left", "Right", "Jitter", "Spin", "Custom"}, "fa_yaw", antiaim_fakes)
-	CreateSlider("Yaw Add", 2, 170, "fa_yaw_add", 0, 180, 0, antiaim_fakes)
-	CreateSlider("Custom Yaw", 2, 210, "fa_cyaw", 0, 180, 0, antiaim_fakes)
-	CreateSlider("Custom Pitch", 2, 250, "fa_cpitch", 0, 180, 0, antiaim_fakes)
-	CreateSlider("Jitter Range", 2, 290, "fa_jitter_range", 0, 180, 0, antiaim_fakes)
+	CreateCheckBox("Enable Anti-Aim", 5, 25, "backtrack_enable", false, co_aa)
 	
-	--AA Chams
-	CreateCheckBox("Fake Angle Chams", 10, 30, "aa_chams", false, antiaim_visual)
-	CreateCheckBox("Real Angle Chams", 10, 50, "fa_chams", false, antiaim_visual)
+	CreateCheckBox("Enable Anti-Aim", 5, 25, "backtrack_enable", false, co_aa)
 	
+	CreateCheckBox("Bounding Box", 5, 25, "esp_player_box", true, pl_main, 165)
+	CreateDropdown("Box Style", 5, 45, {"Line | Box", "Line | Corners", "3D Box", "Neon Red", "Neon Blue", "Box | Default", "Box | Outlined"}, "esp_player_box_mode", pl_main)
+	CreateCheckBox("Health Bar", 5, 85, "esp_player_hp", true, pl_main, 165)
+	CreateDropdown("Health Bar Pos", 5, 105, {"Left", "Right", "Up", "Down"}, "esp_player_hp_type", pl_main)	
+	CreateCheckBox("Armor Bar", 5, 145, "esp_player_ap", true, pl_main, 165)
+	CreateDropdown("Armor Bar Pos", 5, 165, {"Left", "Right", "Up", "Down"}, "esp_player_ap_type", pl_main)	
+	CreateCheckBox("Name", 5, 205, "esp_player_name", true, pl_main, 165)
+	CreateCheckBox("Health", 5, 225, "esp_player_health", true, pl_main, 165)
+	CreateCheckBox("Armor", 5, 245, "esp_player_armor", true, pl_main, 165)
+	CreateCheckBox("Weapon Class", 5, 265, "esp_player_weapon", true, pl_main, 165)
+	CreateCheckBox("Weapon Name", 5, 285, "esp_player_weapon_fancy", false, pl_main)
+	CreateCheckBox("Group(Rank)", 5, 305, "esp_player_rank", true, pl_main, 165)
+	CreateCheckBox("Team", 5, 325, "esp_player_team", false, pl_main)
+	CreateCheckBox("Distance", 5, 345, "esp_player_distance", true, pl_main, 165)
+	CreateCheckBox("DarkRP Money", 5, 365, "esp_player_money", true, pl_main, 165)
+	CreateCheckBox("Dormant Indicator", 5, 385, "esp_player_dormant_ind", true, pl_main, 165)
+	CreateCheckBox("Snaplines", 5, 405, "esp_player_snaplines", true, pl_main, 165)
+	CreateDropdown("Snapline Style", 5, 425, {"From Player", "Crosshair", "Aim Spot"}, "esp_player_snaplines_pos", pl_main)
 	
+	CreateCheckBox("Player Skeleton", 5, 25, "esp_player_skeleton", true, pl_render, 165)
+	CreateCheckBox("Player Sights", 5, 45, "esp_player_sights", true, pl_render, 165)
+	CreateCheckBox("Player Hitbox", 5, 65, "esp_player_hitbox", true, pl_render, 165)
+	CreateCheckBox("Bullet Beam", 5, 85, "esp_player_bulletbeam", true, pl_render, 165)
 	
-	--[[
-	CreateCheckBox("Tactical Leaning", 10, 90, "antihit_lean", false, combat_antihit)
-	CreateDropdown("Leaning Direction", 10, 110, {"Left", "Right", "Directional", "Directional Inverted"}, "antihit_lean_dir", combat_antihit)
-	CreateButton("Fix Leaning", "offs leaning.", TacticalLeanDisabler, 10, 160, combat_antihit)
-	]]
-	
-	--AA Misc
-	CreateCheckBox("Fake Duck", 10, 30, "antihit_fd", false, antiaim_misc)
-	CreateKeybind(140, 30, "antihit_fd_key", antiaim_misc)
-	CreateCheckBox("Dance Spam", 10, 50, "antihit_act", false, antiaim_misc)
-	CreateDropdown("Act", 10, 70, {"Dance", "Robot", "Sex", "Bow", "Wave", "Zombie", "Disagree", "Forward", "Pers", "Salute"}, "antihit_act_type", antiaim_misc)
-	--Visuals
-	//Boxes & Bars
-	CreateCheckBox("Bounding Box", 10, 40, "esp_player_box", true, visual_player, 165)
-	CreateDropdown("Box Style", 10, 60, {"Line | Box", "Line | Corners", "3D Box", "Neon Red", "Neon Blue", "Box | Default", "Box | Outlined"}, "esp_player_box_mode", visual_player)
-	CreateCheckBox("Health Bar", 10, 100, "esp_player_hp", true, visual_player, 165)
-	CreateDropdown("Health Bar Pos", 10, 120, {"Left", "Right", "Up", "Down"}, "esp_player_hp_type", visual_player)	
-	CreateCheckBox("Armor Bar", 10, 160, "esp_player_ap", true, visual_player, 165)
-	CreateDropdown("Armor Bar Pos", 10, 180, {"Left", "Right", "Up", "Down"}, "esp_player_ap_type", visual_player)	
-	//Info like Health, Names, Team
-	CreateCheckBox("Name", 10, 220, "esp_player_name", true, visual_player, 165)
-	CreateCheckBox("Health", 10, 240, "esp_player_health", true, visual_player, 165)
-	CreateCheckBox("Armor", 10, 260, "esp_player_armor", true, visual_player, 165)
-	CreateCheckBox("Weapon Class", 10, 280, "esp_player_weapon", true, visual_player, 165)
-	CreateCheckBox("Weapon Name", 10, 300, "esp_player_weapon_fancy", false, visual_player)
-	CreateCheckBox("Weapon Ammo", 10, 320, "esp_player_weapon_fancy", false, visual_player)
-	CreateCheckBox("Group(Rank)", 10, 340, "esp_player_rank", true, visual_player, 165)
-	CreateCheckBox("Team", 10, 360, "esp_player_team", false, visual_player)
-	CreateCheckBox("Distance", 10, 380, "esp_player_distance", true, visual_player, 165)
-	CreateCheckBox("DarkRP Money", 10, 400, "esp_player_money", true, visual_player, 165)
-	CreateCheckBox("Dormant Indicator", 10, 420, "esp_player_dormant_ind", true, visual_player, 165)
-	CreateCheckBox("Snaplines", 10, 440, "esp_player_snaplines", true, visual_player, 165)
-	CreateDropdown("Snapline Style", 10, 460, {"From Player", "Crosshair"}, "esp_player_snaplines_pos", visual_player)
-	//Render Elements
-	CreateCheckBox("Player Skeleton", 205, 40, "esp_player_skeleton", true, visual_player, 165)
-	CreateCheckBox("Player Sights", 205, 60, "esp_player_sights", true, visual_player, 165)
-	CreateCheckBox("Player Hitbox", 205, 80, "esp_player_hitbox", true, visual_player, 165)
-	CreateCheckBox("Bullet Beam", 205, 100, "esp_player_bulletbeam", true, visual_player, 165)
-	CreateCheckBox("Hitbox", 205, 120, "esp_player_hitbox", true, visual_player, 165)
-	//Effects
-	CreateCheckBox("Glow ESP", 205, 255, "esp_player_glow", true, visual_player, 165)
-	CreateDropdown("Glow Style", 205, 275, {"Default", "Cover", "Outline", "Visible Only"}, "esp_player_glow_type", visual_player)
-	CreateCheckBox("Hitsound", 205, 315, "esp_other_hitsound", false, visual_player)
-	CreateCheckBox("HitNumbers", 205, 335, "esp_other_hitnumbers", false, visual_player)
-    CreateCheckBox("Attachment Glow", 205, 355, "esp_attachments_glow", true, visual_player, 165)
-	CreateCheckBox("HitMarker", 205, 375, "esp_player_hitmarker", false, visual_player)
-	CreateDropdown("Hitsound", 205, 395, {"Classic", "Bell", "Bubble", "Rust", "Good One", "Nice Shot", "Neverlose", "Metallic", "Stapler", "Skeet", "Stuck"}, "esp_hitsound_sound", visual_player)	
-	//Colored Models
-	CreateCheckBox("Visible Chams", 205, 470, "esp_player_chams", true, visual_player, 165)
-	CreateCheckBox("Player Chams Overlay", 205, 490, "esp_player_chams_overlay", true, visual_player, 165)
-	CreateCheckBox("Player Chams XYZ", 205, 510, "esp_player_chams_xyz", true, visual_player, 165)	
-	CreateButton("Chams Material", "Opens the cham material selector.", CreateMaterialList, 205, 530, visual_player)
-	CreateCheckBox("Draw Model", 205, 555, "esp_player_drawmodel", false, visual_player)
-	CreateCheckBox("Draw Attachment Model", 205, 575, "esp_player_drawmodelatt", false, visual_player)
-	//Performance & Filtering
-	CreateCheckBox("Ignore Teammates", 400, 40, "esp_player_teamfilter", false, visual_player)
-	CreateCheckBox("Ignore Bots", 400, 60, "esp_player_botfilter", false, visual_player)
-	CreateCheckBox("Ignore Non-visible", 400, 80, "esp_visibleonly", false, visual_player)	
-	CreateSlider("ESP Max Render Distance", 400, 100, "esp_player_render_distance", 500, 10000, 0, visual_player)
-	CreateCheckBox("Hide Dormant Players", 400, 140, "esp_player_dormant", false, visual_player)
-	CreateCheckBox("Highlight Friends Box", 400, 160, "esp_player_highlight_box", true, visual_player, 165)
-	CreateCheckBox("Highlight Friends Name", 400, 180, "esp_player_highlight_name", true, visual_player, 165)
-	CreateCheckBox("ESP Compensation", 400, 200, "esp_comp", false, visual_player)
-	--CreateButton("FPS Booster", "Run fps  boost commands.", FPS_FIX, 595, 245, visual_player)
-	//ESP Element Positions
-	CreateSlider("Name X", 10, 30, "name_x", -250, 250, 0, visual_player_settings)
-	CreateSlider("Name Y", 10, 70, "name_y", -250, 250, 0, visual_player_settings)
+	CreateCheckBox("Glow ESP", 5, 25, "esp_player_glow", true, pl_effect, 165)
+	CreateDropdown("Glow Style", 5, 45, {"Default", "Cover", "Outline", "Visible Only"}, "esp_player_glow_type", pl_effect)
+	CreateCheckBox("Hitsound", 5, 85, "esp_other_hitsound", false, pl_effect)
+	CreateCheckBox("HitNumbers", 5, 105, "esp_other_hitnumbers", false, pl_effect)
+    CreateCheckBox("Attachment Glow", 5, 125, "esp_attachments_glow", true, pl_effect, 165)
+	CreateCheckBox("HitMarker", 5, 145, "esp_player_hitmarker", false, pl_effect)
+	CreateDropdown("Hitsound", 5, 165, {"Classic", "Bell", "Bubble", "Rust", "Good One", "Nice Shot", "Neverlose", "Metallic", "Stapler", "Skeet", "Stuck"}, "esp_hitsound_sound", pl_effect)	
 
-	CreateSlider("Health X", 10, 110, "health_x", -250, 250, 0, visual_player_settings)
-	CreateSlider("Health Y", 10, 150, "health_y", -250, 250, 0, visual_player_settings)
-
-	CreateSlider("Armor X", 10, 190, "armor_x", -250, 250, 0, visual_player_settings)
-	CreateSlider("Armor Y", 10, 230, "armor_y", -250, 250, 0, visual_player_settings)
-
-	CreateSlider("Weapon X", 10, 270, "wep_x", -250, 250, 0, visual_player_settings)
-	CreateSlider("Weapon Y", 10, 310, "wep_y", -250, 250, 0, visual_player_settings)
-
-	CreateSlider("Team X", 10, 350, "tm_x", -250, 250, 0, visual_player_settings)
-	CreateSlider("Team Y", 10, 390, "tm_y", -250, 250, 0, visual_player_settings)
-
-	CreateSlider("Rank X", 10, 430, "rank_x", -250, 250, 0, visual_player_settings)
-	CreateSlider("Rank Y", 10, 470, "rank_y", -250, 250, 0, visual_player_settings)
-
-	CreateSlider("Distance X", 10, 510, "ds_x", -250, 250, 0, visual_player_settings)
-	CreateSlider("Distance Y", 10, 550, "ds_y", -250, 250, 0, visual_player_settings)
-
-	CreateSlider("Money X", 10, 590, "mn_x", -250, 250, 0, visual_player_settings)
-	CreateSlider("Money Y", 10, 630, "mn_y", -250, 250, 0, visual_player_settings)
-
-	CreateSlider("Dormant X", 10, 670, "di_x", -250, 250, 0, visual_player_settings)
-	CreateSlider("Dormant Y", 10, 710, "di_y", -250, 250, 0, visual_player_settings)
+	CreateCheckBox("Visible Chams", 5, 25, "esp_player_chams", true, pl_chams, 165)
+	CreateCheckBox("Player Chams Overlay", 5, 45, "esp_player_chams_overlay", true, pl_chams, 165)
+	CreateCheckBox("Player Chams XYZ", 5, 65, "esp_player_chams_xyz", true, pl_chams, 165)	
+	CreateCheckBox("Draw Model", 5, 85, "esp_player_drawmodel", false, pl_chams)
+	CreateCheckBox("Draw Attachment Model", 5, 105, "esp_player_drawmodelatt", false, pl_chams)
+	CreateButton("Chams Material", "Opens the cham material selector.", CreateMaterialList, 5, 125, pl_chams)	
 	
-	CreateDropdown("Name Position", 200, 30, {"Left", "Right", "Up", "Down"}, "name_pos", visual_player_settings)
-	CreateDropdown("Health Position", 200, 70, {"Left", "Right", "Up", "Down"}, "health_pos", visual_player_settings)	
-	CreateDropdown("Armor Position", 200, 110, {"Left", "Right", "Up", "Down"}, "armor_pos", visual_player_settings)	
-	CreateDropdown("Weapon Position", 200, 150, {"Left", "Right", "Up", "Down"}, "wep_pos", visual_player_settings)
-	CreateDropdown("Team Position", 200, 190, {"Left", "Right", "Up", "Down"}, "tm_pos", visual_player_settings)
-	CreateDropdown("Rank Position", 200, 230, {"Left", "Right", "Up", "Down"}, "rank_pos", visual_player_settings)
-	CreateDropdown("Distance Position", 200, 270, {"Left", "Right", "Up", "Down"}, "ds_pos", visual_player_settings)
-	CreateDropdown("Money Position", 200, 310, {"Left", "Right", "Up", "Down"}, "mn_pos", visual_player_settings)
-	CreateDropdown("Dormant Position", 200, 350, {"Left", "Right", "Up", "Down"}, "di_pos", visual_player_settings)
+	CreateCheckBox("Ignore Teammates", 5, 25, "esp_player_teamfilter", false, pl_performance)
+	CreateCheckBox("Ignore Bots", 5, 45, "esp_player_botfilter", false, pl_performance)
+	CreateSlider("ESP Max Render Distance", 5, 65, "esp_player_render_distance", 500, 10000, 0, pl_performance)
+	CreateCheckBox("Hide Dormant Players", 5, 105, "esp_player_dormant", false, pl_performance)
+	CreateCheckBox("Highlight Friends Box", 5, 125, "esp_player_highlight_box", true, pl_performance, 165)
+	CreateCheckBox("Highlight Friends Name", 5, 145, "esp_player_highlight_name", true, pl_performance, 165)
+	CreateCheckBox("ESP Compensation", 5, 165, "esp_comp", false, pl_performance)
+	
+    CreateSlider("Name X", 10, 30, "name_x", -250, 250, 0, esps_poss)
+	CreateSlider("Name Y", 10, 70, "name_y", -250, 250, 0, esps_poss)
 
-	CreateDropdown("Main Font", 10, 750, CheatFonts, "name_font", visual_player_settings)
-	CreateSlider("Main Font Size", 10, 790, "name_font_size", 10, 20, 0, visual_player_settings)
-	CreateDropdown("Flag Font", 10, 830, CheatFonts, "flag_font", visual_player_settings)
-	CreateSlider("Flag Font Size", 10, 870, "flags_font_size", 10, 20, 0, visual_player_settings)
+	CreateSlider("Health X", 10, 110, "health_x", -250, 250, 0, esps_poss)
+	CreateSlider("Health Y", 10, 150, "health_y", -250, 250, 0, esps_poss)
 
-	CreateCheckBox("Thirdperson", 10, 30, "esp_other_thirdperson", false, visual_self_view)
-	CreateKeybind(140, 30, "thirdperson_key", visual_self_view)
-	CreateSlider("Thirdperson Distance", 10, 50, "esp_other_thirdperson_distance", 5, 50, 0, visual_self_view)
-	CreateCheckBox("Freecam", 10, 90, "esp_other_freecam", false, visual_self_view)
-	CreateKeybind(140, 90, "freecam_key", visual_self_view)
-	CreateSlider("Freecam Speed", 10, 110, "esp_other_freecam_speed", 1, 10, 0, visual_self_view)
-	CreateCheckBox("Override FOV", 10, 150, "misc_fov", false, visual_self_view)
-	CreateSlider("FOV Value", 10, 170, "misc_fov_value", 50, 160, 0, visual_self_view)
-	CreateCheckBox("Viewmodel Changer", 10, 210, "misc_viewmodel", false, visual_self_view)
-	CreateCheckBox("Remove Bob", 10, 230, "misc_bob", false, visual_self_view)
-	CreateCheckBox("Remove Sway", 10, 250, "misc_sway", false, visual_self_view)
-	CreateSlider("Viewmodel X", 10, 290, "misc_vm_x", -50, 50, 0, visual_self_view)
-	CreateSlider("Viewmodel Y", 10, 330, "misc_vm_y", -30, 30, 0, visual_self_view)
-	CreateSlider("Viewmodel Z", 10, 370, "misc_vm_z", -20, 20, 0, visual_self_view)
-	CreateSlider("Viewmodel Pitch", 10, 410, "misc_vm_p", -90, 90, 0, visual_self_view)
-	CreateSlider("Viewmodel Yaw", 10, 450, "misc_vm_ya", -90, 90, 0, visual_self_view)
-	CreateSlider("Viewmodel Roll", 10, 490, "misc_vm_r", -90, 90, 0, visual_self_view)
-	CreateCheckBox("Thirdperson Wall Detect", 10, 530, "esp_other_thirdperson_walldetect", false, visual_self_view)
-    CreateCheckBox("Swing Animation", 10, 550, "esp_other_swinganim", false, visual_self_view)
-	CreateCheckBox("Hand Chams", 10, 570, "esp_self_hand_chams", true, visual_self_view, 165)
-	CreateCheckBox("Gun Chams", 10, 590, "esp_self_gun_chams", true, visual_self_view, 165)
+	CreateSlider("Armor X", 10, 190, "armor_x", -250, 250, 0, esps_poss)
+	CreateSlider("Armor Y", 10, 230, "armor_y", -250, 250, 0, esps_poss)
 
-	CreateCheckBox("Draw Aimbot FOV", 10, 30, "esp_other_drawfov", true, visual_self, 165)
-	CreateCheckBox("Bullet Tracer", 10, 50, "esp_self_bullet_tracers", true, visual_self, 165)
-	CreateCheckBox("Laser Sights", 10, 70, "esp_self_laser_sight", true, visual_self, 165)
-	CreateCheckBox("DLight", 10, 90, "esp_self_dlight", true, visual_self, 165)
-	CreateCheckBox("DLight HSV", 10, 110, "esp_self_dlight_hsv", false, visual_self)
-	CreateCheckBox("Predict Fall", 10, 130, "esp_self_predict_me", false, visual_self)
-	CreateCheckBox("AimFov Fill", 10, 150, "esp_other_drawfov_fill", false, visual_self, 165)
-	CreateCheckBox("Velocity Crosshair", 10, 170, "esp_self_velocity_crosshair", true, visual_self, 165)
-	CreateCheckBox("Player Hat", 10, 190, "esp_self_hat", false, visual_self, 165)	
-	CreateDropdown("Hat model", 10, 210, {"Nimbus", "Hat", "Cap", "Bomb"}, "esp_self_hat_type", visual_self)
-	CreateCheckBox("Agent Changer", 10, 250, "esp_self_customagent", false, visual_self, 165)	
-	CreateDropdown("Agent", 10, 270, {"SAS", "Pirat", "Anarchist", "Pro"}, "esp_self_customagent_agent", visual_self)
-	CreateCheckBox("Fake Lag Chams", 10, 310, "esp_self_fakelagchams", true, visual_self, 165)	
+	CreateSlider("Weapon X", 10, 270, "wep_x", -250, 250, 0, esps_poss)
+	CreateSlider("Weapon Y", 10, 310, "wep_y", -250, 250, 0, esps_poss)
+
+	CreateSlider("Team X", 10, 350, "tm_x", -250, 250, 0, esps_poss)
+	CreateSlider("Team Y", 10, 390, "tm_y", -250, 250, 0, esps_poss)
+
+	CreateSlider("Rank X", 10, 430, "rank_x", -250, 250, 0, esps_poss)
+	CreateSlider("Rank Y", 10, 470, "rank_y", -250, 250, 0, esps_poss)
+
+	CreateSlider("Distance X", 10, 510, "ds_x", -250, 250, 0, esps_poss)
+	CreateSlider("Distance Y", 10, 550, "ds_y", -250, 250, 0, esps_poss)
+
+	CreateSlider("Money X", 10, 590, "mn_x", -250, 250, 0, esps_poss)
+	CreateSlider("Money Y", 10, 630, "mn_y", -250, 250, 0, esps_poss)
+
+	CreateSlider("Dormant X", 10, 670, "di_x", -250, 250, 0, esps_poss)
+	CreateSlider("Dormant Y", 10, 710, "di_y", -250, 250, 0, esps_poss)	
 	
-	CreateButton("Entity List", "Open Entity List.", CreateEntityList, 10, 30, world_ents)
-	CreateCheckBox("Storage ESP", 10, 50, "esp_ent_storage_esp", true, world_ents , 165)
-	CreateCheckBox("Crosshair Entity", 10, 70, "esp_ent_crosshair", false, world_ents , 165)
+    CreateDropdown("Name Position", 5, 30, {"Left", "Right", "Up", "Down"}, "name_pos", esps_aligns)
+	CreateDropdown("Health Position", 5, 70, {"Left", "Right", "Up", "Down"}, "health_pos", esps_aligns)	
+	CreateDropdown("Armor Position", 5, 110, {"Left", "Right", "Up", "Down"}, "armor_pos", esps_aligns)	
+	CreateDropdown("Weapon Position", 5, 150, {"Left", "Right", "Up", "Down"}, "wep_pos", esps_aligns)
+	CreateDropdown("Team Position", 5, 190, {"Left", "Right", "Up", "Down"}, "tm_pos", esps_aligns)
+	CreateDropdown("Rank Position", 5, 230, {"Left", "Right", "Up", "Down"}, "rank_pos", esps_aligns)
+	CreateDropdown("Distance Position", 5, 270, {"Left", "Right", "Up", "Down"}, "ds_pos", esps_aligns)
+	CreateDropdown("Money Position", 5, 310, {"Left", "Right", "Up", "Down"}, "mn_pos", esps_aligns)
+	CreateDropdown("Dormant Position", 5, 350, {"Left", "Right", "Up", "Down"}, "di_pos", esps_aligns)
 	
-	CreateCheckBox("Enable Minimap", 10, 30, "map_enable", true, world_minimap, 165)
-	CreateSlider("Radar FOV", 10, 50, "map_zoom", 5, 100, 0, world_minimap)
-	CreateSlider("Radar Size", 10, 90, "map_size", 0, 1000, 0, world_minimap)
-	CreateSlider("Radar X", 10, 130, "map_x", 0, ScrW(), 0, world_minimap)
-	CreateSlider("Radar Y", 10, 170, "map_y", 0, ScrH(), 0, world_minimap)
-	CreateCheckBox("Player Names", 10, 210, "map_names", true, world_minimap, 165)
-	CreateCheckBox("Player Team", 10, 230, "map_teams", false, world_minimap, 165) 	
+	CreateDropdown("Main Font", 5, 30, CheatFonts, "name_font", esps_fonts)
+	CreateSlider("Main Font Size", 5, 70, "name_font_size", 10, 20, 0, esps_fonts)
+	CreateDropdown("Flag Font", 5, 110, CheatFonts, "flag_font", esps_fonts)
+	CreateSlider("Flag Font Size", 5, 150, "flags_font_size", 10, 20, 0, esps_fonts)	
 	
-	CreateCheckBox("Watermark", 10, 30, "hud_watermark", false, visual_self_hud )
-	CreateCheckBox("Disable HL2 HUD", 10, 70, "hud_disable_hl2_hud", false, visual_self_hud )
-	CreateCheckBox("CrossHair", 10, 110, "hud_crosshair", false, visual_self_hud )
-    CreateDropdown("CrossHair Style", 10, 130, {"Classic", "Зига", "Смачная Наиплотнейшая Зигота"}, "hud_crosshair_type", visual_self_hud)
-	CreateCheckBox("KeyStrokes", 10, 170, "hud_keystrokes", false, visual_self_hud )
-    CreateDropdown("KeyStrokes Style", 10, 190, {"WASD", "WASD-SPACE", "WASD-LMB-RMB", "All"}, "hud_keystrokes_style", visual_self_hud)
-	CreateCheckBox("KillAura Circle", 10, 230, "hud_aimbotstatus", false, visual_self_hud )
-	CreateCheckBox("KillStreak", 10, 250, "hud_killstreak", false, visual_self_hud )
-	CreateCheckBox("Bind list", 10, 270, "hud_arraylist", false, visual_self_hud )
-	CreateCheckBox("Top Line", 10, 290, "hud_topline", false, visual_self_hud )
-	CreateDropdown("Top Line Style", 10, 310, {"Outlined", "Normal", "Glow"}, "hud_topline_style", visual_self_hud)
-	CreateCheckBox("Velocity", 10, 350, "hud_velo", false, visual_self_hud )
+	CreateCheckBox("Thirdperson", 10, 30, "esp_other_thirdperson", false, self_view)
+	CreateKeybind(140, 30, "thirdperson_key", self_view)
+	CreateSlider("Thirdperson Distance", 10, 50, "esp_other_thirdperson_distance", 5, 50, 0, self_view)
+	CreateCheckBox("Freecam", 10, 90, "esp_other_freecam", false, self_view)
+	CreateKeybind(140, 90, "freecam_key", self_view)
+	CreateSlider("Freecam Speed", 10, 110, "esp_other_freecam_speed", 1, 10, 0, self_view)
+	CreateCheckBox("Override FOV", 10, 150, "misc_fov", false, self_view)
+	CreateSlider("FOV Value", 10, 170, "misc_fov_value", 50, 160, 0, self_view)
+	CreateCheckBox("Viewmodel Changer", 10, 210, "misc_viewmodel", false, self_view)
+	CreateCheckBox("Remove Bob", 10, 230, "misc_bob", false, self_view)
+	CreateCheckBox("Remove Sway", 10, 250, "misc_sway", false, self_view)
+	CreateSlider("Viewmodel X", 10, 290, "misc_vm_x", -50, 50, 0, self_view)
+	CreateSlider("Viewmodel Y", 10, 330, "misc_vm_y", -30, 30, 0, self_view)
+	CreateSlider("Viewmodel Z", 10, 370, "misc_vm_z", -20, 20, 0, self_view)
+	CreateSlider("Viewmodel Pitch", 10, 410, "misc_vm_p", -90, 90, 0, self_view)
+	CreateSlider("Viewmodel Yaw", 10, 450, "misc_vm_ya", -90, 90, 0, self_view)
+	CreateSlider("Viewmodel Roll", 10, 490, "misc_vm_r", -90, 90, 0, self_view)
+	CreateCheckBox("Thirdperson Wall Detect", 10, 530, "esp_other_thirdperson_walldetect", false, self_view)
+    CreateCheckBox("Swing Animation", 10, 550, "esp_other_swinganim", false, self_view)
+	CreateCheckBox("Hand Chams", 10, 570, "esp_self_hand_chams", true, self_view, 165)
+	CreateCheckBox("Gun Chams", 10, 590, "esp_self_gun_chams", true, self_view, 165)	
 	
+	CreateCheckBox("Draw Aimbot FOV", 10, 30, "esp_other_drawfov", true, self_other, 165)
+	CreateCheckBox("Bullet Tracer", 10, 50, "esp_self_bullet_tracers", true, self_other, 165)
+	CreateCheckBox("Laser Sights", 10, 70, "esp_self_laser_sight", true, self_other, 165)
+	CreateCheckBox("DLight", 10, 90, "esp_self_dlight", true, self_other, 165)
+	CreateCheckBox("DLight HSV", 10, 110, "esp_self_dlight_hsv", false, self_other)
+	CreateCheckBox("Predict Fall", 10, 130, "esp_self_predict_me", false, self_other)
+	CreateCheckBox("AimFov Fill", 10, 150, "esp_other_drawfov_fill", false, self_other, 165)
+	CreateCheckBox("Velocity Crosshair", 10, 170, "esp_self_velocity_crosshair", true, self_other, 165)
+	CreateCheckBox("Player Hat", 10, 190, "esp_self_hat", false, self_other, 165)	
+	CreateDropdown("Hat model", 10, 210, {"Nimbus", "Hat", "Cap", "Bomb"}, "esp_self_hat_type", self_other)
+	CreateCheckBox("Agent Changer", 10, 250, "esp_self_customagent", false, self_other, 165)	
+	CreateDropdown("Agent", 10, 270, {"SAS", "Pirat", "Anarchist", "Pro"}, "esp_self_customagent_agent", self_other)
+	CreateCheckBox("Fake Lag Chams", 10, 310, "esp_self_fakelagchams", true, self_other, 165)		
+
+	CreateCheckBox("Watermark", 10, 30, "hud_watermark", false, self_hud )
+	CreateCheckBox("Disable HL2 HUD", 10, 70, "hud_disable_hl2_hud", false, self_hud )
+	CreateCheckBox("CrossHair", 10, 110, "hud_crosshair", false, self_hud )
+    CreateDropdown("CrossHair Style", 10, 130, {"Classic", "Зига", "Смачная Наиплотнейшая Зигота"}, "hud_crosshair_type", self_hud)
+	CreateCheckBox("KeyStrokes", 10, 170, "hud_keystrokes", false, self_hud )
+    CreateDropdown("KeyStrokes Style", 10, 190, {"WASD", "WASD-SPACE", "WASD-LMB-RMB", "All"}, "hud_keystrokes_style", self_hud)
+	CreateCheckBox("KillAura Circle", 10, 230, "hud_aimbotstatus", false, self_hud )
+	CreateCheckBox("KillStreak", 10, 250, "hud_killstreak", false, self_hud )
+	CreateCheckBox("Bind list", 10, 270, "hud_arraylist", false, self_hud )
+	CreateCheckBox("Top Line", 10, 290, "hud_topline", false, self_hud )
+	CreateDropdown("Top Line Style", 10, 310, {"Outlined", "Normal", "Glow"}, "hud_topline_style", self_hud)
+	CreateCheckBox("Packets", 10, 350, "hud_bsp", false, self_hud )
+
+	CreateCheckBox("Storage ESP", 10, 30, "esp_ent_storage_esp", true, wrld_ents , 165)
+	CreateCheckBox("Crosshair Entity", 10, 50, "esp_ent_crosshair", false, wrld_ents , 165)	
 	
-	--World
-	CreateCheckBox("Fog Modulation", 10, 30, "esp_other_fog", true, world_effects, 165)
-	CreateSlider("Fog Start", 10, 50, "esp_other_fog_start", 0, 50000, 0, world_effects)
-	CreateSlider("Fog End", 10, 90, "esp_other_fog_end", 0, 50000, 0, world_effects)
-	CreateSlider("Fog Density", 10, 130, "esp_other_fog_density", 0, 1, 1, world_effects)
-	CreateCheckBox("NoSky (2D)", 10, 170, "esp_other_nosky", false, world_effects)
-	CreateCheckBox("SkyBox Draw Rect", 10, 190, "esp_other_skyboxrect", true, world_effects, 165)
-	CreateCheckBox("Disable 3d Sky", 10, 210, "esp_other_3dskydisabler", false, world_effects)
-	CreateSlider("Bloom Scale", 10, 230, "esp_other_bloom", 0, 1, 2, world_effects)	
-	CreateCheckBox("HL1 Flashlight", 10, 270, "esp_other_hlflashlight", false, world_effects)
+	CreateCheckBox("Enable Minimap", 10, 30, "map_enable", true, wrld_minimap, 165)
+	CreateSlider("Radar FOV", 10, 50, "map_zoom", 5, 100, 0, wrld_minimap)
+	CreateSlider("Radar Size", 10, 90, "map_size", 0, 1000, 0, wrld_minimap)
+	CreateSlider("Radar X", 10, 130, "map_x", 0, ScrW(), 0, wrld_minimap)
+	CreateSlider("Radar Y", 10, 170, "map_y", 0, ScrH(), 0, wrld_minimap)
+	CreateCheckBox("Player Names", 10, 210, "map_names", true, wrld_minimap, 165)
+	CreateCheckBox("Player Team", 10, 230, "map_teams", false, wrld_minimap, 165) 	
 	
+	CreateCheckBox("Fog Modulation", 10, 30, "esp_other_fog", true, wrld_effects, 165)
+	CreateSlider("Fog Start", 10, 50, "esp_other_fog_start", 0, 50000, 0, wrld_effects)
+	CreateSlider("Fog End", 10, 90, "esp_other_fog_end", 0, 50000, 0, wrld_effects)
+	CreateSlider("Fog Density", 10, 130, "esp_other_fog_density", 0, 1, 1, wrld_effects)
+	CreateCheckBox("NoSky (2D)", 10, 170, "esp_other_nosky", false, wrld_effects)
+	CreateCheckBox("SkyBox Draw Rect", 10, 190, "esp_other_skyboxrect", true, wrld_effects, 165)
+	CreateCheckBox("Disable 3d Sky", 10, 210, "esp_other_3dskydisabler", false, wrld_effects)
+	CreateSlider("Bloom Scale", 10, 230, "esp_other_bloom", 0, 1, 2, wrld_effects)	
+	CreateCheckBox("HL1 Flashlight", 10, 270, "esp_other_hlflashlight", false, wrld_effects)	
+	CreateCheckBox("World Color", 10, 290, "esp_other_worldmod", true, wrld_effects, 165)
+	CreateCheckBox("Prop Color", 10, 310, "esp_other_propmod", true, wrld_effects, 165)
+	CreateCheckBox("Fullbright", 10, 330, "esp_other_fullbright", false, wrld_effects, 165)		
 	
-	CreateCheckBox("World Modulation", 10, 30, "esp_other_worldmod", true, world_colors, 165)
-	CreateCheckBox("Prop Modulation", 10, 50, "esp_other_propmod", true, world_colors, 165)
-	CreateCheckBox("Fullbright", 10, 70, "esp_other_fullbright", false, world_colors, 165)	
-	
-	CreateCheckBox("Color Correction", 10, 30, "esp_other_cc", false, world_cc)
-	CreateSlider("Contrast Scale", 10, 50, "esp_other_cc_scale", 0, 1, 1, world_cc)
-	CreateSlider("Add Red", 10, 90, "esp_other_cc_addr", 0, 255, 0, world_cc)
-	CreateSlider("Add Green", 10, 130, "esp_other_cc_addg", 0, 255, 0, world_cc)
-	CreateSlider("Add Blue", 10, 170, "esp_other_cc_addb", 0, 255, 0, world_cc)
-	CreateSlider("Color", 10, 210, "esp_other_cc_color", 0, 1, 0, world_cc)
-	CreateSlider("MulR", 10, 250, "esp_other_cc_mulr", 0, 255, 0, world_cc)
-	CreateSlider("MulG", 10, 290, "esp_other_cc_mulg", 0, 255, 0, world_cc)
-	CreateSlider("MulB", 10, 330, "esp_other_cc_mulrb", 0, 255, 0, world_cc)	
-	
-	--Movement
+	CreateCheckBox("Color Correction", 10, 30, "esp_other_cc", false, wrld_cc)
+	CreateSlider("Contrast Scale", 10, 50, "esp_other_cc_scale", 0, 1, 1, wrld_cc)
+	CreateSlider("Add Red", 10, 90, "esp_other_cc_addr", 0, 255, 0, wrld_cc)
+	CreateSlider("Add Green", 10, 130, "esp_other_cc_addg", 0, 255, 0, wrld_cc)
+	CreateSlider("Add Blue", 10, 170, "esp_other_cc_addb", 0, 255, 0, wrld_cc)
+	CreateSlider("Color", 10, 210, "esp_other_cc_color", 0, 1, 0, wrld_cc)
+	CreateSlider("MulR", 10, 250, "esp_other_cc_mulr", 0, 255, 0, wrld_cc)
+	CreateSlider("MulG", 10, 290, "esp_other_cc_mulg", 0, 255, 0, wrld_cc)
+	CreateSlider("MulB", 10, 330, "esp_other_cc_mulrb", 0, 255, 0, wrld_cc)	
 	
 	CreateCheckBox("Auto Bunnyhop", 10, 30, "misc_autobunnyhop", false, misc_movement)
 	CreateCheckBox("Auto Strafe", 10, 50, "misc_autostrafe", false, misc_movement)
 	CreateDropdown("Strafe Type", 10, 70, {"Legit", "Rage", "Free Move", "Directional"}, "misc_autostrafe_type", misc_movement)
 	CreateCheckBox("Infinity Duck", 10, 110, "misc_infinitduck", false, misc_movement)
 	CreateCheckBox("Air Duck", 10, 130, "misc_airduck", false, misc_movement)
-	CreateCheckBox("Duck Walk", 10, 150, "misc_duckwalk", false, misc_movement)
-	CreateDropdown("AirDuck Style", 10, 170, {"Input", "Command", "No Stop"}, "misc_airduckmetod", misc_movement)
-	CreateCheckBox("Micromovement", 10, 210, "slowwalk", false, misc_movement)
-	CreateKeybind(140, 210, "misc_mm_keybind", misc_movement)
-	CreateSlider("Micromovement speed", 10, 230, "slowwalk_speed", 10, 60, 0, misc_movement)
-	CreateCheckBox("180° turn", 10, 270, "misc_180turn", false, misc_movement)
-	CreateKeybind(140, 270, "180turn_keybind", misc_movement)
-	CreateCheckBox("Jitter Move", 10, 290, "misc_jittermove", false, misc_movement)
-	CreateKeybind(140, 290, "jitter_keybind", misc_movement)
-	CreateCheckBox("Anti-AFK", 10, 310, "misc_antiafk", false, misc_movement)
-	CreateCheckBox("Circle Strafe", 10, 330, "misc_circlestrafer", false, misc_movement)
-	CreateKeybind(140, 330, "circlestrafer_key", misc_movement)
-	--MiniGames
+	CreateDropdown("AirDuck Style", 10, 150, {"Input", "Command", "No Stop"}, "misc_airduckmetod", misc_movement)
+	CreateCheckBox("Micromovement", 10, 190, "slowwalk", false, misc_movement)
+	CreateKeybind(140, 190, "misc_mm_keybind", misc_movement)
+	CreateSlider("Micromovement speed", 10, 210, "slowwalk_speed", 10, 60, 0, misc_movement)
+	CreateCheckBox("180° turn", 10, 250, "misc_180turn", false, misc_movement)
+	CreateKeybind(140, 250, "180turn_keybind", misc_movement)
+	CreateCheckBox("Circle Strafe", 10, 270, "misc_circlestrafer", false, misc_movement)
+	CreateKeybind(140, 270, "circlestrafer_key", misc_movement)	
+	
 	CreateCheckBox("TTT/Murder info", 10, 30, "misc_ttt", false, misc_mmgames)
     CreateCheckBox("Arest Leave", 10, 50, "misc_antiarest", false, misc_mmgames)
 	CreateDropdown("Leave Method", 10, 70, {"Suicide", "Retry", "/Hobo (Job)"}, "misc_antiarest_metod", misc_mmgames)	
     CreateCheckBox("RP Name changer", 10, 110, "misc_rpnamer", false, misc_mmgames)	
-    CreateSlider("RPName Delay", 10, 130, "misc_rpnamer_time", 1, 300, 0, misc_mmgames)	
-
-	--Player
-	CreateCheckBox("Name Stealer", 10, 30, "misc_fnamechanger", false, misc_name)
-	CreateCheckBox("Rainbow Physgun", 10, 50, "misc_rainbow", false, misc_name)
-	CreateCheckBox("Rainbow Player", 10, 70, "misc_rainbowply", false, misc_name)
-	CreateSlider("Rainbow Speed", 10, 90, "misc_rainbow_speed", 1, 100, 0, misc_name)
-	CreateCheckBox("Chat Spammer", 10, 130, "misc_chat_spam", false, misc_name)	
-	CreateCheckBox("Kill Say", 10, 150, "misc_gaysay", false, misc_name)	
-	CreateDropdown("KillSay Type", 10, 170, {"Русский", "D3D9C style", "Русский 2", "Arabian", "Omerican"}, "misc_gaysays", misc_name)	
+    CreateSlider("RPName Delay", 10, 130, "misc_rpnamer_time", 1, 300, 0, misc_mmgames)		
 	
-	--Logs
+	CreateCheckBox("Name Stealer", 10, 30, "misc_fnamechanger", false, misc_player)
+	CreateCheckBox("Rainbow Physgun", 10, 50, "misc_rainbow", false, misc_player)
+	CreateCheckBox("Rainbow Player", 10, 70, "misc_rainbowply", false, misc_player)
+	CreateSlider("Rainbow Speed", 10, 90, "misc_rainbow_speed", 1, 100, 0, misc_player)
+	CreateCheckBox("Chat Spammer", 10, 130, "misc_chat_spam", false, misc_player)	
+	CreateCheckBox("Kill Say", 10, 150, "misc_gaysay", false, misc_player)	
+	CreateDropdown("KillSay Type", 10, 170, {"Русский", "D3D9C style", "Русский 2", "Arabian", "Omerican"}, "misc_gaysays", misc_player)		
+	CreateCheckBox("Flashlight Spammmer", 10, 210, "misc_flashlight", false, misc_player)	
+	CreateCheckBox("Use Spammer", 10, 230, "misc_use", false, misc_player)	
+	CreateCheckBox("Za Putina", 100, 230, "misc_doundo", false, misc_player)	
+	
 	CreateCheckBox("Event log", 10, 30, "misc_eventlog", false, misc_logs)
 	CreateCheckBox("Log Connection", 10, 50, "misc_eventlog_connects", false, misc_logs)	
 	CreateCheckBox("Log Disconnects", 10, 70, "misc_eventlog_dconects", false, misc_logs)
-	CreateCheckBox("Log Hurt", 10, 90, "misc_eventlog_hurt", false, misc_logs)
-
-	--Other
-	--CreateCheckBox("Observer List", 10, 30, "misc_observerlist", false, misc_misc)
-	CreateCheckBox("Flashlight Spammmer", 10, 50, "misc_flashlight", false, misc_misc)	
-	CreateCheckBox("Use Spammer", 10, 70, "misc_use", false, misc_misc)	
-	CreateButton("Player List", "Open the player list menu.", CreatePlayerList, 10, 90, misc_misc)
-	CreateButton("Filter Teams", "The filter will be applied when the filter menu is closed. This filter applies to ESP and Aimbot.", CreateFilterPanel, 10, 115, misc_misc)
-    CreateCheckBox("Info List", 10, 145, "misc_infolist", false, misc_misc)
-	CreateSlider("Info List X", 10, 165, "misc_infolist_x", 0, ScrW(), 0, misc_misc)
-	CreateSlider("Info List Y", 10, 205, "misc_infolist_y", 0, ScrH(), 0, misc_misc)
-	CreateCheckBox("Spectator List", 10, 245, "misc_speclist", false, misc_misc)
-	CreateSlider("Spectator List X", 10, 265, "misc_speclist_x", 0, ScrW(), 0, misc_misc)
-	CreateSlider("Spectator List Y", 10, 305, "misc_speclist_y", 0, ScrH(), 0, misc_misc)
-	--Admin list
-	CreateCheckBox("Admin List", 10, 30, "misc_adminlist", false, misc_alist)
-	CreateSlider("Admin List X", 10, 50, "misc_adminlist_x", 0, ScrW(), 0, misc_alist)
-	CreateSlider("Admin List Y", 10, 90, "misc_adminlist_y", 0, ScrH(), 0, misc_alist)
-	--bsendpacket
-	CreateCheckBox("Fake Lags", 10, 30, "bsp_fake_lags", false, bsendpacket_tab)
-	CreateSlider("FakeLag Limit", 10, 50, "bsp_fake_lags_value", 1, 128, 0, bsendpacket_tab)
-	CreateDropdown("FakeLag Conditions", 10, 90, {"Always On", "In Move", "In Stand", "On Ground", "In Air", "On Attack", "Off Attack"}, "bsp_fake_lags_conditions", bsendpacket_tab)
+	CreateCheckBox("Log Hurt", 10, 90, "misc_eventlog_hurt", false, misc_logs)	
 	
-	--CFG
-    CreateLabel("Menu Keybind", 10, 10, cfg_tab)
-	CreateKeybind(10, 30, "menu_key", cfg_tab)
+    CreateCheckBox("Info List", 10, 30, "misc_infolist", false, misc_panels)
+	CreateSlider("Info List X", 10, 50, "misc_infolist_x", 0, ScrW(), 0, misc_panels)
+	CreateSlider("Info List Y", 10, 90, "misc_infolist_y", 0, ScrH(), 0, misc_panels)
+	CreateCheckBox("Spectator List", 10, 130, "misc_speclist", false, misc_panels)
+	CreateSlider("Spectator List X", 10, 150, "misc_speclist_x", 0, ScrW(), 0, misc_panels)
+	CreateSlider("Spectator List Y", 10, 190, "misc_speclist_y", 0, ScrH(), 0, misc_panels)
+	CreateCheckBox("Admin List", 10, 230, "misc_adminlist", false, misc_panels)
+	CreateSlider("Admin List X", 10, 250, "misc_adminlist_x", 0, ScrW(), 0, misc_panels)
+	CreateSlider("Admin List Y", 10, 290, "misc_adminlist_y", 0, ScrH(), 0, misc_panels)	
+
+	CreateCheckBox("Fake Lags", 10, 30, "bsp_fake_lags", false, misc_packets)
+	CreateSlider("FakeLag Limit", 10, 50, "bsp_fake_lags_value", 1, 128, 0, misc_packets)
+	CreateDropdown("FakeLag Conditions", 10, 90, {"Always On", "In Move", "In Stand", "On Ground", "In Air", "On Attack", "Off Attack"}, "bsp_fake_lags_conditions", misc_packets)
+	CreateCheckBox("Evade bullets", 10, 130, "bsp_evadebullets", false, misc_packets)
+	
+    CreateLabel("Menu Keybind", 10, 30, cfg_tab)
+	CreateKeybind(140, 30, "menu_key", cfg_tab)
 	local usercfgs = {}
 	cfgDropdown = vgui.Create("DComboBox", cfg_tab)
 	cfgDropdown:SetSize(200, 20)
@@ -2587,12 +2440,19 @@ function HavocGUI()
 	CreateButton("Create Config", "Create Config.", CreateConfig, 10, 125, cfg_tab)
 	CreateButton("Delete Config", "Delete Config.", DeleteConfig, 10, 150, cfg_tab)
 	CreateTextInput("Config Name", "config_name", 10, 175, 16, cfg_tab)
-	CreateButton("Unload", "Fully unloads the cheat.", Unload, 10, 200, cfg_tab)
+
 	CreateLabel("Unload Key", 10, 225, cfg_tab)
 	CreateKeybind(10, 245, "panic_key", cfg_tab)
 
-	CreateButton("ESP Mode " .. GetRenderMode(), "If your ESP is not working on a server try changing this to unsafe. (THIS SHOULD ALWAYS BE PROTECTED WHEN POSSIBLE TO MAXIMIZE SCREENGRAB PROTECTION)", SwapRender, 10, 425, cfg_tab)
-    
+	
+    	
+	--TOP Buttons
+	CreateButton("Entity List", "Open Entity List.", CreateEntityList, 25, 3, topframe)	
+	CreateButton("Player List", "Open the player list menu.", CreatePlayerList, 180, 3, topframe)
+	CreateButton("Filter Teams", "The filter will be applied when the filter menu is closed. This filter applies to ESP and Aimbot.", CreateFilterPanel, 330, 3, topframe)
+    CreateButton("ESP Mode " .. GetRenderMode(), "If your ESP is not working on a server try changing this to unsafe. (THIS SHOULD ALWAYS BE PROTECTED WHEN POSSIBLE TO MAXIMIZE SCREENGRAB PROTECTION)", SwapRender, 475, 3, topframe)	
+	CreateButton("Unload", "Fully unloads the cheat.", Unload, ScrW() - 150, 3, topframe)  
+	
 	if teamFilterWasOpen then
 		CreateFilterPanel()
 		teamFilterWasOpen = false
@@ -2996,7 +2856,7 @@ local function DoESP()
 						surfSetFont("ESP_Font_Flag")
                         local w, h = surfGetTextSize("Dormant")
 						local col = string.ToColor(config.colors["esp_player_dormant_ind"])
-						if v:Dormant() then
+						if v:IsDormant() then
 						if config["di_pos"] == 1 then
 						drawSimpleOutlinedText("Dormant", "ESP_Font_Flag", MinX-config["di_x"], MinY+config["di_y"], col, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, Color(0,0,0))
 						elseif config["di_pos"] == 2 then
@@ -3027,27 +2887,25 @@ local function DoESP()
 						end
 					end
 					if config["esp_player_snaplines"] then
-					if config["esp_player_snaplines_pos"] == 1 then
+					    if config["esp_player_snaplines_pos"] == 1 then
 						surfSetDrawColor( string.ToColor(config.colors["esp_player_snaplines"]))
 						surfDrawLine( ScrW() / 2 - 1, ScrH() , MaxX - ( MaxX - MinX ) / 2 - 1, MaxY )
-					elseif config["esp_player_snaplines_pos"] == 2 then
+					    elseif config["esp_player_snaplines_pos"] == 2 then
 					    surfSetDrawColor( string.ToColor(config.colors["esp_player_snaplines"]))
 						surfDrawLine( ScrW() / 2 , ScrH() / 2 , MaxX - ( MaxX - MinX ) / 2 - 1, MaxY )
-				    elseif config["esp_player_snaplines_pos"] == 3 && config["esp_player_snaplines"] then
-
-					end
+					    end
 					end
                     if config["esp_player_drawmodel"] then
 	                    cam.Start3D()
 		                    v:DrawModel()
 		                cam.End3D()
 	                end
-					if config["esp_player_drawmodelatt"] then
-					local vwep = v:GetActiveWeapon()
-	                    cam.Start3D()
-		                    vwep:DrawModel()
-		                cam.End3D()
-	                end
+					--if config["esp_player_drawmodelatt"] then
+					--local vwep = v:GetActiveWeapon()
+	                --    cam.Start3D()
+		            --        vwep:DrawModel()
+		            --    cam.End3D()
+	                --end
 					if config["esp_player_skeleton"] then
 						for _, b in pairs( bones ) do
 							if v:LookupBone(b.S) != nil && v:LookupBone(b.E) != nil then
@@ -3183,12 +3041,11 @@ local function DoESP()
 		if config["esp_ent_crosshair"] then
 		    draw.SimpleText( LocalPlayer():GetEyeTrace().Entity, "smallest_pixel", (ScrW()/2) - 100, ScrH() / 2 + 65, color_white )
 		end
-        if config["hud_watermark"] then
+        if config["hud_watermark"] && !frame then
 		    surface.SetFont("smallest_pixel")
 		    local textwi = surface.GetTextSize("PenisDeda.NET " .. PenisDedushki.Version .. "|username: " .. LocalPlayer():Name() .. " |gm: " .. engine.ActiveGamemode() .. " |latency:" .. LocalPlayer():Ping() .. " |tick:"..math.Round(1/engine.TickInterval()-1) )
 			local textwid = textwi + 5
 			local rgbcol = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
-			--if frame then textwid = 470 else textwid = textwi + 5 end --static size
 		    draw.RoundedBox( 3, 5, 5, textwid, 25, Color(25,25,25))
 			draw.RoundedBox( 10, 7, 6, textwid-4, 3, Color(rgbcol.r,rgbcol.g,rgbcol.b))
 		    surfSetDrawColor( 255, 255, 255, 60 ) 
@@ -3224,6 +3081,13 @@ local function DoESP()
 		draw.SimpleText( "卐", "Trebuchet24", ScrW() / 2, ScrH() / 2, color_white, TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER )
 		end
 		end
+		--if config["hud_bsp"] then
+        --    if bsendpacket then
+		--        draw.SimpleText("PACKETS","Trebuchet24",5,500,Color(255,25,25),TEXT_ALIGN_LEFT,TEXT_ALIGN_TOP)
+		--    else
+		--       draw.SimpleText("PACKETS","Trebuchet24",5,500,Color(25,255,25),TEXT_ALIGN_LEFT,TEXT_ALIGN_TOP)
+		--    end
+		--end
 		if config["hud_keystrokes"] then
 		if config["hud_keystrokes_style"] == 1 then
 		AddKeyRectangle("W", IN_FORWARD, 35,550)
@@ -5119,8 +4983,10 @@ local function FastSwitch(ucmd)
     local guns = LocalPlayer():GetWeapons()
     if ( ucmd:GetMouseWheel() != 0 ) then ucmd:SelectWeapon( guns ) end
 end
+
+servertime = 0
+
 local function BulletTime()
-    servertime = 0
     wep = pm.GetActiveWeapon(ply)
     if (!wep || !em.IsValid(wep) || config["aim_bullettime"]) then return(true) end
     return(servertime >= wm.GetNextPrimaryFire(wep))	
@@ -5131,19 +4997,14 @@ AddHook("Move", RandomString() , function()
 end)
 --===========Nospread/Norecoil
 
-local ofb = em.FireBullets;
 local cones = {};
 local nullvec = Vector() * -1;
- 
-function em.FireBullets(p, data)
-    local spread = data.Spread * -1;
-    local class = p:GetActiveWeapon():GetClass();
-    if (spread != cones[class] && spread != nullvec) then
-        cones[class] = spread;
-    end
-    return(ofb(p, data));
+GAMEMODE["EntityFireBullets"] = function(self, p, data)
+	local w = pm.GetActiveWeapon(me);
+	local Spread = data.Spread * -1;
+	if(!w || !em.IsValid(w) || cones[em.GetClass(w)] == Spread || Spread == nullvec) then return; end
+	cones[em.GetClass(w)] = Spread;
 end
- 
 local function NoRecoil(ang)
 	local w = me:GetActiveWeapon()
 	local c = w:GetClass()
@@ -5160,99 +5021,13 @@ end
 local function PredictSpread(cmd, ang)
     local w = LocalPlayer():GetActiveWeapon()
 	local class = w:GetClass()
-    if class:StartWith("swb_") then
-		local function CalculateSpread()
-			local vel = me:GetVelocity():Length()
-			local dir = ang:Forward()
-			
-			if !me.LastView then
-				me.LastView = dir
-				me.ViewAff = 0
-			else
-				me.ViewAff = Lerp(0.25, me.ViewAff, (dir - me.LastView):Length() * 0.5)
-				--  me.LastView = dir
-			end
-			
-			if w.dt.State == SWB_AIMING then
-				w.BaseCone = w.AimSpread
-				
-				if w.Owner.Expertise then
-					w.BaseCone = w.BaseCone * (1 - w.Owner.Expertise["steadyaim"].val * 0.0015)
-				end
-			else
-				w.BaseCone = w.HipSpread
-				
-				if w.Owner.Expertise then
-					w.BaseCone = w.BaseCone * (1 - w.Owner.Expertise["wepprof"].val * 0.0015)
-				end
-			end
-			
-			if me:Crouching() then
-				w.BaseCone = w.BaseCone * (w.dt.State == SWB_AIMING and 0.9 or 0.75)
-			end
-			w.AddSpread = 0
-			w.AddSpreadSpeed = 0
-			w.CurCone = mClamp(w.BaseCone + w.AddSpread + (vel / 10000 * w.VelocitySensitivity) * (w.dt.State == SWB_AIMING and w.AimMobilitySpreadMod or 1) + me.ViewAff, 0, 0.09 + w.MaxSpreadInc)
-			
-			if CurTime() > servertime then
-				w.AddSpread = mClamp(w.AddSpread - 0.005 * w.AddSpreadSpeed, 0, w.MaxSpreadInc)
-				w.AddSpreadSpeed = mClamp(w.AddSpreadSpeed + 0.05, 0, 1)
-			end
-		end
-		
-		CalculateSpread()
-		
-		local cone = w.CurCone
-		if !cone then return ang end
-
-		if me:Crouching() then
-			cone = cone * 0.85
-		end
-
-		math.randomseed(cmd:CommandNumber())
-		ang = ang - Angle(mRand(-cone, cone), mRand(-cone, cone), 0) * 25	
-		
-	else	
-	
     if (!w || !w:IsValid() || !cones[w:GetClass()]) then return ang end
     local ang = (dickwrap.Predict(cmd, ang:Forward(), cones[w:GetClass()])):Angle()
     ang.y, ang.x = math.NormalizeAngle(ang.y), math.NormalizeAngle(ang.x)
-    end
 	
     return(ang)
 end
---[[local function AutofireWallCheck( v ) -- Мусорная функция
-    local ent = LocalPlayer():GetEyeTrace().Entity
-	local ply = LocalPlayer()	
-	local pos = v:LocalToWorld(v:OBBCenter())	
-	local dop = v:GetBonePosition(v:LookupBone("ValveBiped.Bip01_Head1")) + Vector(0, 0, 0)   
-	
-	if config["aim_hitbox"] == 1 then     
-	    pos = HitScan(v) 	
-	elseif config["aim_hitbox"] == 2 && v:LookupBone("ValveBiped.Bip01_Head1") != nil then
-	    pos = dop 
-	elseif config["aim_hitbox"] == 3 && v:LookupBone("ValveBiped.Bip01_Pelvis") != nil then 
-        pos = v:GetBonePosition(v:LookupBone("ValveBiped.Bip01_Pelvis")) 		
-	else
-        pos = v:LocalToWorld(v:OBBCenter()) 
-	end
-	
-	local trace = { 
-		start = ply:GetShootPos(), 
-		endpos = pos, 
-		filter = { ply, v }, 
-		mask = MASK_SHOT
-	}
-	
-	local tr = util.TraceLine( trace )
-	
-	if InFOV && AimP then
-	    if (!tr.Hit) then
-		    return true
-		end
-	    return false
-	end
-end]]
+
 --Facestab
 local function ForceBackStap( ucmd )
     --RMB
@@ -5313,6 +5088,24 @@ local function AAFM( cmd )
     cmd:SetSideMove( math.sin(yaw) * speed )
 	end
 end
+
+local function EvadeBullets(ucmd) 
+	for k, v in pairs(player.GetAll()) do
+	    if v:IsValid() and v != LocalPlayer() then
+	        local Trace = {}
+	        Trace.start  = LocalPlayer():EyePos() + Vector(0, 0, 32)
+	        Trace.endpos = v:EyePos() + Vector(0, 0, 32)
+	        Trace.filter = {v, LocalPlayer()}
+	        TraceRes = util.TraceLine(Trace)
+	        if !TraceRes.Hit then
+	            if (v:EyeAngles():Forward():Dot((LocalPlayer():EyePos() - v:EyePos())) > math.cos(math.rad(45))) then
+	                bSendPacket = (ucmd:CommandNumber() % 15) < 3
+	            end
+	        end
+	    end
+	end
+end
+
 
 AddHook("CreateMove", RandomString(), function(ucmd)
 if config["aa_enable"] then
@@ -5383,6 +5176,8 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 		        bSendPacket = (ucmd:CommandNumber() % config["bsp_fake_lags_value"]) < 3
 		    end
 	    end
+	elseif config["bsp_evadebullets"] then
+	EvadeBullets(ucmd)
 	else
 	    bSendPacket = true
     end
@@ -5393,7 +5188,7 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 		    if LocalPlayer():KeyDown(IN_DUCK) then ucmd:RemoveKey(IN_DUCK) end
 		end
     end
-	if config["aim_silent"] then
+	if config["aim_silent"] == 2 then
 	    if(!realAng) then realAng = ucmd:GetViewAngles(); end
 	    realAng = realAng + Angle(ucmd:GetMouseY() * .023, ucmd:GetMouseX() * -.023, 0);
 	    realAng.x = math.NormalizeAngle(realAng.x);
@@ -5694,7 +5489,7 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 								InFOV = true 
 							
 							end
-							if config["aim_psilent"] then
+							if config["aim_silent"] == 3 then
 							    if AimP && InFOV then
 							        if not world_click then return end 
                                     if not ucmd:GetInWorldClicker() then 
@@ -5754,13 +5549,13 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 							else
 							sprdang = Angle()
 							end						
-							if AimP && InFOV then
+							if AimP && InFOV && config["aim_silent"] != 3 then
 								if config["aim_smoothing"] && (IsValid(LocalPlayer():GetActiveWeapon()) && LocalPlayer():GetActiveWeapon():GetClass() != "weapon_crossbow" ) then
 									playerCenter = newPlayerCenter
 									PlayerHealth = NewPlayerHealth
 									PlayerDistance = NewPlayerDistance
 									ucmd:SetViewAngles(Smoothing(FinAngle))
-									if config["aim_silent"] && !config["antihit_antiaim"] then
+									if config["aim_silent"] == 2 then
 										FixMovement(ucmd, realAng)
 									end
 								else
@@ -5768,7 +5563,7 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 									PlayerHealth = NewPlayerHealth
 									PlayerDistance = NewPlayerDistance
 									ucmd:SetViewAngles(FinAngle + sprdang)
-									if config["aim_silent"] && !config["antihit_antiaim"] then
+									if config["aim_silent"] == 2 then
 										FixMovement(ucmd, realAng)
 									end
 								end
@@ -6261,8 +6056,10 @@ function Antihit( cmd )
 end
 eventListOpen()
 --==================== PostInject
-MsgC(Color(255, 25, 25), "\n████████████████████████████████████████\n████████████████░░██████████████████████\n███████████████▀░░░▀▀▀▀▀▀███████████████\n███████████▀▀░░░░░░░░░░░░░░▀▀███████████\n████████▀░░░░▄▄░░░▄░░▀███▄▄░░░░▀████████\n██████▀░░░▄███░░░██▄░░░██████▄░░░▀██████\n█████▀░░▄████▀░░▄████░░░███████▄░░▀█████\n████▀░░▄█████░░░██████░░░▀██████▄░░▀████\n████░░░█████▀░░████████▄░░▀████▀▀░░░░▀██\n████░░██████░░▄███████▀▀░░░░░░░░░░░░▄▄██\n████░░█████░░░▀▀▀░░░░░░░░▄░░░▄████░░████\n███▀░░░▀░░░░░░░░▄▄▄▄▄██████░░░▀██░░░████\n██▄░░░░░▄▄░░░███████████████▄░░▀▀░░▄████\n█████▄░░▀░░░█████████████████▄░░░░▄█████\n██████▄░░░░░█████████████████▀░░░░██████\n████████░░░░░▀▀██████████▀▀░░░░▄░░░▀████\n███████▀░░▄▄▄░░░░░░░░░░░░░░▄▄████▄░░▀███\n███████░░░█████▄▄▄▄▄▄▄▄▄▄█████████▄▄▄███\n██████▄▄▄███████████████████████████████\n████████████████████████████████████████\n")
-MsgC(Color(255, 25, 25), "PenisDeda" .. PenisDedushki.Version .. "loaded! \n")
+
+MsgC(Color(255, 15, 15), "\n████████████████████████████████████████\n████████████████░░██████████████████████\n███████████████▀░░░▀▀▀▀▀▀███████████████\n███████████▀▀░░░░░░░░░░░░░░▀▀███████████\n████████▀░░░░▄▄░░░▄░░▀███▄▄░░░░▀████████\n██████▀░░░▄███░░░██▄░░░██████▄░░░▀██████\n█████▀░░▄████▀░░▄████░░░███████▄░░▀█████\n████▀░░▄█████░░░██████░░░▀██████▄░░▀████\n████░░░█████▀░░████████▄░░▀████▀▀░░░░▀██\n████░░██████░░▄███████▀▀░░░░░░░░░░░░▄▄██\n████░░█████░░░▀▀▀░░░░░░░░▄░░░▄████░░████\n███▀░░░▀░░░░░░░░▄▄▄▄▄██████░░░▀██░░░████\n██▄░░░░░▄▄░░░███████████████▄░░▀▀░░▄████\n█████▄░░▀░░░█████████████████▄░░░░▄█████\n██████▄░░░░░█████████████████▀░░░░██████\n████████░░░░░▀▀██████████▀▀░░░░▄░░░▀████\n███████▀░░▄▄▄░░░░░░░░░░░░░░▄▄████▄░░▀███\n███████░░░█████▄▄▄▄▄▄▄▄▄▄█████████▄▄▄███\n██████▄▄▄███████████████████████████████\n████████████████████████████████████████\n")
+MsgC( Color(255,15,15), "Loaded PenisDeda " .. PenisDedushki.Version .."  | " .. os.date("%I:%M %p") .. "\n" )
+
 notification.AddLegacy("Loaded PenisDeda " .. PenisDedushki.Version .."  | " .. os.date("%I:%M %p"), NOTIFY_HINT, 5)
 
 for k, v in ipairs(files) do
