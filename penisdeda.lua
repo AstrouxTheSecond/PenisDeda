@@ -1,6 +1,6 @@
 --Cheat Information
 local PenisDedushki = {}
-PenisDedushki.Version = "V4.7"
+PenisDedushki.Version = "V4.8"
 PenisDedushki.UpdateDate = "05.04.2022"
 PenisDedushki.Build = "Beta v2"
 --Tables
@@ -57,7 +57,7 @@ require("dickwrap")
 require("enginepred")
 require("context")
 require("bsendpacket")
---require("")
+--require("cvar3")
 //PenisDeduration
 config["aim_master_toggle"] = false
 config["aim_onkey"] = false
@@ -96,7 +96,8 @@ config["aim_animknife"] = false
 config["aim_act_disabler"] = false
 config["aim_interp"] = false
 config["aim_velocitypred"] = true
-config["aim_idealtick"] = false
+config["aim_autopeek3"] = false
+config["aim_autopeek_timer"] = 3
 
 config["movement_fix"] = 1
 
@@ -354,6 +355,7 @@ config["misc_doundo"] = false
 config["misc_rpnamer"] = false
 config["misc_rpnamer_time"] = 35
 config["misc_circlestrafer"] = false
+config["misc_fakecrouch"] = false
 
 config["misc_fnamechanger"] = false
 
@@ -370,6 +372,9 @@ config["bsp_fake_lags"] = false
 config["bsp_fake_lags_value"] = 1
 config["bsp_fake_lags_conditions"] = 1
 config["bsp_evadebullets"] = false
+config["misc_pairstack"] = false
+
+config["gameserver"] = 1
 
 config.colors["esp_player_box"] = "255 255 255 255"
 config.colors["esp_player_name"] = "255 255 255 255"
@@ -441,6 +446,9 @@ config.keybinds["jitter_keybind"] = 0
 config.keybinds["circlestrafer_key"] = 0
 config.keybinds["misc_warp_key"] = 0
 config.keybinds["antihit_fd_key"] = 0
+config.keybinds["airstack"] = 0
+config.keybinds["aim_autopeek"] = 0
+--config.keybinds["aim_autopeek2"] = 0
 
 config["friends"] = {}
 config["entities"] = {}
@@ -488,6 +496,7 @@ local ChamMaterials = {
 	["Chrome"] = "debug/env_cubemap_model",
 
 }
+local oldposition = Vector(0,0,0)
 local CheatFonts = {"comfortaa", "Arial", "Bahnschrift", "Calibri", "Comic Sans MS", "Consolas", "Courier New", "Franklin Gothic Medium", "Impact", "Ink Free", "Microsoft Sans Serif", "Myanmar Text", "Segoe UI", "Tahoma", "Times New Roman", "Trebuchet MS", "Verdana"}
 local function UpdateNameFont()
 	surface.CreateFont("ESP_Font_Main",{font = CheatFonts[config["name_font"]], size = config["name_font_size"]})
@@ -1764,7 +1773,7 @@ function HavocGUI()
 	end
     local co_helpers = vgui.Create( "DPanel", AIM_SCROLL)
     co_helpers:SetPos( 517, 3 ) 
-    co_helpers:SetSize( 250, 200 )
+    co_helpers:SetSize( 250, 300 )
 	co_helpers.Paint = function(self,w,h)
 	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
 	draw.SimpleText( "Helpers:", "TargetID", 0, 0, color_white )
@@ -1783,7 +1792,7 @@ function HavocGUI()
 	Wrad(15,16,195,5)
 	end
     local co_trigger = vgui.Create( "DPanel", AIM_SCROLL)
-    co_trigger:SetPos( 517, 205 ) 
+    co_trigger:SetPos( 517, 305 ) 
     co_trigger:SetSize( 250, 80 )
 	co_trigger.Paint = function(self,w,h)
 	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
@@ -1793,7 +1802,7 @@ function HavocGUI()
 	Wrad(15,16,195,5)
 	end
     local co_bt = vgui.Create( "DPanel", AIM_SCROLL)
-    co_bt:SetPos( 517, 285 ) 
+    co_bt:SetPos( 517, 385 ) 
     co_bt:SetSize( 250, 114 )
 	co_bt.Paint = function(self,w,h)
 	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
@@ -1802,16 +1811,16 @@ function HavocGUI()
 	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
 	Wrad(15,16,195,5)
 	end
-    local co_aa = vgui.Create( "DPanel", AIM_SCROLL)
-    co_aa:SetPos( 517, 400 ) 
-    co_aa:SetSize( 250, 100 )
-	co_aa.Paint = function(self,w,h)
-	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
-	draw.SimpleText( "Anti-Aim:", "TargetID", 0, 0, color_white )
-	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
-	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
-	Wrad(15,16,195,5)
-	end
+    --local co_aa = vgui.Create( "DPanel", AIM_SCROLL)
+    --co_aa:SetPos( 517, 400 ) 
+    --co_aa:SetSize( 250, 100 )
+	--co_aa.Paint = function(self,w,h)
+	--local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	--draw.SimpleText( "Anti-Aim:", "TargetID", 0, 0, color_white )
+	--draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	--draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	--Wrad(15,16,195,5)
+	--end
 	--======================= Player ==========================--
 	local VISUAL_SCROLL = vgui.Create( "DScrollPanel", sheet )
     VISUAL_SCROLL:Dock( FILL )
@@ -2049,7 +2058,7 @@ function HavocGUI()
 	end
 	local misc_movement = vgui.Create( "DPanel", MISC_SCROLL)
     misc_movement:SetPos( 3, 3 ) 
-    misc_movement:SetSize( 250, 300 )
+    misc_movement:SetSize( 250, 350 )
 	misc_movement.Paint = function(self,w,h)
 	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
 	draw.SimpleText( "Movement:", "TargetID", 0, 0, color_white )
@@ -2078,7 +2087,7 @@ function HavocGUI()
 	Wrad(15,16,195,5)
 	end
 	local misc_logs = vgui.Create( "DPanel", MISC_SCROLL)
-    misc_logs:SetPos( 3, 307 ) 
+    misc_logs:SetPos( 3, 357 ) 
     misc_logs:SetSize( 250, 250 )
 	misc_logs.Paint = function(self,w,h)
 	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
@@ -2176,6 +2185,10 @@ function HavocGUI()
 	CreateCheckBox("Force Backstab", 5, 105, "aim_facestab", false, co_helpers)
 	CreateCheckBox("Knife BOT", 5, 125, "aim_knifebot", false, co_helpers)
 	CreateCheckBox("Act Disabler", 5, 145, "aim_act_disabler", false, co_helpers)	
+	CreateCheckBox("Peek Teleport", 5, 165, "aim_autopeek3", false, co_helpers)	
+	CreateKeybind(140, 165, "aim_autopeek", co_helpers)
+	CreateSlider("Teleport Timer", 2, 185, "aim_autopeek_timer", 0, 5, 2, co_helpers)
+	--CreateKeybind(18, 165, "aim_autopeek2", co_helpers)
 	
 	CreateCheckBox("Ignore Friends", 5, 25, "aim_ignorefriends", false, co_filtering)
 	CreateCheckBox("Ignore BOTS", 5, 45, "aim_ignorebots", false, co_filtering)
@@ -2194,7 +2207,7 @@ function HavocGUI()
 	CreateCheckBox("Enable backtracking", 5, 25, "backtrack_enable", false, co_bt)
 	CreateSlider("Backtrack Amount", 2, 45, "backtrack_amount", 0, 200, 0, co_bt)	
 	
-	CreateCheckBox("Enable Anti-Aim", 5, 25, "backtrack_enable", false, co_aa)
+	--CreateCheckBox("Enable Anti-Aim", 5, 25, "backtrack_enable", false, co_aa)
 	
 	CreateCheckBox("Enable Anti-Aim", 5, 25, "backtrack_enable", false, co_aa)
 	
@@ -2383,6 +2396,7 @@ function HavocGUI()
 	CreateKeybind(140, 250, "180turn_keybind", misc_movement)
 	CreateCheckBox("Circle Strafe", 10, 270, "misc_circlestrafer", false, misc_movement)
 	CreateKeybind(140, 270, "circlestrafer_key", misc_movement)	
+	CreateCheckBox("Fake Crouch", 10, 290, "misc_fakecrouch", false, misc_movement)
 	
 	CreateCheckBox("TTT/Murder info", 10, 30, "misc_ttt", false, misc_mmgames)
     CreateCheckBox("Arest Leave", 10, 50, "misc_antiarest", false, misc_mmgames)
@@ -2399,7 +2413,7 @@ function HavocGUI()
 	CreateDropdown("KillSay Type", 10, 170, {"Русский", "D3D9C style", "Русский 2", "Arabian", "Omerican"}, "misc_gaysays", misc_player)		
 	CreateCheckBox("Flashlight Spammmer", 10, 210, "misc_flashlight", false, misc_player)	
 	CreateCheckBox("Use Spammer", 10, 230, "misc_use", false, misc_player)	
-	CreateCheckBox("Za Putina", 100, 230, "misc_doundo", false, misc_player)	
+	CreateCheckBox("Za Putina", 120, 230, "misc_doundo", false, misc_player)	
 	
 	CreateCheckBox("Event log", 10, 30, "misc_eventlog", false, misc_logs)
 	CreateCheckBox("Log Connection", 10, 50, "misc_eventlog_connects", false, misc_logs)	
@@ -2420,6 +2434,8 @@ function HavocGUI()
 	CreateSlider("FakeLag Limit", 10, 50, "bsp_fake_lags_value", 1, 128, 0, misc_packets)
 	CreateDropdown("FakeLag Conditions", 10, 90, {"Always On", "In Move", "In Stand", "On Ground", "In Air", "On Attack", "Off Attack"}, "bsp_fake_lags_conditions", misc_packets)
 	CreateCheckBox("Evade bullets", 10, 130, "bsp_evadebullets", false, misc_packets)
+	CreateCheckBox("Airstack", 10, 150, "misc_pairstack", false, misc_packets)
+	CreateKeybind(140, 150, "airstack", misc_packets)
 	
     CreateLabel("Menu Keybind", 10, 30, cfg_tab)
 	CreateKeybind(140, 30, "menu_key", cfg_tab)
@@ -2443,7 +2459,7 @@ function HavocGUI()
 
 	CreateLabel("Unload Key", 10, 225, cfg_tab)
 	CreateKeybind(10, 245, "panic_key", cfg_tab)
-
+    CreateDropdown("Server", 10, 265, {"Comunity", "D3S HvH"}, "gameserver", cfg_tab)
 	
     	
 	--TOP Buttons
@@ -3284,8 +3300,6 @@ local function DoESP()
 		
 	    end
 		end
-		
-		
 	end
 end 
 --Swap Render
@@ -3394,6 +3408,21 @@ if config["hud_aimbotstatus"] then
 		surfDrawCircle( 0, 0, 135 + math.sin( CurTime() ) * 15, Color( hsv.r, hsv.g, hsv.b ) )
 		surfDrawCircle( 1, 0, 135 + math.sin( CurTime() ) * 15, Color( hsv.r, hsv.g, hsv.b ) )
 	cam.End3D2D()
+end
+if config["aim_autopeek3"] then
+	local angle = Angle( 0, 0, 0 )
+	local matspark = Material("gui/npc.png")
+    cam.Start3D2D( oldposition , angle, 1 )
+	    if config["aim_autopeek3"] && input.IsKeyDown(config.keybinds["aim_autopeek"]) && peeked then    
+            surface.SetDrawColor( 255, 255, 255, 250 ) 
+	        surface.SetMaterial( matspark )
+	        surface.DrawTexturedRect( -64, -64, 128, 128 )
+	    elseif config["aim_autopeek3"] && !peeked then
+            surface.SetDrawColor( 255, 25, 25, 250 )
+	        surface.SetMaterial( matspark )
+	        surface.DrawTexturedRect( -64, -64, 128, 128 )
+	    end			
+    cam.End3D2D()
 end
 if config["esp_self_hat"] && config["esp_self_hat_type"] == 1 && !config["esp_self_customagent"] then
 if intp then
@@ -4758,6 +4787,8 @@ end
 end
 end
 
+
+
 local function One80Turn( ucmd )
     if input.IsKeyDown(config.keybinds["180turn_keybind"]) && config["misc_180turn"] then
         if !timerfix then
@@ -4769,21 +4800,28 @@ local function One80Turn( ucmd )
     end
 end
 
-local function JitterMove( ucmd )
-    if input.IsKeyDown(config.keybinds["jitter_keybind"]) && config["misc_jittermove"] then
-        if !timerfix then
-            LocalPlayer():SetEyeAngles(LocalPlayer():EyeAngles() - Angle(0, 180, 0))
-        end
-        ucmd.SetViewAngles(ucmd, LocalPlayer():EyeAngles())
-        timerfix = true
-        timer.Simple(0.05, function() timerfix = false end)
-    end
-end
-
-local function AntiAFK( ucmd )
-    if config["misc_antiafk"] then
-    ucmd:SetForwardMove( math.random( -300, 300 ) )
-	ucmd:SetSideMove( math.random( -300, 300 ) )
+local crouched = 0
+local function FakeCrouch(cmd)
+	if config["misc_fakecrouch"] then
+	if em.GetMoveType(me) == MOVETYPE_NOCLIP then return end
+	if me:Team() == TEAM_SPECTATOR then return end
+	if not me:Alive() or me:Health() < 1 then return end
+	if LocalPlayer():IsFlagSet(1024) then return end
+		if me:KeyDown(IN_DUCK) then
+			if crouched <= 5 then
+				cmd:SetButtons(cmd:GetButtons() + IN_DUCK)
+			elseif crouched >= 25 then
+				crouched = 0
+			end
+			crouched = crouched + 1
+		else
+			if crouched <= 5 then
+				cmd:SetButtons(cmd:GetButtons() + IN_DUCK)
+			elseif crouched >= 12.5 then
+				crouched = 0
+			end
+			crouched = crouched + 1
+		end
 	end
 end
 --local bor = bit.bor
@@ -5122,6 +5160,7 @@ end
 end) 
 
 AddHook("CreateMove", RandomString(), function(ucmd, world_click)
+    FakeCrouch(ucmd)
     if config["aim_interp"] then
     RunConsoleCommand("cl_interp", 0)
 	RunConsoleCommand("cl_updaterate", 100000)
@@ -5604,6 +5643,26 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 	if config["slowwalk"] then
 	Micromovement(ucmd)
 	end
+	
+	
+	
+	--d3s servers autopeek
+    peeked = false
+	if config["aim_autopeek3"] && config["gameserver"] == 2 then
+	    if input.IsKeyDown(config.keybinds["aim_autopeek"]) then
+	        RunConsoleCommand("autopeek_start")
+		    peeked = true
+		    oldposition = me:GetPos()
+	    elseif config["aim_autopeek3"] && ucmd:KeyDown(IN_ATTACK) then
+	        timer.Simple( config["aim_autopeek_timer"] / 10, function() RunConsoleCommand("autopeek_end") peeked = false end)
+		    oldposition = oldposition
+	    end
+	end
+	--autopeek end
+	
+	
+	
+	
 end)
 
 end
@@ -5611,13 +5670,20 @@ end
 --===================================
 --=================================== Misc
 --===================================
---[[AddHook("Think", RandomString(), function()
---local FName = _fhook_changename
+AddHook("Think", RandomString(), function()
+--[[local FName = _fhook_changename
 local randomplayer = player.GetAll()[math.random(#player.GetAll())]
 if config["misc_fnamechanger"]  then
     _fhook_changename(randomplayer:Name() .. " ")
+end]]
+if input.IsKeyDown(config.keybinds["airstack"]) && config["misc_pairstack"] then
+if config["gameserver"] == 2 then
+    RunConsoleCommand("net_fakeloss"," 99")
+else
+    RunConsoleCommand("net_fakeloss", "0")
 end
-end)]]
+end
+end)
 
 do
 
@@ -6054,6 +6120,14 @@ function Antihit( cmd )
         end
     end
 end
+
+
+
+
+
+
+
+
 eventListOpen()
 --==================== PostInject
 
