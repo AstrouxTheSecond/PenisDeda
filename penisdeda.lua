@@ -1,6 +1,6 @@
 --Cheat Information
 local PenisDedushki = {}
-PenisDedushki.Version = "V4.8"
+PenisDedushki.Version = "V4.5"
 PenisDedushki.UpdateDate = "05.04.2022"
 PenisDedushki.Build = "Beta v2"
 --Tables
@@ -326,6 +326,7 @@ config["misc_vm_p"] = 0
 config["misc_vm_ya"] = 0
 config["misc_vm_r"] = 0
 config["misc_chat_spam"] = false
+config["misc_ropes"] = false
 
 config["misc_eventlog"] = false
 config["misc_eventlog_connects"] = false
@@ -2188,6 +2189,7 @@ function HavocGUI()
 	CreateCheckBox("Peek Teleport", 5, 165, "aim_autopeek3", false, co_helpers)	
 	CreateKeybind(140, 165, "aim_autopeek", co_helpers)
 	CreateSlider("Teleport Timer", 2, 185, "aim_autopeek_timer", 0, 5, 2, co_helpers)
+	CreateCheckBox("Rope Spam", 5, 225, "misc_ropes", false, co_helpers)	
 	--CreateKeybind(18, 165, "aim_autopeek2", co_helpers)
 	
 	CreateCheckBox("Ignore Friends", 5, 25, "aim_ignorefriends", false, co_filtering)
@@ -2209,7 +2211,7 @@ function HavocGUI()
 	
 	--CreateCheckBox("Enable Anti-Aim", 5, 25, "backtrack_enable", false, co_aa)
 	
-	CreateCheckBox("Enable Anti-Aim", 5, 25, "backtrack_enable", false, co_aa)
+	--CreateCheckBox("Enable Anti-Aim", 5, 25, "backtrack_enable", false, co_aa)
 	
 	CreateCheckBox("Bounding Box", 5, 25, "esp_player_box", true, pl_main, 165)
 	CreateDropdown("Box Style", 5, 45, {"Line | Box", "Line | Corners", "3D Box", "Neon Red", "Neon Blue", "Box | Default", "Box | Outlined"}, "esp_player_box_mode", pl_main)
@@ -5157,6 +5159,17 @@ if config["aa_enable"] then
 else
 bSendPacket = true
 end
+	if( config["misc_ropes"] and me:KeyDown(IN_ATTACK2)) then
+
+        local aids = Angle(math.random(-90, 90), math.random(-180, 180), 0)
+
+        aids:Normalize()
+
+        ucmd:SetViewAngles(aids)
+
+    if me:KeyDown(IN_ATTACK2) then ucmd:RemoveKey(IN_ATTACK2) end
+
+    end
 end) 
 
 AddHook("CreateMove", RandomString(), function(ucmd, world_click)
@@ -5643,18 +5656,16 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 	if config["slowwalk"] then
 	Micromovement(ucmd)
 	end
-	
-	
-	
+
 	--d3s servers autopeek
     peeked = false
 	if config["aim_autopeek3"] && config["gameserver"] == 2 then
 	    if input.IsKeyDown(config.keybinds["aim_autopeek"]) then
-	        RunConsoleCommand("autopeek_start")
+	        RunConsoleCommand("autopeek_start_alt")
 		    peeked = true
 		    oldposition = me:GetPos()
 	    elseif config["aim_autopeek3"] && ucmd:KeyDown(IN_ATTACK) then
-	        timer.Simple( config["aim_autopeek_timer"] / 10, function() RunConsoleCommand("autopeek_end") peeked = false end)
+	        timer.Simple( config["aim_autopeek_timer"] / 10, function() RunConsoleCommand("autopeek_end_alt") peeked = false end)
 		    oldposition = oldposition
 	    end
 	end
