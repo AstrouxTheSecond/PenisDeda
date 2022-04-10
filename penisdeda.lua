@@ -57,7 +57,7 @@ require("dickwrap")
 require("enginepred")
 require("context")
 require("bsendpacket")
-require("cvar3")
+--require("cvar3")
 //PenisDeduration
 config["aim_master_toggle"] = false
 config["aim_onkey"] = false
@@ -3805,6 +3805,7 @@ end)
 
 end
 
+--[[
 do
 local c_net_fakeloss = GetConVar("net_fakeloss")
 local net_fakeloss = 0
@@ -3821,6 +3822,8 @@ end
 
 
 end
+]]
+
 
 do
 -- ======================= Event Logger
