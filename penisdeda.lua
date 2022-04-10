@@ -57,7 +57,6 @@ require("dickwrap")
 require("enginepred")
 require("context")
 require("bsendpacket")
---require("cvar3")
 //PenisDeduration
 config["aim_master_toggle"] = false
 config["aim_onkey"] = false
@@ -76,7 +75,7 @@ config["aim_ignorefriends"] = false
 config["aim_ignoreadmins"] = false
 config["aim_ignorenoclip"] = false
 config["aim_ignoreteam"] = false
-config["aim_ignoreinvis"] = false
+config["aim_ignoreinvis"] = true
 config["aim_ignorebots"] = false
 config["aim_autofire"] = false
 config["aim_autofire_fast"] = false
@@ -139,6 +138,8 @@ config["aa_chams"] = false
 config["fa_chams"] = false
 config["antihit_act"] = false
 config["antihit_fd"] = false
+config["crimwalk"] = false
+
 
 config["esp_self_predict_me"] = false
 config["esp_self_dlight"] = false
@@ -289,7 +290,7 @@ config["hud_topline"] = false
 config["hud_topline_style"] = 1
 config["hud_bsp"] = false
 
-config["esp_render_mode"] = true
+config["esp_render_mode"] = false
 
 config["misc_autobunnyhop"] = false
 config["misc_autostrafe"] = false
@@ -449,6 +450,7 @@ config.keybinds["misc_warp_key"] = 0
 config.keybinds["antihit_fd_key"] = 0
 config.keybinds["airstack"] = 0
 config.keybinds["aim_autopeek"] = 0
+config.keybinds["crimwalkkey"] = 0
 --config.keybinds["aim_autopeek2"] = 0
 
 config["friends"] = {}
@@ -495,7 +497,17 @@ local ChamMaterials = {
 	["Galaxy"] = "Models/effects/comball_sphere",
 	["Water 2"] = "models/shadertest/shader3",
 	["Chrome"] = "debug/env_cubemap_model",
-
+	["Shiny"] = "models/shiny",
+	["Supreme"] = "random-supreme",
+	["VaporWave"] = "random-vaporwave",
+	["Rainbow"] = "color-arcoiris",
+	["Cloud"] = "color-blanco-transparente",
+	["Portal"] = "minecraft-portal",
+	["Random Map"] = "random-6",
+	["Marihuana"] = "random-marihuana",
+	["LEGO"] = "random-lego",
+	["Palm"] = "random-2",
+	["Green"] = "random-cuadriculado",
 }
 local oldposition = Vector(0,0,0)
 local CheatFonts = {"comfortaa", "Arial", "Bahnschrift", "Calibri", "Comic Sans MS", "Consolas", "Courier New", "Franklin Gothic Medium", "Impact", "Ink Free", "Microsoft Sans Serif", "Myanmar Text", "Segoe UI", "Tahoma", "Times New Roman", "Trebuchet MS", "Verdana"}
@@ -659,8 +671,6 @@ AddHook("ShutDown", RandomString(), function()
     render.SetRenderTarget()
 end )
 
-
-
 local renderv = render.RenderView
 local renderc = render.Clear
 local rendercap = render.Capture
@@ -818,7 +828,6 @@ local function CloseFrame()
 	RememberCursorPosition()
 	frame:Remove()
 	frame = false
-    topframe:Remove()
 end
 local function SaveConfig()
 	if cfgDropdown:GetSelected() == nil then return end	
@@ -904,7 +913,6 @@ end
 local function Unload()
 	if frame then
 		frame:Remove()
-		topframe:Remove()
 	end
 	if teamFilter then
 		teamFilter:Remove()
@@ -940,7 +948,6 @@ local function Unload()
 	cvars.RemoveChangeCallback("pd_setmat", "update_chams")
 	cvars.RemoveChangeCallback("pd_setxyzmat", "update_chams_xyz")
 	cvars.RemoveChangeCallback("pd_setoverlaymat", "update_chams_overlay")
-	--bsendpacket = true
 	print("Cheat was unloaded..")
 end
 
@@ -1687,26 +1694,7 @@ end
 --========================GUI Menu============================================--
 function HavocGUI()
 	files, dir = file.Find( "penisdeda/*.json", "DATA" )
- 
-    
-	topframe = vgui.Create("DFrame")
-	topframe:SetSize(ScrW(), 25)
-	topframe:SetPos(0, 0)
-	topframe:SetTitle("")
-	topframe:MakePopup()
-	topframe:ShowCloseButton(false)
-	topframe:SetDraggable(false)
-	topframe:SetIcon("icon16/emoticon_happy.png")
-	topframe.Paint = function(self,w,h)
-	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
-    draw.RoundedBox( 3, 0, 0, w, h, Color(0,0,0,255) )
-	draw.RoundedBox( 3, 1, 1, w-2, h-2, Color(35,35,40,255) )
-	draw.RoundedBox( 3, 0, 0, w, 4, Color(0,0,0,255) )
-	draw.RoundedBox( 3, 1, 1, w-2, 2, Color(hsv.r,hsv.g,hsv.b) )
-	Wrad(25,1,w-50,2)
-	end
-	
- 
+
 	frame = vgui.Create("DFrame")
 	frame:SetSize(780, 650)
 	if frameX == nil or frameY == nil then frame:Center() else frame:SetPos(frameX, frameY) end
@@ -1812,16 +1800,53 @@ function HavocGUI()
 	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
 	Wrad(15,16,195,5)
 	end
-    --local co_aa = vgui.Create( "DPanel", AIM_SCROLL)
-    --co_aa:SetPos( 517, 400 ) 
-    --co_aa:SetSize( 250, 100 )
-	--co_aa.Paint = function(self,w,h)
-	--local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
-	--draw.SimpleText( "Anti-Aim:", "TargetID", 0, 0, color_white )
-	--draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
-	--draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
-	--Wrad(15,16,195,5)
-	--end
+    --====================== Anti-Aim =========================--
+	local AA_SCROLL = vgui.Create( "DScrollPanel", sheet )
+    AA_SCROLL:Dock( FILL )
+    local AA_SCROLLS = AA_SCROLL:GetVBar()
+	function AA_SCROLLS:Paint(w, h)
+    draw.RoundedBox(0, 0, 0, w, h, Color(15, 15, 15, 200))
+	end
+	function AA_SCROLLS.btnUp:Paint(w, h)
+    draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
+	end
+	function AA_SCROLLS.btnDown:Paint(w, h)
+	draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
+	end
+	function AA_SCROLLS.btnGrip:Paint(w, h)
+    draw.RoundedBox( 3, 0, 0, w, h, Color(0,0,0,255) )
+	draw.RoundedBox( 3, 1, 1, w-2, h-2, Color(45,45,50,255) )
+	end	
+    local co_aa = vgui.Create( "DPanel", AA_SCROLL)
+    co_aa:SetPos( 3, 3 ) 
+    co_aa:SetSize( 250, 400 )
+	co_aa.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Anti-Aim:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end
+    local co_fa = vgui.Create( "DPanel", AA_SCROLL)
+    co_fa:SetPos( 260, 3 ) 
+    co_fa:SetSize( 250, 400 )
+	co_fa.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Fake Angles:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end
+    local co_otheraa = vgui.Create( "DPanel", AA_SCROLL)
+    co_otheraa:SetPos( 517, 3 ) 
+    co_otheraa:SetSize( 250, 400 )
+	co_otheraa.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Other:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end
 	--======================= Player ==========================--
 	local VISUAL_SCROLL = vgui.Create( "DScrollPanel", sheet )
     VISUAL_SCROLL:Dock( FILL )
@@ -1881,7 +1906,7 @@ function HavocGUI()
 	end
     local pl_performance = vgui.Create( "DPanel", VISUAL_SCROLL)
     pl_performance:SetPos( 517, 115 ) 
-    pl_performance:SetSize( 250, 200 )
+    pl_performance:SetSize( 250, 260 )
 	pl_performance.Paint = function(self,w,h)
 	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
 	draw.SimpleText( "Performance:", "TargetID", 0, 0, color_white )
@@ -2146,6 +2171,7 @@ function HavocGUI()
 	end  
 	
     sheet:AddSheet( "Combat", AIM_SCROLL, "icon16/gun.png", false, false, nil)
+	sheet:AddSheet( "Anti-Aim", AA_SCROLL, "icon16/male.png", false, false, nil)
 	sheet:AddSheet( "Player", VISUAL_SCROLL, "icon16/group.png", false, false, nil)
 	sheet:AddSheet( "ESP Settings", ESPS_SCROLL, "icon16/style_edit.png", false, false, nil)
 	sheet:AddSheet( "Self", SELF_SCROLL, "icon16/eye.png", false, false, nil)
@@ -2209,9 +2235,32 @@ function HavocGUI()
 	CreateCheckBox("Enable backtracking", 5, 25, "backtrack_enable", false, co_bt)
 	CreateSlider("Backtrack Amount", 2, 45, "backtrack_amount", 0, 200, 0, co_bt)	
 	
-	--CreateCheckBox("Enable Anti-Aim", 5, 25, "backtrack_enable", false, co_aa)
-	
-	--CreateCheckBox("Enable Anti-Aim", 5, 25, "backtrack_enable", false, co_aa)
+	--Anti-Aim
+	CreateCheckBox("Enable Anti-Aim", 10, 30, "aa_enable", false, co_aa)
+	CreateDropdown("Pitch", 10, 50, {"None", "Zero", "Down", "Up", "Fake Down", "Fake Up", "Random", "Custom"}, "aa_pitch", co_aa)
+	CreateDropdown("Yaw", 10, 90, {"None", "Backward", "Forward", "Left", "Right", "Jitter", "Spin", "Custom"}, "aa_yaw", co_aa)
+	CreateSlider("Yaw Add", 2, 170, "aa_yaw_add", 0, 180, 0, co_aa)
+	CreateSlider("Custom Yaw", 2, 210, "aa_cyaw", 0, 180, 0, co_aa)
+	CreateSlider("Custom Pitch", 2, 250, "aa_cpitch", 0, 180, 0, co_aa)
+	CreateSlider("Jitter Range", 2, 290, "aa_jitter_range", 0, 180, 0, co_aa)
+	--Fake-Angles
+	CreateCheckBox("Enable Fake Angles", 10, 30, "fa_enable", false, co_fa)
+	CreateDropdown("Fake Pitch", 10, 50, {"None", "Zero", "Down", "Up", "Fake Down", "Fake Up", "Random", "Custom"}, "fa_pitch", co_fa)
+	CreateDropdown("Fake Yaw", 10, 90, {"None", "Backward", "Forward", "Left", "Right", "Jitter", "Spin", "Custom"}, "fa_yaw", co_fa)
+	CreateSlider("Yaw Add", 2, 170, "fa_yaw_add", 0, 180, 0, co_fa)
+	CreateSlider("Custom Yaw", 2, 210, "fa_cyaw", 0, 180, 0, co_fa)
+	CreateSlider("Custom Pitch", 2, 250, "fa_cpitch", 0, 180, 0, co_fa)
+	CreateSlider("Jitter Range", 2, 290, "fa_jitter_range", 0, 180, 0, co_fa)
+	CreateDropdown("LBY", 10, 130, {"None", "LBY Normal", "LBY Breaker"}, "aa_lby", co_fa)
+	--AA Chams
+	CreateCheckBox("Fake Angle Chams", 10, 30, "aa_chams", false, co_otheraa)
+	CreateCheckBox("Real Angle Chams", 10, 50, "fa_chams", false, co_otheraa)
+	CreateCheckBox("Fake Duck", 10, 70, "antihit_fd", false, co_otheraa)
+	CreateKeybind(140, 70, "antihit_fd_key", co_otheraa)
+	CreateCheckBox("Dance Spam", 10, 90, "antihit_act", false, co_otheraa)
+	CreateDropdown("Act", 10, 110, {"Dance", "Robot", "Sex", "Bow", "Wave", "Zombie", "Disagree", "Forward", "Pers", "Salute"}, "antihit_act_type", co_otheraa)	
+	CreateCheckBox("Crimwalk", 10, 150, "crimwalk", false, co_otheraa)
+	CreateKeybind(140, 150, "crimwalkkey", co_otheraa)
 	
 	CreateCheckBox("Bounding Box", 5, 25, "esp_player_box", true, pl_main, 165)
 	CreateDropdown("Box Style", 5, 45, {"Line | Box", "Line | Corners", "3D Box", "Neon Red", "Neon Blue", "Box | Default", "Box | Outlined"}, "esp_player_box_mode", pl_main)
@@ -2459,17 +2508,17 @@ function HavocGUI()
 	CreateButton("Delete Config", "Delete Config.", DeleteConfig, 10, 150, cfg_tab)
 	CreateTextInput("Config Name", "config_name", 10, 175, 16, cfg_tab)
 
-	CreateLabel("Unload Key", 10, 225, cfg_tab)
-	CreateKeybind(10, 245, "panic_key", cfg_tab)
-    CreateDropdown("Server", 10, 265, {"Comunity", "D3S HvH"}, "gameserver", cfg_tab)
+	CreateLabel("Unload Key", 10, 195, cfg_tab)
+	CreateKeybind(10, 210, "panic_key", cfg_tab)
+    CreateDropdown("Server", 10, 230, {"Comunity", "D3S HvH"}, "gameserver", cfg_tab)
 	
     	
-	--TOP Buttons
-	CreateButton("Entity List", "Open Entity List.", CreateEntityList, 25, 3, topframe)	
-	CreateButton("Player List", "Open the player list menu.", CreatePlayerList, 180, 3, topframe)
-	CreateButton("Filter Teams", "The filter will be applied when the filter menu is closed. This filter applies to ESP and Aimbot.", CreateFilterPanel, 330, 3, topframe)
-    CreateButton("ESP Mode " .. GetRenderMode(), "If your ESP is not working on a server try changing this to unsafe. (THIS SHOULD ALWAYS BE PROTECTED WHEN POSSIBLE TO MAXIMIZE SCREENGRAB PROTECTION)", SwapRender, 475, 3, topframe)	
-	CreateButton("Unload", "Fully unloads the cheat.", Unload, ScrW() - 150, 3, topframe)  
+	--Other shit
+	CreateButton("Entity List", "Open Entity List.", CreateEntityList, 10, 70, wrld_ents)	
+	CreateButton("Player List", "Open the player list menu.", CreatePlayerList, 5, 190, pl_performance)
+	--CreateButton("Filter Teams", "The filter will be applied when the filter menu is closed. This filter applies to ESP and Aimbot.", CreateFilterPanel, 330, 3, topframe)
+    CreateButton("ESP Mode " .. GetRenderMode(), "If your ESP is not working on a server try changing this to unsafe. (THIS SHOULD ALWAYS BE PROTECTED WHEN POSSIBLE TO MAXIMIZE SCREENGRAB PROTECTION)", SwapRender, 5, 215, pl_performance)	
+	CreateButton("Unload", "Fully unloads the cheat.", Unload, 10, 275, cfg_tab)  
 	
 	if teamFilterWasOpen then
 		CreateFilterPanel()
@@ -3099,13 +3148,6 @@ local function DoESP()
 		draw.SimpleText( "卐", "Trebuchet24", ScrW() / 2, ScrH() / 2, color_white, TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER )
 		end
 		end
-		--if config["hud_bsp"] then
-        --    if bsendpacket then
-		--        draw.SimpleText("PACKETS","Trebuchet24",5,500,Color(255,25,25),TEXT_ALIGN_LEFT,TEXT_ALIGN_TOP)
-		--    else
-		--       draw.SimpleText("PACKETS","Trebuchet24",5,500,Color(25,255,25),TEXT_ALIGN_LEFT,TEXT_ALIGN_TOP)
-		--    end
-		--end
 		if config["hud_keystrokes"] then
 		if config["hud_keystrokes_style"] == 1 then
 		AddKeyRectangle("W", IN_FORWARD, 35,550)
@@ -3762,6 +3804,25 @@ end)
 
 end
 
+do
+local c_net_fakeloss = GetConVar("net_fakeloss")
+local net_fakeloss = 0
+net_fakeloss = 99
+c_net_fakeloss:SetValue(net_fakeloss)
+if config["gameserver"] == 2 then
+    require("cvar3")
+end
+if config["misc_pairstack"] && config["gameserver"] == 2 then
+if input.IsKeyDown(config.keybinds["airstack"]) then
+    c_net_fakeloss:SetValue(net_fakeloss)
+else
+    c_net_fakeloss:SetValue(0)
+end
+end
+
+
+
+end
 
 do
 -- ======================= Event Logger
@@ -4046,7 +4107,7 @@ local function DrawFakeLagModel()
     cam.End3D()
 end
 
-fakeangles = Angle(0,0,0)
+fakeanglesss = Angle(0,0,0)
 AntiAimAngle = Angle(0,0,0)
 AntiAimFakeAngle = Angle(0,0,0)
 fakeModelChams = NULL
@@ -4480,7 +4541,153 @@ AddHook("PreDrawHUD", RandomString(), EndOfLightingMod)
 
 end
 
---=================================== Camera Modifications
+local Crimwalk
+
+do
+
+local crimwalkcombos = {
+	
+}
+
+local holdtypes = {
+	low = {
+		{"ar2", 4}, {"smg", 4}, {"shotgun", 3}, {"crossbow", 3},
+		{"pistol", 5}, {"revolver", 4}, {"physgun", 2}, {"melee", 3},
+		{"grenade", 4}, {"rpg", 1}, {"camera", 4}
+	},
+	high = {
+		{"ar2", 3}, {"smg", 3}, {"shotgun", 3}, {"crossbow", 3},
+		{"pistol", 4}, {"revolver", 5}, {"physgun", 2}, {"melee", 5},
+		{"grenade", 5}, {"rpg", 5}, {"camera", 4}
+	}
+}
+
+local angles = {
+	{89, -89},
+	{180.00000762939, -180},
+	{89, -180},
+	{180.00000762939, 180.00008},
+	{89, 180.00008}
+}
+
+local function AddCombo(q, a1, a2, h1, h2)
+	crimwalkcombos[#crimwalkcombos + 1] = {
+		q = q,
+		a1 = a1, a2 = a2,
+		h1 = h1, h2 = h2
+	}
+end
+
+
+for i = 1, #holdtypes.low do
+	local hl = holdtypes.low[i]
+	for j = 1, #holdtypes.high do
+		local hj = holdtypes.high[j]
+		for k = 1, #angles do
+			local a = angles[k]
+			AddCombo(hl[2] + hj[2], a[1], a[2], hl[1], hj[1])
+		end
+	end
+end
+
+local function GetCrimwalk()
+	local weaps = me:GetWeapons()
+	local holdtypes = {}
+	
+	for i = 1, #weaps do
+		local weap = weaps[i]
+		local weapht = weap:GetHoldType()
+		
+		if !holdtypes[weapht] then
+			holdtypes[weapht] = {weap}
+			continue
+		end
+		
+		local ht = holdtypes[weapht]
+		ht[#ht + 1] = weap
+	end
+	
+	local available = {}
+	
+	for i = 1, #crimwalkcombos do
+		local v = crimwalkcombos[i]
+		local h1, h2 = v.h1, v.h2
+		
+		if !holdtypes[h1] or !holdtypes[h2] then
+			continue
+		end
+		
+		available[#available + 1] = v
+	end
+	
+	local qmax = 0
+	for i = 1, #available do
+		local q = available[i].q
+		if q > qmax then
+			qmax = q
+		end
+	end
+	
+	local bestcrimwalks = {}
+	local bestq = 0
+	
+	for i = 1, #available do
+		local v = available[i]
+		
+		if v.q == qmax then
+			local weaps1 = holdtypes[v.h1]
+			local weaps2 = holdtypes[v.h1]
+			
+			v.w1 = weaps1[mrandom(#weaps1)]
+			v.w2 = weaps2[mrandom(#weaps2)]
+			
+			bestcrimwalks[#bestcrimwalks + 1] = v
+			bestq = v.q
+		end
+	end
+	
+	return bestcrimwalks
+end
+
+local ci, nextchange = 1, 0
+function Crimwalk(cmd)
+	local crimwalks = GetCrimwalk()
+	
+	if #crimwalks == 0 then return end
+	
+	if CurTime() > nextchange then
+		ci = mrandom(1, #crimwalks)
+		nextchange = CurTime() + 0.3
+	end
+	
+	if ci > #crimwalks then
+		ci = mrandom(1, #crimwalks)
+	end
+	
+	local cw = crimwalks[ci]
+	
+	cmd:SelectWeapon(cmd:CommandNumber() % 2 == 0 and cw.w1 or cw.w2)
+	cmd:SetViewAngles(Angle(cmd:CommandNumber() % 2 == 0 and cw.a1 or cw.a2, GetPlayerYawInv() - (mrandom(0, 1) == 0 and -45 or 45), 0))
+	
+	if cmd:CommandNumber() % 2 == 0 then
+		cmd:SetButtons(bit.bor(cmd:GetButtons(), IN_DUCK))
+	end
+	
+	if cmd:CommandNumber() % 4 == 0 then
+		local vel = me:GetVelocity()
+		local spd = vel:Length2D()
+		local dir = vel:Angle()
+		
+		dir.y = cmd:GetViewAngles().y - dir.y
+		
+		local negDir = dir:Forward() * -spd
+
+		cmd:SetForwardMove(negDir.x)
+		cmd:SetSideMove(negDir.y)
+	end
+end
+
+end
 
 do
 
@@ -5035,8 +5242,6 @@ AddHook("Move", RandomString() , function()
     if(!IsFirstTimePredicted()) then return end
 	servertime = CurTime()
 end)
---===========Nospread/Norecoil
-
 local cones = {};
 local nullvec = Vector() * -1;
 GAMEMODE["EntityFireBullets"] = function(self, p, data)
@@ -5106,49 +5311,27 @@ local function KnifeBotik( ucmd )
 end
 local function AAS( cmd ) 
     if config["aa_enable"] then
-	if(!fakeangles) then fakeangles = cmd:GetViewAngles(); end
-	fakeangles = fakeangles + Angle(cmd:GetMouseY() * .023, cmd:GetMouseX() * -.023, 0);
-	fakeangles.x = math.NormalizeAngle(fakeangles.x);
-	fakeangles.p = math.Clamp(fakeangles.p, -89, 89);
+	if(!fakeanglesss) then fakeanglesss = cmd:GetViewAngles(); end
+	fakeanglesss = fakeanglesss + Angle(cmd:GetMouseY() * .023, cmd:GetMouseX() * -.023, 0);
+	fakeanglesss.x = math.NormalizeAngle(fakeanglesss.x);
+	fakeanglesss.p = math.Clamp(fakeanglesss.p, -89, 89);
 	if(cmd:CommandNumber() == 0) then
-		cmd:SetViewAngles(fakeangles);
+		cmd:SetViewAngles(fakeanglesss);
 		return;
     end
 	end
 end
-
-
 local function AAFM( cmd )
     if config["aa_enable"] then
     local move = Vector( cmd:GetForwardMove(), cmd:GetSideMove(), cmd:GetUpMove() )
     local speed = math.sqrt( move.x * move.x + move.y * move.y )
     local mang = move:Angle()
-    local yaw = math.rad( cmd:GetViewAngles().y - fakeangles.y + mang.y )
+    local yaw = math.rad( cmd:GetViewAngles().y - fakeanglesss.y + mang.y )
     cmd:SetForwardMove( (math.cos(yaw) * speed) * 1 )
     cmd:SetSideMove( math.sin(yaw) * speed )
 	end
 end
-
-local function EvadeBullets(ucmd) 
-	for k, v in pairs(player.GetAll()) do
-	    if v:IsValid() and v != LocalPlayer() then
-	        local Trace = {}
-	        Trace.start  = LocalPlayer():EyePos() + Vector(0, 0, 32)
-	        Trace.endpos = v:EyePos() + Vector(0, 0, 32)
-	        Trace.filter = {v, LocalPlayer()}
-	        TraceRes = util.TraceLine(Trace)
-	        if !TraceRes.Hit then
-	            if (v:EyeAngles():Forward():Dot((LocalPlayer():EyePos() - v:EyePos())) > math.cos(math.rad(45))) then
-	                bSendPacket = (ucmd:CommandNumber() % 15) < 3
-	            end
-	        end
-	    end
-	end
-end
-
-
 AddHook("CreateMove", RandomString(), function(ucmd)
-if config["aa_enable"] then
 	if config["aa_enable"] then
 	    Antihit(ucmd) 
 	else
@@ -5156,23 +5339,20 @@ if config["aa_enable"] then
 	end
     AAS(ucmd)
     AAFM(ucmd)
-else
-bSendPacket = true
-end
-	if( config["misc_ropes"] and me:KeyDown(IN_ATTACK2)) then
-
-        local aids = Angle(math.random(-90, 90), math.random(-180, 180), 0)
-
-        aids:Normalize()
-
-        ucmd:SetViewAngles(aids)
-
-    if me:KeyDown(IN_ATTACK2) then ucmd:RemoveKey(IN_ATTACK2) end
-
-    end
-end) 
+end)
 
 AddHook("CreateMove", RandomString(), function(ucmd, world_click)
+    if config["crimwalk"] then
+	    if input.IsKeyDown(config.keybinds["freecam_key"]) then
+	        Crimwalk(ucmd)
+		end
+	end
+	if( config["misc_ropes"] and me:KeyDown(IN_ATTACK2)) then
+        local aids = Angle(math.random(-90, 90), math.random(-180, 180), 0)
+        aids:Normalize()
+        ucmd:SetViewAngles(aids)
+    if me:KeyDown(IN_ATTACK2) then ucmd:RemoveKey(IN_ATTACK2) end
+    end
     FakeCrouch(ucmd)
     if config["aim_interp"] then
     RunConsoleCommand("cl_interp", 0)
@@ -5183,14 +5363,6 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 	RunConsoleCommand("cl_updaterate", 100000)
 	RunConsoleCommand("cl_interp_ratio", 1)
     end
-    --[[if config["aim_idealtick"] then
-    local tickrate = tostring(math.Round(1 / engine.TickInterval()))
-	RunConsoleCommand("cl_cmdrate", tickrate)
-	RunConsoleCommand("cl_updaterate", tickrate)
-    else
-	RunConsoleCommand("cl_cmdrate", 100000)
-	RunConsoleCommand("cl_updaterate", tickrate)
-    end]]
     if config["aim_facestab"] then
         ForceBackStap(ucmd)
 	end
@@ -5228,16 +5400,14 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 		        bSendPacket = (ucmd:CommandNumber() % config["bsp_fake_lags_value"]) < 3
 		    end
 	    end
-	elseif config["bsp_evadebullets"] then
-	EvadeBullets(ucmd)
-	else
-	    bSendPacket = true
     end
     if config["antihit_fd"] then
         if input.IsKeyDown(config.keybinds["antihit_fd_key"]) then
-		    bSendPacket = (ucmd:CommandNumber() % 32) < 3
-			ucmd:SetButtons(bit.bor(ucmd:GetButtons(), 4));
-		    if LocalPlayer():KeyDown(IN_DUCK) then ucmd:RemoveKey(IN_DUCK) end
+	        if !bSendPacket then
+                RunConsoleCommand("-duck")
+            elseif bSendPacket then
+                RunConsoleCommand("+duck")
+            end	    
 		end
     end
 	if config["aim_silent"] == 2 then
@@ -5263,8 +5433,6 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 			ucmd:RemoveKey(IN_SPEED)
 		end
 	end
-	
-	
 	if config["esp_other_freecam"] then
 		if config.keybinds["freecam_key"] == 0 then 
 			NoclipOn = true
@@ -5453,8 +5621,6 @@ AddHook("CreateMove", RandomString(), function(ucmd, world_click)
 	end
 	end
 	end
-	--Aimbot
-	--EnginePrediction()
 	if config["aim_master_toggle"] then
 		if !config["aim_onkey"] || ( config.keybinds["aim_onkey_key"] != 0 && ( ( config.keybinds["aim_onkey_key"] >= 107 && config.keybinds["aim_onkey_key"] <= 113 ) && input.IsMouseDown(config.keybinds["aim_onkey_key"]) ) || input.IsKeyDown(config.keybinds["aim_onkey_key"]) ) && !frame then
 			if !LocalPlayer():Alive() then return end
@@ -5687,13 +5853,6 @@ local randomplayer = player.GetAll()[math.random(#player.GetAll())]
 if config["misc_fnamechanger"]  then
     _fhook_changename(randomplayer:Name() .. " ")
 end]]
-if input.IsKeyDown(config.keybinds["airstack"]) && config["misc_pairstack"] then
-if config["gameserver"] == 2 then
-    RunConsoleCommand("net_fakeloss"," 99")
-else
-    RunConsoleCommand("net_fakeloss", "0")
-end
-end
 end)
 
 do
@@ -6037,17 +6196,17 @@ local real_plus = true
 local fake_switch = 0
 local fake_plus = true
 bSendPacket = true
-fakeangles = Angle(0,0,0)
+fakeanglesss = Angle(0,0,0)
 function Antihit( cmd )
 	if config["aa_enable"] then
-        local yaw = 0
+        local yawq = 0
         local pich = 0 
 
         local fakeyaw = 0
         local fakepich = 0
         --== PITCH ==--
 	    if config["aa_pitch"] == 1 then 
-		pich = fakeangles.x 
+		pich = fakeanglesss.x 
 		elseif config["aa_pitch"] == 2 then	
 		pich = 0 
 		elseif config["aa_pitch"] == 3 then	
@@ -6065,27 +6224,27 @@ function Antihit( cmd )
 		end
 	    --== YAW ==--
 		if config["aa_yaw"] == 1 then	
-		yaw = fakeangles.y 
+		yawq = fakeanglesss.y 
 		elseif config["aa_yaw"] == 2 then	
-		yaw = fakeangles.y-180 
+		yawq = fakeanglesss.y-180 
 		elseif config["aa_yaw"] == 3 then	
-		yaw = fakeangles.y
+		yawq = fakeanglesss.y
 		elseif config["aa_yaw"] == 4 then	
-		yaw = fakeangles.y-90
+		yawq = fakeanglesss.y-90
 		elseif config["aa_yaw"] == 5 then	
-		yaw = fakeangles.y+90
+		yawq = fakeanglesss.y+90
 		elseif config["aa_yaw"] == 6 then	
-		yaw = mrandom(-config["aa_jitter_range"],config["aa_jitter_range"])
+		yawq = mrandom(-config["aa_jitter_range"],config["aa_jitter_range"])
 		elseif config["aa_yaw"] == 7 then	
-		yaw = mNormalizeAng(CurTime() * 360)
+		yawq = mNormalizeAng(CurTime() * 360)
 		elseif config["aa_yaw"] == 8 then	
-		yaw = config["aa_cyaw"]
+		yawq = config["aa_cyaw"]
 		end
 		
 		--======================= Fake Angles =======================--
 		
 	    if config["fa_pitch"] == 1 then 
-		fakepich = fakeangles.x 
+		fakepich = fakeanglesss.x 
 		elseif config["fa_pitch"] == 2 then	
 		fakepich = 0 
 		elseif config["fa_pitch"] == 3 then	
@@ -6103,15 +6262,15 @@ function Antihit( cmd )
 		end
 	    --== YAW ==--
 		if config["fa_yaw"] == 1 then	
-		fakeyaw = fakeangles.y 
+		fakeyaw = fakeanglesss.y 
 		elseif config["fa_yaw"] == 2 then	
-		fakeyaw = fakeangles.y-180 
+		fakeyaw = fakeanglesss.y-180 
 		elseif config["fa_yaw"] == 3 then	
-		fakeyaw = fakeangles.y
+		fakeyaw = fakeanglesss.y
 		elseif config["fa_yaw"] == 4 then	
-		fakeyaw = fakeangles.y-90
+		fakeyaw = fakeanglesss.y-90
 		elseif config["fa_yaw"] == 5 then	
-		fakeyaw = fakeangles.y+90
+		fakeyaw = fakeanglesss.y+90
 		elseif config["fa_yaw"] == 6 then	
 		fakeyaw = mrandom(-config["fa_jitter_range"],config["fa_jitter_range"])
 		elseif config["fa_yaw"] == 7 then	
