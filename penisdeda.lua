@@ -57,6 +57,7 @@ require("dickwrap")
 require("enginepred")
 require("context")
 require("bsendpacket")
+require("cvar3")
 //PenisDeduration
 config["aim_master_toggle"] = false
 config["aim_onkey"] = false
@@ -3809,9 +3810,6 @@ local c_net_fakeloss = GetConVar("net_fakeloss")
 local net_fakeloss = 0
 net_fakeloss = 99
 c_net_fakeloss:SetValue(net_fakeloss)
-if config["gameserver"] == 2 then
-    require("cvar3")
-end
 if config["misc_pairstack"] && config["gameserver"] == 2 then
 if input.IsKeyDown(config.keybinds["airstack"]) then
     c_net_fakeloss:SetValue(net_fakeloss)
