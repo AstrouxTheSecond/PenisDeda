@@ -2143,6 +2143,33 @@ function HavocGUI()
 	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
 	Wrad(15,16,195,5)
 	end
+	--====================== Other =========================--
+	local OTHER_SCROLL = vgui.Create( "DScrollPanel", sheet )
+    OTHER_SCROLL:Dock( FILL )
+    local OTHER_SCROLLS = OTHER_SCROLL:GetVBar()
+	function OTHER_SCROLLS:Paint(w, h)
+    draw.RoundedBox(0, 0, 0, w, h, Color(15, 15, 15, 200))
+	end
+	function OTHER_SCROLLS.btnUp:Paint(w, h)
+    draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
+	end
+	function OTHER_SCROLLS.btnDown:Paint(w, h)
+	draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
+	end
+	function OTHER_SCROLLS.btnGrip:Paint(w, h)
+    draw.RoundedBox( 3, 0, 0, w, h, Color(0,0,0,255) )
+	draw.RoundedBox( 3, 1, 1, w-2, h-2, Color(45,45,50,255) )
+	end
+	local others1_tab = vgui.Create( "DPanel", OTHER_SCROLL)
+    others1_tab:SetPos( 3, 3 ) 
+    others1_tab:SetSize( 250, 500 )
+	others1_tab.Paint = function(self,w,h)
+	local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+	draw.SimpleText( "Windows:", "TargetID", 0, 0, color_white )
+	draw.RoundedBox( 3, 0, 16, w, h-16, Color(55,55,60,255) )
+	draw.RoundedBox( 3, 0, 16, w, 5, Color(hsv.r,hsv.g,hsv.b) )
+	Wrad(15,16,195,5)
+	end 
 	--====================== Config =========================--
 	local CFG_SCROLL = vgui.Create( "DScrollPanel", sheet )
     CFG_SCROLL:Dock( FILL )
@@ -2178,6 +2205,7 @@ function HavocGUI()
 	sheet:AddSheet( "Self", SELF_SCROLL, "icon16/eye.png", false, false, nil)
 	sheet:AddSheet( "World", WORLD_SCROLL, "icon16/world.png", false, false, nil)
 	sheet:AddSheet( "Misc", MISC_SCROLL, "icon16/page_white_stack.png", false, false, nil)
+	sheet:AddSheet( "Other", OTHER_SCROLL, "icon16/application_cascade.png", false, false, nil)
 	sheet:AddSheet( "Config", CFG_SCROLL, "icon16/disk.png", false, false, nil)
 	--=========== sheet ===========--
     sheet:SwitchToName(activeTab)
@@ -2489,6 +2517,9 @@ function HavocGUI()
 	CreateCheckBox("Airstack", 10, 150, "misc_pairstack", false, misc_packets)
 	CreateKeybind(140, 150, "airstack", misc_packets)
 	
+	CreateButton("Open Logs", "Open log windows.", OpenLogsWindow, 5, 25, others1_tab)
+	CreateButton("Calculator", "Basic Calculator.", OpenCalculator, 5, 50, others1_tab)
+
     CreateLabel("Menu Keybind", 10, 30, cfg_tab)
 	CreateKeybind(140, 30, "menu_key", cfg_tab)
 	local usercfgs = {}
@@ -2603,10 +2634,381 @@ AddHook("Think", RandomString(), function()
 		Unload()
 	end
 end)
+
+--=================================== Other
 do
+
+function OpenLogsWindow()
+
+
+end
+
+function OpenCalculator()
+    if !cframe then 
+
+		local cframe = vgui.Create("DFrame") 
+		cframe:SetPos(255, 255)  
+		cframe:SetSize(115, 245)
+		cframe:SetTitle("") 
+		cframe:MakePopup()
+		cframe:ShowCloseButton(false)
+
+		cframe.Paint = function(self,w,h)
+			local hsv = HSVToColor( ( CurTime() * 50 ) % 360, 1, 1 )
+			surfSetFont("Trebuchet24")
+			local tw,th = surfGetTextSize("Calculator")
+			draw.RoundedBox(0,0,0,w,h,Color(45,45,50))
+			draw.SimpleText("Culculator","Trebuchet18",5,6,color_white,TEXT_ALIGN_LEFT,TEXT_ALIGN_TOP)
+			draw.RoundedBox(0,1,1,w,4,Color(hsv.r,hsv.g,hsv.b))
+			Wrad(1,1,w,4)
+			surfSetDrawColor(Color(2,2,2))
+			surface.DrawOutlinedRect(0,0,w,h,1)
+			surface.DrawOutlinedRect(5,30,w-10,h-35,1)
+		end
+
+		local cbutton = vgui.Create( "DButton", cframe ) 
+		cbutton:SetText( "" )		
+		cbutton:SetPos( 93, 7 )					
+		cbutton:SetSize( 20, 20 )					
+		cbutton.DoClick = function()				
+			cframe:Close()	
+		end
+
+		cbutton.Paint = function(self,w,h)				
+			draw.RoundedBox(0,0,0,w,h,Color(255,88,88))
+			surfSetDrawColor(Color(5,5,5))
+			surface.DrawOutlinedRect(0,0,w,h,1)
+
+
+            draw.SimpleText("X","BudgetLabel",7,3,Color(245,245,245),TEXT_ALIGN_LEFT,TEXT_ALIGN_TOP)
+		end
+
+		local entry = vgui.Create( "DTextEntry", cframe ) 
+	    entry:SetSize(95,20)
+		entry:SetPos(8,32)
+		entry:SetNumeric(false)
+		entry:SetEditable(false)
+		entry:SetFont("Trebuchet18")
+
+		-- number buttons
+		local num = 0
+		local memoryplus = 0
+		local memorymin = 0 
+		local memory = 0
+		local memcheck = 0
+		local check = 0 
+		local operation = ""
+		local value2 = 0
+		local value1 = 0
+		local posx = 10
+		local posy = 180
+		entry:SetValue( "0" )
+		for i = 1, 9 do
+			-- print( "Building button " .. i )
+			local calc_but = vgui.Create( "DButton", cframe )
+			calc_but:SetSize( 20, 20 )
+			calc_but:SetPos( posx, posy )
+			calc_but:SetText( i )
+			calc_but.DoClick = function()
+				memcheck = 0
+				if check == 1 then check = 0 entry:SetValue( 0 ) end
+				num = entry:GetValue()
+				if num == "0" then
+					entry:SetValue( i )
+				else
+					entry:SetValue( num .. i )
+				end
+				-- print( "value 2 " .. value )
+			end
+			
+			posx = posx + 25
+			if posx > 75 then
+				posx = 10
+			end
+			
+			if i == 3 then 
+				posy = 155
+			elseif i == 6 then
+				posy = 130
+			end
+		end
+		
+		local zero_but = vgui.Create( "DButton", cframe )
+		zero_but:SetSize( 45, 20 )
+		zero_but:SetPos( 10, 205 )
+		zero_but:SetText( 0 )
+		zero_but.DoClick = function()
+			memcheck = 0
+			if check == 1 then check = 0 entry:SetValue( 0 ) end
+			num = entry:GetValue()
+			-- print( "value " .. value )
+			-- print( "num " .. num )
+			-- print( "i " .. 0 ) 
+			if num == "0" then
+				entry:SetValue( 0 )
+			else
+				entry:SetValue( num .. 0 )
+			end
+		end
+		
+		
+		-- memory function buttons 
+		
+		local mshow_but = vgui.Create( "DButton", cframe )
+		mshow_but:SetSize( 20, 20 )
+		mshow_but:SetPos( 10, 55 )
+		mshow_but:SetText( "MR" )
+		mshow_but.DoClick = function()
+			if tonumber( memory ) == 0 then	 -- set memory value
+				if isnumber( tonumber( entry:GetValue())) == true then
+					memory = tonumber( entry:GetValue() )
+				else
+					memory = 0 
+				end
+				print( "Added " .. memory .. " to memory" )
+			else
+				if memcheck == 1 then 	-- clear memory
+					print( "Cleared calc memory!" )
+					entry:SetValue( 0 )
+					num = 0
+					memory = 0 
+					memcheck = 0
+					memorymin = 0 
+					memoryplus = 0
+				elseif memcheck == 0 then 	-- set text to value
+					entry:SetValue( memory )
+					memcheck = 1
+				end
+			end
+		end
+		
+		local mplus_but = vgui.Create( "DButton", cframe )
+		mplus_but:SetSize( 20, 20 )
+		mplus_but:SetPos( 35, 55 )
+		mplus_but:SetText( "M+" )
+		mplus_but.DoClick = function()
+			memcheck = 0
+			if entry:GetValue() == 0 or entry:GetValue() == "0" then
+			//pass
+			else
+				if memoryplus == 0 then 
+					if isnumber(tonumber( entry:GetValue() )) == true then
+						num = tonumber( entry:GetValue() )
+					else
+						num = 0 
+					end
+					memoryplus = num
+				else 
+					num = memoryplus
+				end
+			end
+			-- if isstring( memory ) == true then memory = 0 end
+			memory = memory + num 
+			entry:SetValue( memory )
+		end
+		
+		local mmin_but = vgui.Create( "DButton", cframe )
+		mmin_but:SetSize( 20, 20 )
+		mmin_but:SetPos( 60, 55 )
+		mmin_but:SetText( "M-" )
+		mmin_but.DoClick = function()
+			memcheck = 0
+			if entry:GetValue() == 0 or entry:GetValue() == "0" then
+			//pass
+			else
+				if memorymin == 0 then 
+					if isnumber(tonumber( entry:GetValue() )) == true then
+						num = tonumber( entry:GetValue() )
+					else
+						num = 0 
+					end
+					memorymin = num
+				else 
+					num = memorymin
+				end
+			end
+			
+			memory = memory - num 
+			entry:SetValue( memory )
+			-- end
+		end
+		
+		// special function buttons now with more filler 
+		
+		
+		
+		local rad_but = vgui.Create( "DButton", cframe )
+		rad_but:SetSize( 20, 20 )
+		rad_but:SetPos( 85, 80 )
+		rad_but:SetText( "√" )
+		rad_but.DoClick = function()
+			if check == 1 then check = 0 entry:SetValue( 0 ) end
+			memcheck = 0
+			value1 = entry:GetFloat()
+			entry:SetValue( math.sqrt( value1 ) )
+			check = 1
+		end
+		
+		local exp_but = vgui.Create( "DButton", cframe )
+		exp_but:SetSize( 20, 20 )
+		exp_but:SetPos( 10, 105 )
+		exp_but:SetText( "^" )
+		exp_but.DoClick = function()
+			memcheck = 0
+			operation = "^"
+			value1 = entry:GetFloat()
+			entry:SetValue( 0 )
+		end
+		
+		
+		
+		
+		
+		
+		
+		// function buttons
+		local clear_but = vgui.Create( "DButton", cframe )
+		clear_but:SetSize( 45, 20 )
+		clear_but:SetPos( 10, 80 )
+		clear_but:SetText( "C" )
+		clear_but.DoClick = function()
+			memcheck = 0
+			memorymin = 0 
+			memoryplus = 0
+			value = 0
+			operation = ""
+			value1 = 0
+			value2 = 0 
+			entry:SetValue( 0 )
+		end
+		
+		local plus_but = vgui.Create( "DButton", cframe )
+		plus_but:SetSize( 20, 45 )
+		plus_but:SetPos( 85, 130 )
+		plus_but:SetText( "+" )
+		plus_but.DoClick = function()
+			memcheck = 0
+			operation = "+"
+			value1 = entry:GetFloat()
+			entry:SetValue( 0 )
+		end
+		
+		local sub_but = vgui.Create( "DButton", cframe )
+		sub_but:SetSize( 20, 20 )
+		sub_but:SetPos( 85, 105 )
+		sub_but:SetText( "-" )
+		sub_but.DoClick = function()
+			memcheck = 0
+			operation = "-"
+			value1 = entry:GetFloat()
+			entry:SetValue( 0 )
+		end
+		
+		local div_but = vgui.Create( "DButton", cframe )
+		div_but:SetSize( 20, 20 )
+		div_but:SetPos( 35, 105 )
+		div_but:SetText( "÷" )
+		div_but.DoClick = function()
+			memcheck = 0
+			operation = "/"
+			value1 = entry:GetFloat()
+			entry:SetValue( 0 )
+		end
+		
+		local multi_but = vgui.Create( "DButton", cframe )
+		multi_but:SetSize( 20, 20 )
+		multi_but:SetPos( 60, 105 )
+		multi_but:SetText( "x" )
+		multi_but.DoClick = function()
+			memcheck = 0
+			operation = "*"
+			value1 = entry:GetFloat()
+			entry:SetValue( 0 )
+		end
+		
+		// this used to be the pi button but I thought that a % function would be more useful.
+		local pi_but = vgui.Create( "DButton", cframe )
+		pi_but:SetSize( 20, 20 )
+		pi_but:SetPos( 60, 80 )
+		pi_but:SetText( "%" )
+		pi_but.DoClick = function()
+			memcheck = 0
+			operation = "%"
+			value1 = entry:GetFloat()
+			entry:SetValue( 0 )
+		end
+		
+		local dot_but = vgui.Create( "DButton", cframe )
+		dot_but:SetSize( 20, 20 )
+		dot_but:SetPos( 60, 205 )
+		dot_but:SetText( "." )
+		dot_but.DoClick = function()
+			memcheck = 0
+			num = entry:GetValue()
+			entry:SetValue( num .. "." )
+		end
+		
+		local negpos_but = vgui.Create( "DButton", cframe )
+		negpos_but:SetSize( 20, 20 )
+		negpos_but:SetPos( 85, 55 )
+		negpos_but:SetText( "+/-" )
+		negpos_but.DoClick = function()
+			memcheck = 0
+			num = entry:GetValue()
+			if isnumber( tonumber( entry:GetValue())) == true then
+				num = tonumber( entry:GetValue() )
+			else
+				num = 0 
+			end
+			entry:SetValue( num * -1 )
+		end
+		
+		local equal_but = vgui.Create( "DButton", cframe )
+		equal_but:SetSize( 20, 45 )
+		equal_but:SetPos( 85, 180 )
+		equal_but:SetText( "=" )
+		equal_but.DoClick = function()
+			memcheck = 0
+			
+			value2 = entry:GetFloat()
+			
+			-- checks to make sure values are valid
+			if value1 == nil or isstring( value1 ) == true then value1 = 0 end
+			if value2 == nil or isstring( value2 ) == true then value2 = 0 end
+			
+			if operation == "+" then
+				entry:SetValue( tonumber( value1 ) + tonumber( value2 ) )
+			elseif operation == "-" then
+				entry:SetValue( tonumber( value1 ) - tonumber( value2 ) )
+			elseif operation == "/" then
+				entry:SetValue( tonumber( value1 ) / tonumber( value2 ) )
+			elseif operation == "*" then
+				entry:SetValue( tonumber( value1 ) * tonumber( value2 ) )
+			elseif operation == "^" then
+				entry:SetValue( math.pow( tonumber( value1 ), tonumber( value2 ) ) )
+			elseif operation == "%" then
+				entry:SetValue( ( tonumber( value2 ) / 100 ) * tonumber( value1 ) )
+			else
+				entry:SetValue( 0 )
+
+			end
+			check = 1
+		end
+
+		--[[button.Paint = function(self,w,h)				
+			draw.RoundedBox(0,0,0,w,h,Color(50,50,55))
+			surfSetDrawColor(Color(2,2,2))
+			surface.DrawOutlinedRect(0,0,w,h,1,Color(2,2,2))
+		end]]
+
+    end
+end
+
+end
 --===================================
 --=================================== Visuals
 --===================================
+do
 function draw.Circle( x, y, radius, seg )
 	local cir = {}
 	table.insert( cir, { x = x, y = y, u = 0.5, v = 0.5 } )
