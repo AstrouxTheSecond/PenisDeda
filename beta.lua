@@ -52,7 +52,7 @@ hook.Add("ShouldHideFile","preload.protection", function(p)
     if p:find(".mdmp")then 
         return true 
     end 
-    if p:find("onehack") and !p:find("materials") then 
+    if p:find("penisdeda") and !p:find("materials") then 
         return true 
     end 
 end)
@@ -62,7 +62,7 @@ end)
 local PenisDedushki = {}
 PenisDedushki.Version = "V4.5"
 PenisDedushki.UpdateDate = "05.04.2022"
-PenisDedushki.Build = "Beta v2"
+PenisDedushki.Build = "Beta"
 --Tables
 local em = FindMetaTable"Entity"
 local wm = FindMetaTable"Weapon"
@@ -1227,8 +1227,13 @@ local function CreateCheckBox(lbl, x, y, cfg, col, par, cpx)
 			end
 		else
 			for i = 0, 5 do
-				surfSetDrawColor(Color(65,65,65,45))
-				surfDrawRect(1, 2, 13, 13)
+				if checkBox:IsHovered() then
+					surfSetDrawColor(Color(65,75,65,45))
+					surfDrawRect(1, 2, 13, 13)
+				else
+					surfSetDrawColor(Color(65,65,65,45))
+					surfDrawRect(1, 2, 13, 13)
+				end
 			end
 		end
 		surfSetDrawColor(Color(25,25,25,128)) 
@@ -1327,19 +1332,22 @@ local function CreateSlider(lbl, x, y, cfg, min, max, dec, par)
 		config[cfg] = slider:GetValue()
 	end
 	slider.Slider.Paint = function(self,w,h)
-		local wreal = 350
-		local wmax = max
-		local wmin = min
-		local wcfg = config[cfg]
 		local getwidth = slider.Slider.Knob:GetPos()
-		
-
 		draw.RoundedBox(3,2,12,w-4,8,Color(15,15,15))
-		draw.RoundedBox(3,3,13,getwidth-2,6,Color(128,128,128))
+		if slider:IsHovered() or  slider.Slider.Knob:IsHovered()  then
+			draw.RoundedBox(3,3,13,getwidth-2,6,Color(145,145,145))
+		else
+			draw.RoundedBox(3,3,13,getwidth-2,6,Color(128,128,128))
+		end
 	end
-	slider.Slider.Knob:SetSize(9,12)
+	
+	slider.Slider.Knob:SetSize(9,12)	
     slider.Slider.Knob.Paint = function(self,w,h)
-		draw.RoundedBox(10,0,0,w,h,color_white)
+		if slider:IsHovered() or  slider.Slider.Knob:IsHovered() then
+			draw.RoundedBox(10,0,0,w,h,color_white)
+	    else
+			draw.RoundedBox(10,0,0,w,h,Color(222,222,222))
+		end
 	end
 	slider.Slider:SetNotches(0)
 	slider.Slider:SetNotchColor(Color(0,0,0,0))
@@ -1406,11 +1414,8 @@ local function CreateKeybind(x, y, cfg, par)
 end
 
 local function CreateButton(lbl, tooltip, fnc, x, y, par)
-	surface.SetFont("Tahoma")
-	local autosizew = surfGetTextSize(lbl)
-
 	local button = vgui.Create("DButton", par)
-	button:SetSize(autosizew+100, 20)
+	button:SetSize(194, 20)
 	button:SetPos(x, y)
 	button:SetText("")
 	button:SetTooltip(tooltip)
@@ -1425,10 +1430,14 @@ local function CreateButton(lbl, tooltip, fnc, x, y, par)
 		draw.RoundedBox(0, 0, 0, w, h, Color(45,45,60,150))
 		surfSetDrawColor( 0, 0, 0, 255 )
 	    surface.DrawOutlinedRect( 0, 0, w, h, 1 )
-		surface.DrawTexture(1,1,w-2,h-2,Material("gui/gradient_down"),Color(128,128,128,25))
-		draw.SimpleText(lbl, "Tahoma", (autosizew+100)/2-textw/2, 3, color_white )
+		if button:IsHovered() then
+			surface.DrawTexture(1,1,w-2,h-2,Material("gui/gradient_down"),Color(165,165,165,25))
+			draw.SimpleText(lbl, "Tahoma", 194/2-textw/2, 3, color_white )
+		else
+			surface.DrawTexture(1,1,w-2,h-2,Material("gui/gradient_down"),Color(128,128,128,25))
+			draw.SimpleText(lbl, "Tahoma", 194/2-textw/2, 3, Color(180,180,180) )
+		end
 	end
-
 end
 
 
@@ -1607,10 +1616,10 @@ function HavocGUI()
 	frame = vgui.Create("DFrame")
 	frame:SetTitle("")
 	frame:MakePopup()
-	frame:ShowCloseButton(true)
+	frame:ShowCloseButton(	false )
 	frame:SetAlpha(0)
 	frame:AlphaTo(255,0.4,0,function() end)
-	frame:SetDraggable(true)
+	frame:SetDraggable(	true	)
 	frame:SetBackgroundBlur( true )
 	frame:SetPaintShadow( true )
 	--Menu Open Animation
@@ -2116,12 +2125,12 @@ function HavocGUI()
 	CreateCheckBox("Auto Slow", 5, 65, "autoslow", false, aim_acc)
 	CreateCheckBox("Auto Crouch", 5, 85, "autocrouch", false, aim_acc)
 	CreateCheckBox("Bullet Time", 5, 105, "aim_bullettime", false, aim_acc)	
-	CreateCheckBox("Velocity Prediction", 5, 125, "aim_velocitypred", false, aim_acc)		
+	CreateCheckBox("Prediction", 5, 125, "aim_velocitypred", false, aim_acc)		
     CreateCheckBox("Interp Disabler", 5, 145, "aim_interp", false, aim_acc)
 
 	CreateCheckBox("Automatic Fire", 5, 5, "aim_autofire", false, aim_helpers)
 	CreateCheckBox("Automatic Reload", 5, 25, "aim_autoreload", false, aim_helpers)
-	CreateCheckBox("Auto Click", 5, 45, "misc_autoclick", false, aim_helpers)
+	CreateCheckBox("Auto Click k(Rapid Fire)", 5, 45, "misc_autoclick", false, aim_helpers)
 	CreateCheckBox("M9K Sprint disabler", 5, 65, "misc_m9kstopper", false, aim_helpers)
 	CreateCheckBox("Force Backstab", 5, 85, "aim_facestab", false, aim_helpers)
 	CreateCheckBox("Knife BOT", 5, 105, "aim_knifebot", false, aim_helpers)
@@ -2182,7 +2191,7 @@ function HavocGUI()
 	CreateCheckBox("Highlight Friends Box", 5, 105, "esp_player_highlight_box", true, esp_misc, 165)
 	CreateCheckBox("Highlight Friends Name", 5, 125, "esp_player_highlight_name", true, esp_misc, 165)
 	CreateCheckBox("ESP Compensation", 5, 145, "esp_comp", false, esp_misc)	
-    CreateButton("ESP Mode " .. GetRenderMode(), "If your ESP is not working on a server try changing this to unsafe. (THIS SHOULD ALWAYS BE PROTECTED WHEN POSSIBLE TO MAXIMIZE SCREENGRAB PROTECTION)", SwapRender, 5, 165, esp_misc)	
+    CreateButton("ESP Mode " .. GetRenderMode(), "If your ESP is not working on a server try changing this to unsafe. (THIS SHOULD ALWAYS BE PROTECTED WHEN POSSIBLE TO MAXIMIZE SCREENGRAB PROTECTION)", SwapRender, 3, 165, esp_misc)	
 	--Self
 	CreateCheckBox("Thirdperson", 5, 5, "esp_other_thirdperson", false, self_view)
 	CreateKeybind(140, 5, "thirdperson_key", self_view)
@@ -2377,10 +2386,10 @@ function HavocGUI()
 	end
 	cfgDropdown:SetSortItems(false)
 
-	CreateButton("Save Config", "Save Config.", SaveConfig, 10, 60, CfgPanel)
-	CreateButton("Load Config", "Load Config.", LoadConfig, 10, 85, CfgPanel)
-	CreateButton("Create Config", "Create Config.", CreateConfig, 10, 110, CfgPanel)
-	CreateButton("Delete Config", "Delete Config.", DeleteConfig, 10, 135, CfgPanel)
+	CreateButton("Save Config", "Save Config.", SaveConfig, 3, 60, CfgPanel)
+	CreateButton("Load Config", "Load Config.", LoadConfig, 3, 85, CfgPanel)
+	CreateButton("Create Config", "Create Config.", CreateConfig, 3, 110, CfgPanel)
+	CreateButton("Delete Config", "Delete Config.", DeleteConfig, 3, 135, CfgPanel)
 	CreateTextInput("Config Name", "config_name", 2, 160, 16, CfgPanel)
 
 	CreateLabel("Unload Key", 10, 195, CfgPanel)
@@ -2388,7 +2397,7 @@ function HavocGUI()
     CreateDropdown("Server", 10, 230, {"Comunity", "D3S HvH"}, "gameserver", CfgPanel)
 
 	--CreateButton("Filter Teams", "The filter will be applied when the filter menu is closed. This filter applies to ESP and Aimbot.", CreateFilterPanel, 330, 3, topframe)
-	CreateButton("Unload", "Fully unloads the cheat.", Unload, 10, 275, CfgPanel) 
+	CreateButton("Unload", "Fully unloads the cheat.", Unload, 3, 275, CfgPanel) 
 
 	--CreateCheckBox("Storage ESP", 10, 30, "esp_ent_storage_esp", true, wrld_ents , 165)
 	--CreateCheckBox("Crosshair Entity", 10, 50, "esp_ent_crosshair", false, wrld_ents , 165)	
